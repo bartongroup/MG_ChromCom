@@ -3,6 +3,10 @@ title: "Chromosome compaction - simple three-state model"
 output: html_notebook
 ---
 
+```{r}
+library(reshape2)
+library(ggplot2)
+```
 
 # 11/07/2017
 
@@ -12,16 +16,16 @@ Model parameters.
 
 ```{r}
 start <- -80
-stop <- 40
+stop <- 60
 step <- 1
 time = seq(from=start, to=stop, by=step)
 n <- length(time)
 
 pars <- list(
   t1 = -60,
-  t2 = NULL,
+  t2 = -50,
   r1 = 0.01,
-  r2 = 0.03
+  r2 = 0.01
 )
 ```
 
@@ -59,7 +63,7 @@ timelineCell <- function(pars) {
   cell <- rep('BB', length(time))
   cell[iBBP:iPR-1] <- 'P'
   cell[iPR:n] <- 'R'
-  cell <- factor(cell, levels=c("BB", "P", "R"))
+  #cell <- factor(cell, levels=c("BB", "P", "R"))
   
   return(cell)
 }
@@ -68,7 +72,23 @@ timelineCell <- function(pars) {
 Repeat for 100 cells.
 
 ```{r}
-cells <- lapply(1:100, function(i) timelineCell(pars))
+cells <- lapply(1:1000, function(i) timelineCell(pars))
 cells <- do.call(rbind, cells)
+```
+
+Count colours in each column.
+
+```{r}
+cnt <- apply(cells, 2, function(x) table(factor(x, levels=c("BB", "P", "R"))))
+cnt <- as.data.frame(t(cnt))
+cnt$Time <- time
+```
+
+Plot.
+
+```{r}
+m <- reshape2::melt(cnt, id.vars="Time", variable.name="Colour", value.name="Count")
+cPalette <- c("blue", "pink", "red")
+ggplot(m, aes(x=Time, y=Count)) + geom_line(aes(colour=Colour), size=1.5) + scale_colour_manual(values=cPalette) + theme(legend.position="none")
 ```
 
