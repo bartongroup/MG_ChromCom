@@ -1,0 +1,74 @@
+---
+title: "Chromosome compaction - simple three-state model"
+output: html_notebook
+---
+
+
+# 11/07/2017
+
+Writing introduction.
+
+Model parameters.
+
+```{r}
+start <- -80
+stop <- 40
+step <- 1
+time = seq(from=start, to=stop, by=step)
+n <- length(time)
+
+pars <- list(
+  t1 = -60,
+  t2 = NULL,
+  r1 = 0.01,
+  r2 = 0.03
+)
+```
+
+
+Do not need step-by-step model, only need to calculate transition times.
+
+```{r}
+transitionTimes <- function(pars) {
+  BBP <- pars$t1 + rexp(1, pars$r1)
+  if(is.null(pars$t2)) {
+    PR <- BBP + rexp(1, pars$r2)
+  } else {
+    PR <- pars$t2 + rexp(1, pars$r2)
+    if(PR < BBP) PR <- BBP
+  }
+  T <- list(
+    BBP = BBP,
+    PR = PR
+  )
+  return(T)
+}
+
+timeIndex <- function(t) {
+  if(t > stop) t <- stop
+  i <- ceiling((t - start) / step)
+}
+
+timelineCell <- function(pars) {
+  T <- transitionTimes(pars)
+  #print (T)
+  
+  iBBP <- timeIndex(T$BBP)
+  iPR <- timeIndex(T$PR)
+
+  cell <- rep('BB', length(time))
+  cell[iBBP:iPR-1] <- 'P'
+  cell[iPR:n] <- 'R'
+  cell <- factor(cell, levels=c("BB", "P", "R"))
+  
+  return(cell)
+}
+```
+
+Repeat for 100 cells.
+
+```{r}
+cells <- lapply(1:100, function(i) timelineCell(pars))
+cells <- do.call(rbind, cells)
+```
+

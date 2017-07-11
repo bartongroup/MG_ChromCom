@@ -1,0 +1,26 @@
+---
+title: "Chromosome compation - simple 3-state model"
+author: "Marek Gierlinski"
+output: html_document
+---
+
+
+
+# The model
+
+In our data we distinguish four states, marked by colour: blue, brown, pink, red. The model is going to be very simple. 
+
+## States
+
+* blue/brown (BB)
+* pink (P)
+* red (R)
+ 
+## Transition rates
+
+Transition  |  $t < t_1$  |  $t_1 < t <  t_2$  |  $t > t_2$
+------------|-------------|----------|-----
+BB->P   |  0  |  $r_1$  |  $r_1$
+P->R  |  0  |  0  |  $r_2$
+
+We need to consider $t_2$ as a free parameter or a dynamic parameter, that is, it happens at BB->P transition.
