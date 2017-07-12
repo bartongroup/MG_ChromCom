@@ -4,6 +4,7 @@ library(reshape2)
 
 source("../R/lib.R")
 
+echr <- experimentalData()
 
 ########################################################################
 
@@ -44,7 +45,7 @@ server <- shinyServer(function(input, output) {
     chr <- ChromCom3(pars)
     #print(chr)
     chr <- generateCells(chr)
-    plotTimelines(chr)
+    plotTimelines(chr, expdata=echr)
   }, res=120)
   
 })
