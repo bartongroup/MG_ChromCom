@@ -122,7 +122,7 @@ timelinePanel <- function(m, single=FALSE) {
     scale_colour_manual(values=cPalette) + 
     theme(legend.position="none") +
     labs(x="Time (s)", y="Proportion") +
-    geom_vline(xintercept=0, color="grey") +
+    geom_vline(xintercept=0, color="grey20", linetype=2) +
     if(!single) facet_grid(X ~ Y)
 }
 
