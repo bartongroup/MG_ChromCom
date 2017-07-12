@@ -80,3 +80,18 @@ range1 <- c(0.01, 0.03, 0.05, 0.10)
 range2 <- c(0.01, 0.05, 0.08, 0.12)
 parameterGrid(pars, "r1", range1, "r2", range2)
 ```
+
+What about range of delays?
+
+```{r}
+pars <- list(
+  t1 = -30,
+  dt = 0,
+  r1 = 0.03,
+  r2 = 0.01
+)
+
+range1 <- c(0, 10, 20, 30)
+range2 <- c(0.01, 0.05, 0.08, 0.12)
+parameterGrid(pars, "dt", range1, "r2", range2)
+```
