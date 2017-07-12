@@ -44,8 +44,8 @@ ChromCom3 <- function(pars) {
 #'
 #' @return A list with two transition times
 transitionTimes <- function(pars) {
-  BBP <- pars$t1 + rexp(1, pars$r1)
-  PR <- BBP + pars$dt + rexp(1, pars$r2)
+  BBP <- ifelse(pars$r1 > 0, pars$t1 + rexp(1, pars$r1), 1000)
+  PR <- ifelse(pars$r2 > 0, BBP + pars$dt + rexp(1, pars$r2), 1000)
   T <- list(
     BBP = BBP,
     PR = PR
@@ -114,7 +114,7 @@ meltTimelines <- function(chr, label1="L1", label2="L2") {
   return(m)
 }
 
-timelinePanel <- function(m) {
+timelinePanel <- function(m, single=FALSE) {
   cPalette <- c("blue", "pink", "red")
   ggplot(m, aes(x=Time, y=Count)) + 
     simple_theme_grid +
@@ -123,12 +123,12 @@ timelinePanel <- function(m) {
     theme(legend.position="none") +
     labs(x="Time (s)", y="Proportion") +
     geom_vline(xintercept=0, color="grey") +
-    facet_grid(X ~ Y)
+    if(!single) facet_grid(X ~ Y)
 }
 
 plotTimelines <- function(chr) {
   m <- meltTimelines(chr)
-  timelinePanel(m)
+  timelinePanel(m, single=TRUE)
 }
 
 
