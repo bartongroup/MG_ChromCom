@@ -6,89 +6,27 @@ output: html_notebook
 ```{r}
 library(reshape2)
 library(ggplot2)
+
+source("lib.R")
 ```
 
 # 11/07/2017
 
-Writing introduction.
+Writing introduction. First script to do simulation.
 
-Model parameters.
+
+# 12/07/2017
+
+Let's try if it works.
 
 ```{r}
-start <- -80
-stop <- 60
-step <- 1
-time = seq(from=start, to=stop, by=step)
-n <- length(time)
-
 pars <- list(
   t1 = -60,
-  t2 = -50,
+  t2 = NULL,
   r1 = 0.01,
   r2 = 0.01
 )
+chr <- ChromCom3(pars)
+chr <- generateCells(chr)
+plotTimelines(chr)
 ```
-
-
-Do not need step-by-step model, only need to calculate transition times.
-
-```{r}
-transitionTimes <- function(pars) {
-  BBP <- pars$t1 + rexp(1, pars$r1)
-  if(is.null(pars$t2)) {
-    PR <- BBP + rexp(1, pars$r2)
-  } else {
-    PR <- pars$t2 + rexp(1, pars$r2)
-    if(PR < BBP) PR <- BBP
-  }
-  T <- list(
-    BBP = BBP,
-    PR = PR
-  )
-  return(T)
-}
-
-timeIndex <- function(t) {
-  if(t > stop) t <- stop
-  i <- ceiling((t - start) / step)
-}
-
-timelineCell <- function(pars) {
-  T <- transitionTimes(pars)
-  #print (T)
-  
-  iBBP <- timeIndex(T$BBP)
-  iPR <- timeIndex(T$PR)
-
-  cell <- rep('BB', length(time))
-  cell[iBBP:iPR-1] <- 'P'
-  cell[iPR:n] <- 'R'
-  #cell <- factor(cell, levels=c("BB", "P", "R"))
-  
-  return(cell)
-}
-```
-
-Repeat for 100 cells.
-
-```{r}
-cells <- lapply(1:1000, function(i) timelineCell(pars))
-cells <- do.call(rbind, cells)
-```
-
-Count colours in each column.
-
-```{r}
-cnt <- apply(cells, 2, function(x) table(factor(x, levels=c("BB", "P", "R"))))
-cnt <- as.data.frame(t(cnt))
-cnt$Time <- time
-```
-
-Plot.
-
-```{r}
-m <- reshape2::melt(cnt, id.vars="Time", variable.name="Colour", value.name="Count")
-cPalette <- c("blue", "pink", "red")
-ggplot(m, aes(x=Time, y=Count)) + geom_line(aes(colour=Colour), size=1.5) + scale_colour_manual(values=cPalette) + theme(legend.position="none")
-```
-
