@@ -6,27 +6,77 @@ output: html_notebook
 ```{r}
 library(reshape2)
 library(ggplot2)
+library(gridExtra)
 
 source("lib.R")
 ```
 
-# 11/07/2017
+## 11/07/2017
 
 Writing introduction. First script to do simulation.
 
 
-# 12/07/2017
+## 12/07/2017
 
 Let's try if it works.
 
-```{r}
+```{r, fig.width=5}
 pars <- list(
   t1 = -60,
-  t2 = NULL,
+  dt = 0,
   r1 = 0.01,
   r2 = 0.01
 )
 chr <- ChromCom3(pars)
 chr <- generateCells(chr)
 plotTimelines(chr)
+```
+
+Parameter grid.
+
+```{r}
+parameterGrid <- function(pars, par1, range1, par2, range2) {
+  melts <- NULL
+  for(p1 in range1) {
+    pars[[par1]] <- p1
+    for(p2 in range2) {
+      pars[[par2]] <- p2
+      chr <- ChromCom3(pars)
+      chr <- generateCells(chr)
+      label1 <- sprintf("%s = %.3g", par1, p1)
+      label2 <- sprintf("%s = %.3g", par2, p2)
+      m <- meltTimelines(chr, label1=label1, label2=label2)
+      melts <- rbind(melts, m)
+    }
+  }
+  timelinePanel(melts)
+}
+```
+
+```{r}
+pars <- list(
+  t1 = -30,
+  dt = 0,
+  r1 = 0.05,
+  r2 = 0.01
+)
+
+range1 <- c(0.01, 0.05, 0.08, 0.12)
+range2 <- c(0.01, 0.05, 0.08, 0.12)
+parameterGrid(pars, "r1", range1, "r2", range2)
+```
+ I think we need to introduce a delay between pink and red.
+ 
+ 
+```{r}
+pars <- list(
+  t1 = -30,
+  dt = 10,
+  r1 = 0.05,
+  r2 = 0.01
+)
+
+range1 <- c(0.01, 0.03, 0.05, 0.10)
+range2 <- c(0.01, 0.05, 0.08, 0.12)
+parameterGrid(pars, "r1", range1, "r2", range2)
 ```

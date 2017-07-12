@@ -1,11 +1,21 @@
+simple_theme_grid <- ggplot2::theme_bw() +
+  ggplot2::theme(
+    panel.border = ggplot2::element_blank(),
+    panel.grid.major = ggplot2::element_line(colour = "grey90"),
+    panel.grid.minor = ggplot2::element_line(colour = "grey95"),
+    axis.line = ggplot2::element_line(colour = "black")
+  )
+
+
+
 #' \code{ChrCom3} object constructor
 #'
 #' @param pars A list of model parameters
 #'
 #' @return A \code{ChrCom3} object.
 ChromCom3 <- function(pars) {
-  start <- -80
-  stop <- 60
+  start <- -140
+  stop <- 90
   step <- 1
   time = seq(from=start, to=stop, by=step)
   n <- length(time)
@@ -35,12 +45,7 @@ ChromCom3 <- function(pars) {
 #' @return A list with two transition times
 transitionTimes <- function(pars) {
   BBP <- pars$t1 + rexp(1, pars$r1)
-  if(is.null(pars$t2)) {
-    PR <- BBP + rexp(1, pars$r2)
-  } else {
-    PR <- pars$t2 + rexp(1, pars$r2)
-    if(PR < BBP) PR <- BBP
-  }
+  PR <- BBP + pars$dt + rexp(1, pars$r2)
   T <- list(
     BBP = BBP,
     PR = PR
@@ -96,17 +101,34 @@ generateCells <- function(chr, nsim=1000) {
   
   chr$cells <- cells
   chr$cnt <- cnt
+  chr$nsim <- nsim
   
   return(chr)
 }
 
-plotTimelines <- function(chrcom) {
-  m <- reshape2::melt(chrcom$cnt, id.vars="Time", variable.name="Colour", value.name="Count")
+meltTimelines <- function(chr, label1="L1", label2="L2") {
+  m <- reshape2::melt(chr$cnt, id.vars="Time", variable.name="Colour", value.name="Count")
+  m$Count <- m$Count / chr$nsim
+  m$X <- label1
+  m$Y <- label2
+  return(m)
+}
+
+timelinePanel <- function(m) {
   cPalette <- c("blue", "pink", "red")
   ggplot(m, aes(x=Time, y=Count)) + 
+    simple_theme_grid +
     geom_line(aes(colour=Colour), size=1.5) + 
     scale_colour_manual(values=cPalette) + 
-    theme(legend.position="none")
+    theme(legend.position="none") +
+    labs(x="Time (s)", y="Proportion") +
+    geom_vline(xintercept=0, color="grey") +
+    facet_grid(X ~ Y)
+}
+
+plotTimelines <- function(chr) {
+  m <- meltTimelines(chr)
+  timelinePanel(m)
 }
 
 
