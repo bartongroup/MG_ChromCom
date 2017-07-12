@@ -7,6 +7,7 @@ output: html_notebook
 library(reshape2)
 library(ggplot2)
 library(gridExtra)
+library(caTools)
 
 source("lib.R")
 ```
@@ -94,4 +95,11 @@ pars <- list(
 range1 <- c(0, 10, 20, 30)
 range2 <- c(0.01, 0.05, 0.08, 0.12)
 parameterGrid(pars, "dt", range1, "r2", range2)
+```
+
+Experlimental data.
+
+```{r, warning=FALSE}
+echr <- exprimentalData()
+plotTimelines(echr, smooth=TRUE, k=15)
 ```
