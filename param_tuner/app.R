@@ -1,6 +1,7 @@
 library(shiny)
 library(ggplot2)
 library(reshape2)
+library(caTools)
 
 source("../R/lib.R")
 

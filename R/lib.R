@@ -135,17 +135,16 @@ generateCells <- function(chr, nsim=1000) {
 }
 
 
-smoothColours <- function(cnt, colours) {
+smoothColours <- function(cnt, colours, k) {
   cnt[,colours] <- apply(cnt[,colours], 2, function(x) runmean(x, k))
   return(cnt)
 }
-
 
 meltTimelines <- function(chr, label1="L1", label2="L2", smooth=FALSE, k=5) {
   cnt <- chr$cnt
   colours <- chr$colours
   cnt[,colours] <- cnt[,colours] / cnt$total
-  if(smooth) cnt <- smoothColours(cnt)
+  if(smooth) cnt <- smoothColours(cnt, colours, k)
   m <- reshape2::melt(cnt, id.vars="Time", measure.vars=colours, variable.name="Colour", value.name="Count")
   m$X <- label1
   m$Y <- label2
