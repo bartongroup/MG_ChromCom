@@ -4,7 +4,8 @@ output: html_notebook
 ---
 
 ```{r}
-source("lib.R")
+library(ChromCom)
+library(ggplot2)
 ```
 
 ## 11/07/2017
@@ -94,7 +95,13 @@ parameterGrid(pars, "dt", range1, "r2", range2)
 
 Experimental data.
 
-```{r, warning=FALSE}
-echr <- exprimentalData()
+```{r, warning=FALSE, fig.width=5}
+echr <- experimentalData(ctrlFile)
 plotTimelines(echr, smooth=TRUE, k=15)
 ```
+
+
+## 13/07/2017
+
+Prepared [shiny app](https://shiny.compbio.dundee.ac.uk/marek_chromcom/param_tuner/) for deployment.
+

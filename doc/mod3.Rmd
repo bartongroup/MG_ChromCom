@@ -6,7 +6,7 @@ output: html_document
 
 
 ```{r setup, include=FALSE}
-source("lib.R")
+library(ChromCom)
 library(knitr)
 opts_chunk$set(fig.path='../figure/mpd3-', 
                cache.path='../cache/mod3-', 

@@ -1,9 +1,8 @@
-library(ggplot2)
-library(caTools)
-library(reshape2)
-library(gridExtra)
+#' @import ggplot2
+#' @import caTools
+#' @import reshape2
+#' @import gridExtra
 
-ctrlFile <- "../data/scramble_noncoloured.csv"
 
 data.colours <- c("", "_blue_", "_blueDark_g", "_blueDark_r",
                   "_brown_g", "_brown_r", "_brownDark_g", "_brownDark_r",
@@ -13,6 +12,13 @@ translateVector <- function(x) {
   model.colours[match(x, data.colours)]
 }
 
+
+#' File with control data
+#' @export
+ctrlFile <- "../data/scramble_noncoloured.csv"
+
+#' Simple theme for plotting
+#' @export
 simple_theme_grid <- ggplot2::theme_bw() +
   ggplot2::theme(
     panel.border = ggplot2::element_blank(),
@@ -25,9 +31,16 @@ simple_theme_grid <- ggplot2::theme_bw() +
 
 #' \code{ChrCom3} object constructor
 #'
+#'
+#' \code{ChromCom3} will create an empty object with model parameters. Optionally, data can be added.
+#'
 #' @param pars A list of model parameters
+#' @param time An optional time vector
+#' @param cells An optional matrix with data
+#' @param colours Colour names
 #'
 #' @return A \code{ChrCom3} object.
+#' @export
 ChromCom3 <- function(pars, time=NULL, cells=NULL, colours = c("BB", "P", "R")) {
   if(is.null(time)) {
     start <- -140
@@ -47,7 +60,7 @@ ChromCom3 <- function(pars, time=NULL, cells=NULL, colours = c("BB", "P", "R")) 
     if(is.null(time)) stop("Need time")
     cnt <- cellCount(cells, time, colours)
   }
-  
+
   obj <- list(
     colours = colours,
     timepars = list(
@@ -68,7 +81,7 @@ ChromCom3 <- function(pars, time=NULL, cells=NULL, colours = c("BB", "P", "R")) 
 
 #' Generate transition times
 #'
-#' @param pars Parameters of the simulation
+#' @param pars Parameters of the simulation (t1, dt, r1, r2)
 #'
 #' @return A list with two transition times
 transitionTimes <- function(pars) {
@@ -99,6 +112,7 @@ timeIndex <- function(t, tp) {
 #' @param timepars A list of start, stop and step for the timeline
 #'
 #' @return A character vector of colours
+#' @export
 timelineCell <- function(pars, timepars) {
   T <- transitionTimes(pars)
 
@@ -121,6 +135,7 @@ timelineCell <- function(pars, timepars) {
 #' @param colours Factor with colours
 #'
 #' @return Marginal count
+#' @export
 cellCount <- function(cells, time, colours) {
   cnt <- apply(cells, 2, function(x) table(factor(x, levels=colours)))
   cnt <- as.data.frame(t(cnt))
@@ -136,25 +151,36 @@ cellCount <- function(cells, time, colours) {
 #' @param nsim Number of simulations.
 #'
 #' @return A \code{ChrCom3} object with simulation results.
+#' @export
 generateCells <- function(chr, nsim=1000) {
   cells <- lapply(1:nsim, function(i) timelineCell(chr$pars, chr$timepars))
   cells <- do.call(rbind, cells)
 
   cnt <- cellCount(cells, chr$time, chr$colours)
-  
+
   chr$cells <- cells
   chr$cnt <- cnt
   chr$nsim <- nsim
-  
+
   return(chr)
 }
 
 
 smoothColours <- function(cnt, colours, k) {
-  cnt[,colours] <- apply(cnt[,colours], 2, function(x) runmean(x, k))
+  cnt[,colours] <- apply(cnt[,colours], 2, function(x) caTools::runmean(x, k))
   return(cnt)
 }
 
+#' Melt timelines for plotting
+#'
+#' @param chr A \code{ChrCom3} object with data
+#' @param label1 Name of the first variable in the grid
+#' @param label2 Name of the second variable in the grid
+#' @param smooth If TRUE, smoothing will be applied
+#' @param k Smoothing window size
+#'
+#' @return Melted data frame
+#' @export
 meltTimelines <- function(chr, label1="L1", label2="L2", smooth=FALSE, k=5) {
   cnt <- chr$cnt
   colours <- chr$colours
@@ -166,18 +192,32 @@ meltTimelines <- function(chr, label1="L1", label2="L2", smooth=FALSE, k=5) {
   return(m)
 }
 
+#' Plot panel with time lines
+#'
+#' @param m Melted data frame
+#' @param single If true, no facets are applied
+#'
+#' @export
 timelinePanel <- function(m, single=FALSE) {
   cPalette <- c("blue", "pink", "red")
-  ggplot(m, aes(x=Time, y=Count)) + 
+  ggplot(m, aes(x=Time, y=Count)) +
     simple_theme_grid +
-    geom_line(aes(colour=Colour), size=1.5) + 
-    scale_colour_manual(values=cPalette) + 
+    geom_line(aes(colour=Colour), size=1.5) +
+    scale_colour_manual(values=cPalette) +
     theme(legend.position="none") +
     labs(x="Time (min)", y="Proportion") +
     geom_vline(xintercept=0, color="grey20", linetype=2) +
     if(!single) facet_grid(X ~ Y)
 }
 
+#' Plot time lines
+#'
+#' @param chr A \code{ChrCom3} object with data
+#' @param smooth If TRUE, smoothing will be applied
+#' @param k Window size for smoothing
+#' @param expdata Experimental data to add to the plot (another \code{ChrCom3} object)
+#'
+#' @export
 plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL) {
   m <- meltTimelines(chr, smooth=smooth, k=k)
   g <- timelinePanel(m, single=TRUE)
@@ -188,10 +228,16 @@ plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL) {
   g
 }
 
+
+#' Plot cell colour map
+#'
+#' @param chr A \code{ChrCom3} object with data
+#'
+#' @export
 plotCells <- function(chr) {
   cells <- chr$cells
   colnames(cells) <- chr$time
-  m <- melt(cells, varnames=c("Cell", "Time"))
+  m <- reshape2::melt(cells, varnames=c("Cell", "Time"))
   cPalette <- c("blue", "pink", "red")
   ggplot(m, aes(Time, Cell, fill=value)) +
     simple_theme_grid +
@@ -202,8 +248,14 @@ plotCells <- function(chr) {
 }
 
 
-# Read experimental data and change colours
 
+
+#' Read experimental data from CSV file
+#'
+#' @param file File name
+#'
+#' @return A \code{ChrCom3} object
+#' @export
 experimentalData <- function(file) {
   dat <- read.delim(file, header=TRUE, sep=",")
   time <- dat[,1] / 60
