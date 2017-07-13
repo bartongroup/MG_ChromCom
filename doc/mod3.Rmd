@@ -24,7 +24,7 @@ opts_chunk$set(fig.path='../figure/mpd3-',
 ## Data
 
 ```{r}
-echr <- experimentalData(ctrlFile)
+echr <- experimentalData(dataFile$control)
 smth <- 5
 ```
 
@@ -43,7 +43,7 @@ plotTimelines(echr, smooth=TRUE, k=smth)
 
 ## Model
 
-The model is going to be very simple. It consists of three states and only forward transitions are allowed. This way we can reduce the number of free parameters.
+The model is going to be very simple. It consists of three states and only forward transitions are allowed. This way we can reduce the number of free parameters. In addition, transitions are allowed only at certain time periods (see table below).
 
 ### States
 
@@ -76,4 +76,6 @@ chr <- generateCells(chr)
 plotTimelines(chr)
 ```
 
+### Parameter tuner
 
+There is a [shiny app](https://shiny.compbio.dundee.ac.uk/marek_chromcom/param_tuner/) that allows tuning parameters in search for the best solution.

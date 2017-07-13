@@ -96,7 +96,7 @@ parameterGrid(pars, "dt", range1, "r2", range2)
 Experimental data.
 
 ```{r, warning=FALSE, fig.width=5}
-echr <- experimentalData(ctrlFile)
+echr <- experimentalData(dataFile$control)
 plotTimelines(echr, smooth=TRUE, k=15)
 ```
 

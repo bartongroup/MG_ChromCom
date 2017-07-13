@@ -3,9 +3,7 @@ library(ggplot2)
 library(reshape2)
 library(caTools)
 
-source("../R/lib.R")
-
-echr <- experimentalData(ctrlFile)
+library(ChromCom)
 
 ########################################################################
 
@@ -13,16 +11,18 @@ echr <- experimentalData(ctrlFile)
 # Define UI for application that draws a histogram
 ui <- shinyUI(fluidPage(
   titlePanel("Parameter tuner"),
-  
+
   sidebarLayout(
     sidebarPanel(
+      radioButtons("dataSelection", "Background data selection", choices=names(dataFile)),
       sliderInput("t1", "Start time", min=-80, max=0, value=-28, step=1),
       sliderInput("r1", "BB->P rate", min=0, max=0.2, value=0.05, step=0.01),
       sliderInput("r2", "P->R rate", min=0, max=0.2, value=0.03, step=0.01),
       sliderInput("dt", "Time delay", min=0, max=50, value=0, step=1)
     ),
-    
+
     mainPanel(
+      p("This app helps finding the best model parameters to match experimental data. The parameters and background data in the figure can be changed in the side panel."),
       plotOutput("tPlot")
     )
   )
@@ -30,6 +30,8 @@ ui <- shinyUI(fluidPage(
 
 
 server <- shinyServer(function(input, output) {
+
+  D <- lapply(dataFile, experimentalData)
 
   sliderValues <- reactive({
     list(
@@ -39,18 +41,22 @@ server <- shinyServer(function(input, output) {
       dt = input$dt
     )
   })
-  
-  
+
+  getData <- function() {
+    dat <- D[[input$dataSelection]]
+  }
+
   output$tPlot <- renderPlot({
     pars <- sliderValues()
     chr <- ChromCom3(pars)
+    echr <- getData()
     #print(chr)
     chr <- generateCells(chr)
-    plotTimelines(chr, expdata=echr)
+    plotTimelines(chr, expdata=echr, xmin=-100, xmax=100)
   }, res=120)
-  
+
 })
 
-# Run the application 
+# Run the application
 shinyApp(ui = ui, server = server)
 

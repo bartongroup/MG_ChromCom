@@ -4,12 +4,16 @@
 \alias{timelinePanel}
 \title{Plot panel with time lines}
 \usage{
-timelinePanel(m, single = FALSE)
+timelinePanel(m, single = FALSE, xmin = NA, xmax = NA)
 }
 \arguments{
 \item{m}{Melted data frame}
 
 \item{single}{If true, no facets are applied}
+
+\item{xmin}{Lower limit on x-axis}
+
+\item{xmax}{Upper limit on x-axis}
 }
 \description{
 Plot panel with time lines

@@ -13,9 +13,13 @@ translateVector <- function(x) {
 }
 
 
-#' File with control data
+#' Data files
 #' @export
-ctrlFile <- "../data/scramble_noncoloured.csv"
+dataFile <- list(
+  scramble = "../data/scramble_noncoloured.csv",
+  NCAPD2 = "../data/NCAPD2_uncoloured.csv",
+  NCAPD3 = "../data/NCAPD3_uncoloured.csv"
+)
 
 #' Simple theme for plotting
 #' @export
@@ -196,15 +200,18 @@ meltTimelines <- function(chr, label1="L1", label2="L2", smooth=FALSE, k=5) {
 #'
 #' @param m Melted data frame
 #' @param single If true, no facets are applied
+#' @param xmin Lower limit on x-axis
+#' @param xmax Upper limit on x-axis
 #'
 #' @export
-timelinePanel <- function(m, single=FALSE) {
+timelinePanel <- function(m, single=FALSE, xmin=NA, xmax=NA) {
   cPalette <- c("blue", "pink", "red")
   ggplot(m, aes(x=Time, y=Count)) +
     simple_theme_grid +
     geom_line(aes(colour=Colour), size=1.5) +
     scale_colour_manual(values=cPalette) +
     theme(legend.position="none") +
+    xlim(xmin, xmax) +
     labs(x="Time (min)", y="Proportion") +
     geom_vline(xintercept=0, color="grey20", linetype=2) +
     if(!single) facet_grid(X ~ Y)
@@ -216,11 +223,12 @@ timelinePanel <- function(m, single=FALSE) {
 #' @param smooth If TRUE, smoothing will be applied
 #' @param k Window size for smoothing
 #' @param expdata Experimental data to add to the plot (another \code{ChrCom3} object)
+#' @param ... Other parameters passed to \code{\link{timelinePanel}}
 #'
 #' @export
-plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL) {
+plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, ...) {
   m <- meltTimelines(chr, smooth=smooth, k=k)
-  g <- timelinePanel(m, single=TRUE)
+  g <- timelinePanel(m, single=TRUE, ...)
   if(!is.null(expdata)) {
     exm <- meltTimelines(expdata, smooth=TRUE, k=15)
     g <- g + geom_line(data=exm, aes(colour=Colour), size=0.2)
