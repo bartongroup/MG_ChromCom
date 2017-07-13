@@ -5,7 +5,7 @@ library(caTools)
 
 source("../R/lib.R")
 
-echr <- experimentalData()
+echr <- experimentalData(ctrlFile)
 
 ########################################################################
 

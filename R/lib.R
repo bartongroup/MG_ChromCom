@@ -1,3 +1,18 @@
+library(ggplot2)
+library(caTools)
+library(reshape2)
+library(gridExtra)
+
+ctrlFile <- "../data/scramble_noncoloured.csv"
+
+data.colours <- c("", "_blue_", "_blueDark_g", "_blueDark_r",
+                  "_brown_g", "_brown_r", "_brownDark_g", "_brownDark_r",
+                  "_pink_", "_pinkDark_", "anaphase")
+model.colours <- c(NA, "BB", "BB", "BB", "BB", "BB", "BB", "BB", "P", "R", NA)
+translateVector <- function(x) {
+  model.colours[match(x, data.colours)]
+}
+
 simple_theme_grid <- ggplot2::theme_bw() +
   ggplot2::theme(
     panel.border = ggplot2::element_blank(),
@@ -158,7 +173,7 @@ timelinePanel <- function(m, single=FALSE) {
     geom_line(aes(colour=Colour), size=1.5) + 
     scale_colour_manual(values=cPalette) + 
     theme(legend.position="none") +
-    labs(x="Time (s)", y="Proportion") +
+    labs(x="Time (min)", y="Proportion") +
     geom_vline(xintercept=0, color="grey20", linetype=2) +
     if(!single) facet_grid(X ~ Y)
 }
@@ -173,20 +188,32 @@ plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL) {
   g
 }
 
+plotCells <- function(chr) {
+  cells <- chr$cells
+  colnames(cells) <- chr$time
+  m <- melt(cells, varnames=c("Cell", "Time"))
+  cPalette <- c("blue", "pink", "red")
+  ggplot(m, aes(Time, Cell, fill=value)) +
+    simple_theme_grid +
+    geom_tile() +
+    scale_fill_manual(values=cPalette) +
+    theme(legend.position="none") +
+    labs(x="Time (min)", y="Cell")
+}
 
 
-experimentalData <- function() {
-  data.colours <- c("", "_blue_", "_blueDark_g", "_blueDark_r", "_brown_g", "_brown_r", "_brownDark_g", "_brownDark_r", "_pink_", "_pinkDark_", "anaphase")
-  model.colours <- c(NA, "BB", "BB", "BB", "BB", "BB", "BB", "BB", "P", "R", NA)
-  
-  translateVector <- function(x) {
-    model.colours[match(x, data.colours)]
-  }
-  
-  dat <- read.delim("../data/scramble_noncoloured.csv", header=TRUE, sep=",")
+# Read experimental data and change colours
+
+experimentalData <- function(file) {
+  dat <- read.delim(file, header=TRUE, sep=",")
   time <- dat[,1] / 60
   dat <- dat[,2:ncol(dat)]
+  # the last non-empty time point
+  cut <- max(which(s <- rowSums(dat != '') > 0))
+  time <- time[1:cut]
+  dat <- dat[1:cut,]
   tdat <- apply(dat, 1, translateVector)
+  pars <- list(t1=NULL, r1=NULL, r2=NULL)
   echr <- ChromCom3(pars, time=time, cells=tdat)
 }
 

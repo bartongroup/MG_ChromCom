@@ -5,22 +5,75 @@ output: html_document
 ---
 
 
+```{r setup, include=FALSE}
+source("lib.R")
+library(knitr)
+opts_chunk$set(fig.path='../figure/mpd3-', 
+               cache.path='../cache/mod3-', 
+               fig.align='center',
+               external=TRUE,
+               echo=FALSE,
+               warning=FALSE,
+               message=FALSE,
+               fig.pos='H',
+               fig.width=4,
+               fig.height=3
+              )
+```
 
-# The model
+## Data
 
-In our data we distinguish four states, marked by colour: blue, brown, pink, red. The model is going to be very simple. 
+```{r}
+echr <- experimentalData(ctrlFile)
+smth <- 5
+```
 
-## States
+In our data we distinguish four states, marked by colour: blue, brown, pink, red. For the purpose of the model we merge blue and brown together into one state. Here is the result of the experiment from `r nrow(echr$cells)` cells.
+
+```{r}
+plotCells(echr)
+```
+
+The next figure shows the proportions of each colour as a function of time. The curves are smoothed with a running mean over the window of `r smth` time points.
+
+```{r}
+plotTimelines(echr, smooth=TRUE, k=smth)
+```
+
+
+## Model
+
+The model is going to be very simple. It consists of three states and only forward transitions are allowed. This way we can reduce the number of free parameters.
+
+### States
 
 * blue/brown (BB)
 * pink (P)
 * red (R)
  
-## Transition rates
+### Transition rates
 
-Transition  |  $t < t_1$  |  $t_1 < t <  t_2$  |  $t > t_2$
+Transition  |  $t < t_1$  |  $t_1 < t <  t_1 + \Delta t$  |  $t > t_1 + \Delta t$
 ------------|-------------|----------|-----
 BB->P   |  0  |  $r_1$  |  $r_1$
 P->R  |  0  |  0  |  $r_2$
 
-We need to consider $t_2$ as a free parameter or a dynamic parameter, that is, it happens at BB->P transition.
+### Details
+
+The algorithm is simple: for each cell we generate two transitions (BB->P and P->R) according to the table above. The transition times are random numbers with exponential distribution, $P(t) = 1 - e^{-rt}$. The exponential distribution describes a process with constant probability of the event happening.
+
+From transition times we know the history of the cell, its state as a function of time. This process is repeated for 1000 cells and then the colour propotions are found at each time point. An example of the simulation result is shown here.
+
+```{r, fig.width=4, fig.height=3}
+pars <- list(
+  t1 = -30,
+  dt = 0,
+  r1 = 0.05,
+  r2 = 0.03
+)
+chr <- ChromCom3(pars)
+chr <- generateCells(chr)
+plotTimelines(chr)
+```
+
+
