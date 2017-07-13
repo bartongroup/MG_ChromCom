@@ -3,6 +3,7 @@ library(ggplot2)
 library(reshape2)
 library(caTools)
 
+.libPaths("/cluster/gjb_lab/mgierlinski/R/x86_64-redhat-linux-gnu-library/3.3")
 library(ChromCom)
 
 ########################################################################
