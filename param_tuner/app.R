@@ -6,7 +6,8 @@ library(shiny)
 library(ggplot2)
 library(reshape2)
 library(caTools)
-library(ChromCom)
+
+source("../R/lib.R")
 
 ########################################################################
 
