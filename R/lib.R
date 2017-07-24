@@ -204,7 +204,7 @@ meltTimelines <- function(chr, label1="L1", label2="L2", smooth=FALSE, k=5) {
 #' @param xmax Upper limit on x-axis
 #'
 #' @export
-timelinePanel <- function(m, single=FALSE, xmin=NA, xmax=NA) {
+timelinePanel <- function(m, single=FALSE, xmin=as.numeric(NA), xmax=as.numeric(NA)) {
   cPalette <- c("blue", "pink", "red")
   ggplot(m, aes(x=Time, y=Count)) +
     simple_theme_grid +

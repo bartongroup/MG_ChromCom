@@ -1,9 +1,11 @@
+.libPaths("/cluster/gjb_lab/mgierlinski/R/x86_64-redhat-linux-gnu-library/3.3")
+.libPaths("/home/mgierlinski/R/x86_64-pc-linux-gnu-library/3.4")
+
+
 library(shiny)
 library(ggplot2)
 library(reshape2)
 library(caTools)
-
-.libPaths("/cluster/gjb_lab/mgierlinski/R/x86_64-redhat-linux-gnu-library/3.3")
 library(ChromCom)
 
 ########################################################################

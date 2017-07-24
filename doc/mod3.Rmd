@@ -24,7 +24,7 @@ opts_chunk$set(fig.path='../figure/mpd3-',
 ## Data
 
 ```{r}
-echr <- experimentalData(dataFile$control)
+echr <- experimentalData(dataFile$scramble)
 smth <- 5
 ```
 
