@@ -227,12 +227,12 @@ timelinePanel <- function(m, single=FALSE, xmin=as.numeric(NA), xmax=as.numeric(
 #' @param ... Other parameters passed to \code{\link{timelinePanel}}
 #'
 #' @export
-plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, ...) {
+plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', ...) {
   m <- meltTimelines(chr, smooth=smooth, k=k)
   g <- timelinePanel(m, single=TRUE, ...)
   if(!is.null(expdata)) {
     exm <- meltTimelines(expdata, smooth=TRUE, k=15)
-    g <- g + geom_line(data=exm, aes(colour=Colour), size=0.2)
+    g <- g + geom_line(data=exm, aes(colour=Colour), size=0.2) + labs(title=title)
   }
   g
 }
@@ -278,3 +278,24 @@ experimentalData <- function(file) {
   echr <- ChromCom3(pars, time=time, cells=tdat)
 }
 
+
+#' Data-model error
+#'
+#' @param chr Model data
+#' @param echr Experimental data
+#'
+#' @return RMS
+#' @export
+RMS <- function(chr, echr) {
+  rms <- 0
+  for(col in chr$colours) {
+    E <- ts(chr$cnt[[col]] / chr$cnt$total, start=chr$timepars$start, deltat=chr$timepars$step)
+    O <- ts(echr$cnt[[col]] / echr$cnt$total, start=echr$timepars$start, deltat=echr$timepars$step)
+    E[which(is.nan(E) | is.infinite(E))] <- NA
+    O[which(is.nan(O) | is.infinite(O))] <- NA
+    chi2 <- (O - E)**2 / E
+    chi2[which(is.infinite(chi2))] <- NA
+    rms <- rms + sum(chi2, na.rm=TRUE)
+  }
+  rms
+}

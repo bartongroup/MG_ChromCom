@@ -19,7 +19,7 @@ ui <- shinyUI(fluidPage(
   sidebarLayout(
     sidebarPanel(
       radioButtons("dataSelection", "Background data selection", choices=names(dataFile)),
-      sliderInput("t1", "Start time", min=-80, max=0, value=-28, step=1),
+      sliderInput("t1", "Start time", min=-80, max=20, value=-28, step=1),
       sliderInput("r1", "BB->P rate", min=0, max=0.2, value=0.05, step=0.002),
       sliderInput("r2", "P->R rate", min=0, max=0.2, value=0.03, step=0.002),
       sliderInput("dt", "Time delay", min=0, max=50, value=0, step=1)
@@ -56,7 +56,8 @@ server <- shinyServer(function(input, output) {
     echr <- getData()
     #print(chr)
     chr <- generateCells(chr)
-    plotTimelines(chr, expdata=echr, xmin=-100, xmax=100)
+    rms <- round(RMS(chr, echr), 0)
+    plotTimelines(chr, expdata=echr, xmin=-100, xmax=100, title=paste0("rms = ", rms))
   }, res=120)
 
 })

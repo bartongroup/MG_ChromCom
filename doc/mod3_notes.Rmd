@@ -2,7 +2,6 @@
 title: "Chromosome compaction - simple three-state model"
 output: 
   html_notebook:
-    theme: paper
     toc: false
     toc_float: false
     code_folding: hide
@@ -12,6 +11,7 @@ output:
 library(ChromCom)
 library(ggplot2)
 library(gridExtra)
+library(reshape2)
 ```
 
 ## 11/07/2017
@@ -23,7 +23,7 @@ Writing introduction. First script to do simulation.
 
 Let's try if it works. An example for $t_1 = -60$ min, $\Delta t = 0$, $k_1 = 0.04\ {\rm min}^{-1}$ and $k_2 = 0.04\ {\rm min}^{-1}$.
 
-```{r, fig.width=5}
+```{r, fig.width=5, fig.height=3}
 pars <- list(
   t1 = -60,
   dt = 0,
@@ -151,7 +151,7 @@ Prepared [shiny app](https://shiny.compbio.dundee.ac.uk/marek_chromcom/param_tun
 
 ## 24/07/2017
 
-Tomo suggested that the model parameters can be derived directly from data. We can write the following equations:
+Tomo suggested that the model parameters can be derived directly from data. We can write the following equations
 
 $\dot{B} = -k_1 B$
 
@@ -160,6 +160,8 @@ $\dot{P} = k_1 B - k_2 R$
 $\dot{R} = k_2 P$
 
 $B + P + R = 1$
+
+However, I'm not sure if this is exacly the model I use in the simulation. In the simulation, we assumed that P->R transition can happen only after the BB->P transition. 
 
 Because proportions and their derivatives are observed, we can find the rates:
 
@@ -219,7 +221,13 @@ grid.arrange(plotTimelines(chr, smooth=TRUE, k=20), plotRates(chr, k=20), ncol=2
 ```
 
 
-And now, for real data. Here are scramble data smoothed with running mean with window size of 80 time points.
+And now, for real data. Here are scramble data smoothed with running mean with window size of 10 time points.
+
+```{r, fig.width=9, fig.height=3}
+grid.arrange(plotTimelines(echr, smooth=TRUE, k=10), plotRates(echr, k=10), ncol=2)
+```
+
+Now, smoothing with 80 points.
 
 ```{r, fig.width=9, fig.height=3}
 grid.arrange(plotTimelines(echr, smooth=TRUE, k=80), plotRates(echr, k=80), ncol=2)
