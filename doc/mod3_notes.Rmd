@@ -105,3 +105,67 @@ plotTimelines(echr, smooth=TRUE, k=15)
 
 Prepared [shiny app](https://shiny.compbio.dundee.ac.uk/marek_chromcom/param_tuner/) for deployment.
 
+## 24/07/2017
+
+Tomo suggested that the model parameters can be derived directly from data. We can write the following equations:
+
+$\dot{B} = -k_1 B$
+
+$\dot{P} = k_1 B - k_2 R$
+
+$\dot{R} = k_2 P$
+
+$B + P + R = 1$
+
+Because proportions and their derivatives are observed, we can find the rates:
+
+$k_1 = - \frac{\dot{B}}{B}$
+
+$k_2 = \frac{\dot{R}}{P}$
+
+This will require a lot of smoothing, otherwise the derivatives will be all over the place.
+
+First, I see if I can recover rates from the generated data.
+
+```{r}
+timeDeriv <- function(chr, k=20) {
+  ts <- list()
+  for(col in chr$colours) {
+    x <- chr$cnt[[col]] / chr$cnt$total
+    x <- caTools::runmean(x, k)
+    x <- ts(x, start=chr$timepars$start, deltat=chr$timepars$step)
+    xdot <- diff(x)
+    ts[[col]] <- x
+    ts[[paste0(col, ".diff")]] <- xdot
+  }
+  ts
+}
+```
+
+```{r}
+plotRates <- function(chr, k=20) {
+  ts <- timeDeriv(chr, k=k)
+  k1 <- -ts$BB.diff / ts$BB
+  k2 <- ts$R.diff / ts$P
+  df <- data.frame(t=time(k1), k1=k1, k2=k2)
+  m <- melt(df, measure.vars = c("k1", "k2"))
+  ggplot(m, aes(x=t, y=value)) + geom_line(aes(colour=variable)) + ylim(0, 0.05)
+}
+```
+
+```{r, fig.width=5, fig.height=3}
+plotRates(chr, k=1)
+```
+
+Here is the rub. It needs lots of smoothing! These are smooth, generated data, and still produce crazy rates. This is because the time step is too small.
+
+```{r}
+plotRates(chr, k=20)
+```
+
+And now, for real data.
+
+```{r}
+plotTimelines(echr, smooth=TRUE, k=30)
+plotRates(echr, k=30)
+```

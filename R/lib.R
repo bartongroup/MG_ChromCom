@@ -103,10 +103,10 @@ transitionTimes <- function(pars) {
 #' @param t Time point in seconds
 #' @param tp A list of start, stop and step for the timeline
 #'
-#' @return Integer index in the time vector corresponding to t; returns n if index outside range
+#' @return Integer index in the time vector corresponding to t;
 timeIndex <- function(t, tp) {
   i <- round((t - tp$start) / tp$step) + 1
-  if(i > tp$n) i <- tp$n
+  if(i > 1000) i <- 1000
   return(i)
 }
 
@@ -123,9 +123,12 @@ timelineCell <- function(pars, timepars) {
   iBBP <- timeIndex(T$BBP, timepars)
   iPR <- timeIndex(T$PR, timepars)
 
-  cell <- rep('BB', timepars$n)
-  if(iBBP <= iPR && iPR < timepars$n) cell[iBBP:iPR] <- 'P'
-  if(iPR < timepars$n) cell[(iPR+1):timepars$n] <- 'R'
+  # we want to avoid boundary effects
+  maxn <- 5000
+  cell <- rep("BB", maxn)
+  if(iPR > iBBP) cell[(iBBP+1):iPR] <- "P"
+  cell[(iPR+1):maxn] <- "R"
+  cell <- cell[1:timepars$n]
 
   return(cell)
 }
@@ -157,9 +160,7 @@ cellCount <- function(cells, time, colours) {
 #' @return A \code{ChrCom3} object with simulation results.
 #' @export
 generateCells <- function(chr, nsim=1000) {
-  cells <- lapply(1:nsim, function(i) timelineCell(chr$pars, chr$timepars))
-  cells <- do.call(rbind, cells)
-
+  cells <- t(replicate(nsim, timelineCell(chr$pars, chr$timepars)))
   cnt <- cellCount(cells, chr$time, chr$colours)
 
   chr$cells <- cells
