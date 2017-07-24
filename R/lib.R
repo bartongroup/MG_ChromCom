@@ -104,9 +104,9 @@ transitionTimes <- function(pars) {
 #' @param tp A list of start, stop and step for the timeline
 #'
 #' @return Integer index in the time vector corresponding to t;
-timeIndex <- function(t, tp) {
+timeIndex <- function(t, tp, maxn) {
   i <- round((t - tp$start) / tp$step) + 1
-  if(i > 1000) i <- 1000
+  if(i > maxn) i <- maxn
   return(i)
 }
 
@@ -120,11 +120,11 @@ timeIndex <- function(t, tp) {
 timelineCell <- function(pars, timepars) {
   T <- transitionTimes(pars)
 
-  iBBP <- timeIndex(T$BBP, timepars)
-  iPR <- timeIndex(T$PR, timepars)
+  maxn <- 10000
+  iBBP <- timeIndex(T$BBP, timepars, maxn)
+  iPR <- timeIndex(T$PR, timepars, maxn)
 
   # we want to avoid boundary effects
-  maxn <- 5000
   cell <- rep("BB", maxn)
   if(iPR > iBBP) cell[(iBBP+1):iPR] <- "P"
   cell[(iPR+1):maxn] <- "R"

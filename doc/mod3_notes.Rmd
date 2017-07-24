@@ -1,11 +1,17 @@
 ---
 title: "Chromosome compaction - simple three-state model"
-output: html_notebook
+output: 
+  html_notebook:
+    theme: paper
+    toc: false
+    toc_float: false
+    code_folding: hide
 ---
 
 ```{r}
 library(ChromCom)
 library(ggplot2)
+library(gridExtra)
 ```
 
 ## 11/07/2017
@@ -15,21 +21,59 @@ Writing introduction. First script to do simulation.
 
 ## 12/07/2017
 
-Let's try if it works.
+Let's try if it works. An example for $t_1 = -60$ min, $\Delta t = 0$, $k_1 = 0.04\ {\rm min}^{-1}$ and $k_2 = 0.04\ {\rm min}^{-1}$.
 
 ```{r, fig.width=5}
 pars <- list(
   t1 = -60,
   dt = 0,
-  r1 = 0.01,
-  r2 = 0.01
+  r1 = 0.04,
+  r2 = 0.04
 )
 chr <- ChromCom3(pars)
-chr <- generateCells(chr)
+chr <- generateCells(chr, nsim=1000)
 plotTimelines(chr)
 ```
 
-Parameter grid.
+Just to check if output is as expected. With $k_2=0$ we should have pure exponential decay. The yellow curve is $e^{-k_1 t}$.
+
+```{r, fig.width=5}
+pars <- list(
+  t1 = -60,
+  dt = 0,
+  r1 = 0.04,
+  r2 = 0
+)
+tchr <- ChromCom3(pars)
+tchr <- generateCells(tchr, nsim=1000)
+
+x <- seq(from=pars$t1, to=100, by=1)
+y <- exp(-pars$r1 * (x - pars$t1))
+g <- plotTimelines(tchr)
+g + geom_line(data=data.frame(x=x, y=y), aes(x,y), colour="yellow")
+```
+
+Close, but not perfect. Here is an example with much smaller time step (0.1) and larger number of cells (10,000).
+
+```{r, fig.width=5}
+pars <- list(
+  t1 = -60,
+  dt = 0,
+  r1 = 0.04,
+  r2 = 0
+)
+tchr <- ChromCom3(pars, time = seq(from=-140, to=90, by=0.1))
+tchr <- generateCells(tchr, nsim=10000)
+
+x <- seq(from=pars$t1, to=100, by=1)
+y <- exp(-pars$r1 * (x - pars$t1))
+g <- plotTimelines(tchr)
+g + geom_line(data=data.frame(x=x, y=y), aes(x,y), colour="yellow")
+```
+
+
+
+### Parameter grid
 
 ```{r}
 parameterGrid <- function(pars, par1, range1, par2, range2) {
@@ -96,7 +140,7 @@ parameterGrid(pars, "dt", range1, "r2", range2)
 Experimental data.
 
 ```{r, warning=FALSE, fig.width=5}
-echr <- experimentalData(dataFile$control)
+echr <- experimentalData(dataFile$scramble)
 plotTimelines(echr, smooth=TRUE, k=15)
 ```
 
@@ -147,25 +191,36 @@ plotRates <- function(chr, k=20) {
   ts <- timeDeriv(chr, k=k)
   k1 <- -ts$BB.diff / ts$BB
   k2 <- ts$R.diff / ts$P
+  k1[which(is.nan(k1))] <- NA
+  k2[which(is.nan(k2))] <- NA
   df <- data.frame(t=time(k1), k1=k1, k2=k2)
   m <- melt(df, measure.vars = c("k1", "k2"))
-  ggplot(m, aes(x=t, y=value)) + geom_line(aes(colour=variable)) + ylim(0, 0.05)
+  m$value <- as.numeric(m$value)
+  m$value[which(m$value > 0.5)] <- 0.5
+  m$value[which(m$value < -0.5)] <- -0.5
+  ggplot(m, aes(x=t, y=value)) + geom_line(aes(colour=variable)) 
 }
 ```
 
-```{r, fig.width=5, fig.height=3}
-plotRates(chr, k=1)
+Start with a model wiht 10,000 cells and 0.1 min time step. In this model $k_1 = 0.04$ and $k_2 = 0$.  Top panels show original data, lower panels - smoothed data.
+
+```{r, fig.width=8, fig.height=3}
+grid.arrange(plotTimelines(tchr), plotRates(tchr, k=1), ncol=2)
+grid.arrange(plotTimelines(tchr, smooth=TRUE, k=200), plotRates(tchr, k=200), ncol=2)
 ```
 
-Here is the rub. It needs lots of smoothing! These are smooth, generated data, and still produce crazy rates. This is because the time step is too small.
 
-```{r}
-plotRates(chr, k=20)
+What happens if I use only 100 cells and 1 min time step in the model? This time $k_2 = 0.04$.
+
+```{r, fig.width=9, fig.height=3}
+chr <- generateCells(chr, nsim=100)
+grid.arrange(plotTimelines(chr, k=1), plotRates(chr, k=1), ncol=2)
+grid.arrange(plotTimelines(chr, smooth=TRUE, k=20), plotRates(chr, k=20), ncol=2)
 ```
 
-And now, for real data.
 
-```{r}
-plotTimelines(echr, smooth=TRUE, k=30)
-plotRates(echr, k=30)
+And now, for real data. Here are scramble data smoothed with running mean with window size of 80 time points.
+
+```{r, fig.width=9, fig.height=3}
+grid.arrange(plotTimelines(echr, smooth=TRUE, k=80), plotRates(echr, k=80), ncol=2)
 ```
