@@ -4,10 +4,10 @@
 \alias{timeIndex}
 \title{Index of a time point}
 \usage{
-timeIndex(t, tp, maxn)
+timeIndex(t, tp, maxn = 10000)
 }
 \arguments{
-\item{t}{Time point in seconds}
+\item{t}{Time point in minutes}
 
 \item{tp}{A list of start, stop and step for the timeline}
 }

@@ -41,16 +41,17 @@ simple_theme_grid <- ggplot2::theme_bw() +
 #' @param pars A list of model parameters
 #' @param time An optional time vector
 #' @param cells An optional matrix with data
+#' @param timepars Parameters for the time sequence
 #' @param colours Colour names
 #'
 #' @return A \code{ChrCom3} object.
 #' @export
-ChromCom3 <- function(pars, time=NULL, cells=NULL, colours = c("B", "P", "R")) {
+ChromCom3 <- function(pars, time=NULL, cells=NULL, timepars=list(start=-140, stop=90, step=1), colours = c("B", "P", "R")) {
   stopifnot(is(pars, "c3pars"))
   if(is.null(time)) {
-    start <- -140
-    stop <- 90
-    step <- 1
+    start <- timepars$start
+    stop <- timepars$stop
+    step <- timepars$step
     time = seq(from=start, to=stop, by=step)
   } else {
     start <- time[1]
@@ -86,12 +87,12 @@ ChromCom3 <- function(pars, time=NULL, cells=NULL, colours = c("B", "P", "R")) {
 
 #' \code{c3pars} object constructor
 #'
-#' @param t1
-#' @param dt2
-#' @param dt3
-#' @param k1
-#' @param k2
-#' @param k3
+#' @param t1 Start time
+#' @param dt2 Delay until P->R is possible
+#' @param dt3 Delay until P>B is possible
+#' @param k1 B->P rate
+#' @param k2 P->R rate
+#' @param k3 R->B rate
 #' @param dummy Logical, if set empty list is returned
 #'
 #' @return Model parameters object
@@ -132,24 +133,25 @@ transitionTimes <- function(pars) {
 
 #' Index of a time point
 #'
-#' @param t Time point in seconds
+#' @param t Time point in minutes
 #' @param tp A list of start, stop and step for the timeline
 #'
 #' @return Integer index in the time vector corresponding to t;
-timeIndex <- function(t, tp, maxn) {
+timeIndex <- function(t, tp, maxn=10000) {
   i <- round((t - tp$start) / tp$step) + 1
   if(i > maxn) i <- maxn
   return(i)
 }
 
-#' Generate timeline for one cell
+
+
+#' Create a cell using transition method
 #'
 #' @param pars Model parameters
-#' @param timepars A list of start, stop and step for the timeline
+#' @param timepars Time parameters
 #'
-#' @return A character vector of colours
-#' @export
-timelineCell <- function(pars, timepars) {
+#' @return A cell
+tcTransition <- function(pars, timepars) {
   T <- transitionTimes(pars)
 
   maxn <- 10000
@@ -161,6 +163,68 @@ timelineCell <- function(pars, timepars) {
   if(iPR > iBP) cell[(iBP+1):iPR] <- "P"
   cell[(iPR+1):maxn] <- "R"
   cell <- cell[1:timepars$n]
+
+  return(cell)
+}
+
+
+stateTransition <- function(state, i, i2, i3, p1, p2, p3) {
+  R <- runif(1)
+  if(state == "B") {
+    if(R < p1) state <- "P"
+  }
+  else if(state == "P") {
+    if(i >= i3 && R < p3)         state <- "B"
+    else if (i >= i2 && R < p2)   state <- "R"
+  }
+  return(state)
+}
+
+
+#' Create a cell using simulations method
+#'
+#' @param pars Model parameters
+#' @param timepars Time parameters
+#'
+#' @return A cell
+tcSimulation <- function(pars, timepars) {
+  cell <- rep("-", timepars$n)
+  i1 <- timeIndex(pars$t1, timepars)
+  i2 <- timeIndex(pars$t1 + pars$dt2, timepars)
+  i3 <- timeIndex(pars$t1 + pars$dt3, timepars)
+  p1 <- 1 - exp(-timepars$step * pars$k1)
+  p2 <- 1 - exp(-timepars$step * pars$k2)
+  p3 <- 1 - exp(-timepars$step * pars$k3)
+
+  cell[1:(i1-1)] <- "B"
+  state <- "B"
+  for(i in i1:timepars$n) {
+    state <- stateTransition(state, i, i2, i3, p1, p2, p3)
+    cell[i] <- state
+  }
+
+  return(cell)
+}
+
+
+
+
+
+#' Generate timeline for one cell
+#'
+#' @param pars Model parameters
+#' @param timepars A list of start, stop and step for the timeline
+#'
+#' @return A character vector of colours
+#' @export
+timelineCell <- function(pars, timepars, method=c("transition", "simulation")) {
+  method <- match.arg(method)
+
+  if(method == "transition") {
+    cell <- tcTransition(pars, timepars)
+  } else if(method == "simulation") {
+    cell <- tcSimulation(pars, timepars)
+  }
 
   return(cell)
 }
@@ -188,11 +252,12 @@ cellCount <- function(cells, time, colours) {
 #'
 #' @param chr Initial \code{ChrCom3} object with model parameters.
 #' @param nsim Number of simulations.
+#' @param method Either "transition" or "simulation"
 #'
 #' @return A \code{ChrCom3} object with simulation results.
 #' @export
-generateCells <- function(chr, nsim=1000) {
-  cells <- t(replicate(nsim, timelineCell(chr$pars, chr$timepars)))
+generateCells <- function(chr, nsim=1000, method="transition") {
+  cells <- t(replicate(nsim, timelineCell(chr$pars, chr$timepars, method)))
   cnt <- cellCount(cells, chr$time, chr$colours)
 
   chr$cells <- cells
@@ -246,7 +311,7 @@ timelinePanel <- function(m, single=FALSE, xmin=as.numeric(NA), xmax=as.numeric(
     theme(legend.position="none") +
     xlim(xmin, xmax) +
     labs(x="Time (min)", y="Proportion") +
-    geom_vline(xintercept=0, color="grey20", linetype=2) +
+    geom_vline(xintercept=0, color="grey20", linetype=1) +
     if(!single) facet_grid(X ~ Y)
 }
 
@@ -256,16 +321,30 @@ timelinePanel <- function(m, single=FALSE, xmin=as.numeric(NA), xmax=as.numeric(
 #' @param smooth If TRUE, smoothing will be applied
 #' @param k Window size for smoothing
 #' @param expdata Experimental data to add to the plot (another \code{ChrCom3} object)
+#' @param title Title of the plot
+#' @param withpars Title will be replaced with model parameters
 #' @param ... Other parameters passed to \code{\link{timelinePanel}}
 #'
 #' @export
-plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', ...) {
+plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', withpars=FALSE, ...) {
   m <- meltTimelines(chr, smooth=smooth, k=k)
-  g <- timelinePanel(m, single=TRUE, ...)
+  if(withpars) {
+    title <- paste0(lapply(names(chr$pars), function(name) {
+      paste0(name, "=", sprintf("%.3g", chr$pars[[name]]))
+    }
+    ), collapse=", ")
+  }
+  g <- timelinePanel(m, single=TRUE, ...) +
+    geom_vline(xintercept=chr$pars$t1, colour="skyblue", linetype=2) +
+    geom_vline(xintercept=(chr$pars$t1+chr$pars$dt2), colour="salmon", linetype=2) +
+    geom_vline(xintercept=(chr$pars$t1+chr$pars$dt3), colour="brown", linetype=2)
   if(!is.null(expdata)) {
     exm <- meltTimelines(expdata, smooth=TRUE, k=15)
-    g <- g + geom_line(data=exm, aes(colour=Colour), size=0.2) + labs(title=title)
+    chi2 <- oeError(chr, echr)
+    if(withpars) title <- paste0(title, sprintf(", chi2=%.3g", chi2))
+    g <- g + geom_line(data=exm, aes(colour=Colour), size=0.2)
   }
+  g <- g + labs(title=title)
   g
 }
 
@@ -316,9 +395,9 @@ experimentalData <- function(file) {
 #' @param chr Model data
 #' @param echr Experimental data
 #'
-#' @return RMS
+#' @return chi-square
 #' @export
-RMS <- function(chr, echr) {
+oeError <- function(chr, echr, limits=c(-90, 30)) {
   rms <- 0
   for(col in chr$colours) {
     E <- ts(chr$cnt[[col]] / chr$cnt$total, start=chr$timepars$start, deltat=chr$timepars$step)
@@ -327,6 +406,7 @@ RMS <- function(chr, echr) {
     O[which(is.nan(O) | is.infinite(O))] <- NA
     chi2 <- (O - E)**2 / E
     chi2[which(is.infinite(chi2))] <- NA
+    chi2 <- window(chi2, start=limits[1], end=limits[2])
     rms <- rms + sum(chi2, na.rm=TRUE)
   }
   rms

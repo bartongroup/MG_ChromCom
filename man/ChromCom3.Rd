@@ -4,7 +4,8 @@
 \alias{ChromCom3}
 \title{\code{ChrCom3} object constructor}
 \usage{
-ChromCom3(pars, time = NULL, cells = NULL, colours = c("B", "P", "R"))
+ChromCom3(pars, time = NULL, cells = NULL, timepars = list(start = -140,
+  stop = 90, step = 1), colours = c("B", "P", "R"))
 }
 \arguments{
 \item{pars}{A list of model parameters}
@@ -12,6 +13,8 @@ ChromCom3(pars, time = NULL, cells = NULL, colours = c("B", "P", "R"))
 \item{time}{An optional time vector}
 
 \item{cells}{An optional matrix with data}
+
+\item{timepars}{Parameters for the time sequence}
 
 \item{colours}{Colour names}
 }

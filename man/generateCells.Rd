@@ -4,12 +4,14 @@
 \alias{generateCells}
 \title{Perform simulation}
 \usage{
-generateCells(chr, nsim = 1000)
+generateCells(chr, nsim = 1000, method = "transition")
 }
 \arguments{
 \item{chr}{Initial \code{ChrCom3} object with model parameters.}
 
 \item{nsim}{Number of simulations.}
+
+\item{method}{Either "transition" or "simulation"}
 }
 \value{
 A \code{ChrCom3} object with simulation results.
