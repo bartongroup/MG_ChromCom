@@ -4,7 +4,8 @@
 \alias{plotTimelines}
 \title{Plot time lines}
 \usage{
-plotTimelines(chr, smooth = FALSE, k = 5, expdata = NULL, ...)
+plotTimelines(chr, smooth = FALSE, k = 5, expdata = NULL, title = "",
+  ...)
 }
 \arguments{
 \item{chr}{A \code{ChrCom3} object with data}

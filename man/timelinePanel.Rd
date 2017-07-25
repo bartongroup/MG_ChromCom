@@ -4,7 +4,8 @@
 \alias{timelinePanel}
 \title{Plot panel with time lines}
 \usage{
-timelinePanel(m, single = FALSE, xmin = NA, xmax = NA)
+timelinePanel(m, single = FALSE, xmin = as.numeric(NA),
+  xmax = as.numeric(NA))
 }
 \arguments{
 \item{m}{Melted data frame}

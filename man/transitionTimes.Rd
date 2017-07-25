@@ -7,7 +7,7 @@
 transitionTimes(pars)
 }
 \arguments{
-\item{pars}{Parameters of the simulation (t1, dt, r1, r2)}
+\item{pars}{Parameters of the simulation (t1, dt2, k1, k2)}
 }
 \value{
 A list with two transition times

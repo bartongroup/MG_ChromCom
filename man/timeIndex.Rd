@@ -4,7 +4,7 @@
 \alias{timeIndex}
 \title{Index of a time point}
 \usage{
-timeIndex(t, tp)
+timeIndex(t, tp, maxn)
 }
 \arguments{
 \item{t}{Time point in seconds}
@@ -12,7 +12,7 @@ timeIndex(t, tp)
 \item{tp}{A list of start, stop and step for the timeline}
 }
 \value{
-Integer index in the time vector corresponding to t; returns n if index outside range
+Integer index in the time vector corresponding to t;
 }
 \description{
 Index of a time point

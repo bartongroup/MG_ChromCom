@@ -46,6 +46,7 @@ simple_theme_grid <- ggplot2::theme_bw() +
 #' @return A \code{ChrCom3} object.
 #' @export
 ChromCom3 <- function(pars, time=NULL, cells=NULL, colours = c("BB", "P", "R")) {
+  stopifnot(is(pars, "c3pars"))
   if(is.null(time)) {
     start <- -140
     stop <- 90
@@ -80,6 +81,37 @@ ChromCom3 <- function(pars, time=NULL, cells=NULL, colours = c("BB", "P", "R")) 
   )
   class(obj) <- append(class(obj), "ChromCom3")
   return(obj)
+}
+
+
+#' \code{c3pars} object constructor
+#'
+#' @param t1
+#' @param dt2
+#' @param dt3
+#' @param k1
+#' @param k2
+#' @param k3
+#' @param dummy Logical, if set empty list is returned
+#'
+#' @return Model parameters object
+#' @export
+c3pars <- function(
+  t1 = -30,
+  dt2 = 0,
+  dt3 = 0,
+  k1 = 0.04,
+  k2 = 0.04,
+  k3 = 0,
+  dummy = FALSE
+) {
+  if(dummy) {
+    pars = list()
+  } else {
+    pars <- list(t1=t1, dt2=dt2, dt3=dt3, k1=k1, k2=k2, k3=k3)
+  }
+  class(pars) <- append(class(pars), "c3pars")
+  return(pars)
 }
 
 
@@ -274,7 +306,7 @@ experimentalData <- function(file) {
   time <- time[1:cut]
   dat <- dat[1:cut,]
   tdat <- apply(dat, 1, translateVector)
-  pars <- list(t1=NULL, k1=NULL, k2=NULL)
+  pars <- c3pars()
   echr <- ChromCom3(pars, time=time, cells=tdat)
 }
 
