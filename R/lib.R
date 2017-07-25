@@ -7,7 +7,7 @@
 data.colours <- c("", "_blue_", "_blueDark_g", "_blueDark_r",
                   "_brown_g", "_brown_r", "_brownDark_g", "_brownDark_r",
                   "_pink_", "_pinkDark_", "anaphase")
-model.colours <- c(NA, "BB", "BB", "BB", "BB", "BB", "BB", "BB", "P", "R", NA)
+model.colours <- c(NA, "B", "B", "B", "B", "B", "B", "B", "P", "R", NA)
 translateVector <- function(x) {
   model.colours[match(x, data.colours)]
 }
@@ -45,7 +45,7 @@ simple_theme_grid <- ggplot2::theme_bw() +
 #'
 #' @return A \code{ChrCom3} object.
 #' @export
-ChromCom3 <- function(pars, time=NULL, cells=NULL, colours = c("BB", "P", "R")) {
+ChromCom3 <- function(pars, time=NULL, cells=NULL, colours = c("B", "P", "R")) {
   stopifnot(is(pars, "c3pars"))
   if(is.null(time)) {
     start <- -140
@@ -121,10 +121,10 @@ c3pars <- function(
 #'
 #' @return A list with two transition times
 transitionTimes <- function(pars) {
-  BBP <- ifelse(pars$k1 > 0, pars$t1 + rexp(1, pars$k1), 1000)
-  PR <- ifelse(pars$k2 > 0, BBP + pars$dt2 + rexp(1, pars$k2), 1000)
+  BP <- ifelse(pars$k1 > 0, pars$t1 + rexp(1, pars$k1), 1000)
+  PR <- ifelse(pars$k2 > 0, BP + pars$dt2 + rexp(1, pars$k2), 1000)
   T <- list(
-    BBP = BBP,
+    BP = BP,
     PR = PR
   )
   return(T)
@@ -153,12 +153,12 @@ timelineCell <- function(pars, timepars) {
   T <- transitionTimes(pars)
 
   maxn <- 10000
-  iBBP <- timeIndex(T$BBP, timepars, maxn)
+  iBP <- timeIndex(T$BP, timepars, maxn)
   iPR <- timeIndex(T$PR, timepars, maxn)
 
   # we want to avoid boundary effects
-  cell <- rep("BB", maxn)
-  if(iPR > iBBP) cell[(iBBP+1):iPR] <- "P"
+  cell <- rep("B", maxn)
+  if(iPR > iBP) cell[(iBP+1):iPR] <- "P"
   cell[(iPR+1):maxn] <- "R"
   cell <- cell[1:timepars$n]
 

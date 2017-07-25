@@ -161,7 +161,7 @@ $\dot{R} = k_2 P$
 
 $B + P + R = 1$
 
-However, I'm not sure if this is exacly the model I use in the simulation. In the simulation, we assumed that P->R transition can happen only after the BB->P transition. 
+However, I'm not sure if this is exacly the model I use in the simulation. In the simulation, we assumed that P->R transition can happen only after the B->P transition. 
 
 Because proportions and their derivatives are observed, we can find the rates:
 
@@ -191,7 +191,7 @@ timeDeriv <- function(chr, k=20) {
 ```{r}
 plotRates <- function(chr, k=20) {
   ts <- timeDeriv(chr, k=k)
-  k1 <- -ts$BB.diff / ts$BB
+  k1 <- -ts$B.diff / ts$B
   k2 <- ts$R.diff / ts$P
   k1[which(is.nan(k1))] <- NA
   k2[which(is.nan(k2))] <- NA
@@ -237,4 +237,4 @@ grid.arrange(plotTimelines(echr, smooth=TRUE, k=80), plotRates(echr, k=80), ncol
 
 Had a chat with Tomo and John yesterday. They wanted to add a score showing how far the model is from the experimental data. I did it by calculating $\chi^2$ summed over all three curves. It is now added to the figure in the shiny app.
 
-The next thing is to add transition P->BB, with rate $k_3$. It can happen only after time $\Delta t_3$.
+The next thing is to add transition P->B, with rate $k_3$. It can happen only after time $\Delta t_3$.

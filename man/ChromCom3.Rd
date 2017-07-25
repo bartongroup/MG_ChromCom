@@ -4,7 +4,7 @@
 \alias{ChromCom3}
 \title{\code{ChrCom3} object constructor}
 \usage{
-ChromCom3(pars, time = NULL, cells = NULL, colours = c("BB", "P", "R"))
+ChromCom3(pars, time = NULL, cells = NULL, colours = c("B", "P", "R"))
 }
 \arguments{
 \item{pars}{A list of model parameters}
