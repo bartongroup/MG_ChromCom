@@ -85,12 +85,12 @@ ChromCom3 <- function(pars, time=NULL, cells=NULL, colours = c("BB", "P", "R")) 
 
 #' Generate transition times
 #'
-#' @param pars Parameters of the simulation (t1, dt, r1, r2)
+#' @param pars Parameters of the simulation (t1, dt2, k1, k2)
 #'
 #' @return A list with two transition times
 transitionTimes <- function(pars) {
-  BBP <- ifelse(pars$r1 > 0, pars$t1 + rexp(1, pars$r1), 1000)
-  PR <- ifelse(pars$r2 > 0, BBP + pars$dt + rexp(1, pars$r2), 1000)
+  BBP <- ifelse(pars$k1 > 0, pars$t1 + rexp(1, pars$k1), 1000)
+  PR <- ifelse(pars$k2 > 0, BBP + pars$dt2 + rexp(1, pars$k2), 1000)
   T <- list(
     BBP = BBP,
     PR = PR
@@ -274,7 +274,7 @@ experimentalData <- function(file) {
   time <- time[1:cut]
   dat <- dat[1:cut,]
   tdat <- apply(dat, 1, translateVector)
-  pars <- list(t1=NULL, r1=NULL, r2=NULL)
+  pars <- list(t1=NULL, k1=NULL, k2=NULL)
   echr <- ChromCom3(pars, time=time, cells=tdat)
 }
 
