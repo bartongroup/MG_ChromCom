@@ -8,6 +8,18 @@ c3pars(t1 = -30, dt2 = 0, dt3 = 0, k1 = 0.04, k2 = 0.04, k3 = 0,
   dummy = FALSE)
 }
 \arguments{
+\item{t1}{Start time}
+
+\item{dt2}{Delay until P->R is possible}
+
+\item{dt3}{Delay until P>B is possible}
+
+\item{k1}{B->P rate}
+
+\item{k2}{P->R rate}
+
+\item{k3}{R->B rate}
+
 \item{dummy}{Logical, if set empty list is returned}
 }
 \value{

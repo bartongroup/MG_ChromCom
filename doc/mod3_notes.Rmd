@@ -273,38 +273,57 @@ vectorPar <- function(p) {
   return(pars)  
 }
 
-errorFun <- function(p, echr, nsim=1000) {
+parVector <- function(pars, n=3) {
+  p <- c(pars$t1, pars$k1, pars$k2)
+  if(n > 3) p <- c(p, pars$dt2)
+  return(p)
+}
+
+errorFun <- function(p, echr, nsim) {
   pars <- vectorPar(p)
   chr <- ChromCom3(pars, timepars=list(start=-90, stop=30, step=1))
   chr <- generateCells(chr, nsim=nsim, method="simulation")
   err <- oeError(chr, echr)
   return(err)
 }
+
+fitChr <- function(echr, pars, npar=3, nsim=1000, ntry=10) {
+  chr <- ChromCom3(pars)
+  p <- parVector(pars, n=npar)
+  lower <- c(-50, 0, 0, 0)
+  upper <- c(0, 0.2, 0.2, 30)
+  lower <- lower[1:npar]
+  upper <- upper[1:npar]
+  
+  chi2 <- 1e6
+  for(i in 1:ntry) {
+    print(paste("Iteration", i))
+    print()
+    opt <- optim(p, errorFun, gr=NULL, echr, nsim, method="L-BFGS-B", lower=lower, upper=upper, control=list(trace=3))
+    if(opt$value < chi2) {
+      chi2 <- opt$value
+      p <- opt$par
+    }
+  }
+    
+  pars <- vectorPar(p)
+  chr <- ChromCom3(pars, timepars=list(start=-90, stop=30, step=1))
+  chr <- generateCells(chr, nsim=1000, method="simulation")
+  return(chr)
+}
+
 ```
 
 ```{r, fig.width=5}
-startpars <- c(-30, 0.05, 0.05)
-lower <- c(-50,0,0)
-upper <- c(0,0.2,0.2)
-opt <- cacheData("optim_n1000_3par", optim, startpars, errorFun, gr=NULL, echr, method="L-BFGS-B", lower=lower, upper=upper, control=list(trace=3), binDir=binDir)
-
-pars <- vectorPar(opt$par)
-chr <- ChromCom3(pars, timepars=list(start=-90, stop=30, step=1))
-chr <- generateCells(chr, nsim=1000, method="simulation")
-plotTimelines(chr, expdata = echr)
+pars <- c3pars()
+chr <- cacheData("fit_n1000_3par", fitChr, echr, pars, npar=3, nsim=1000, binDir=binDir)
+plotTimelines(chr, expdata = echr, withpars=TRUE)
 ```
 
 Now, the same, but with extra parameter, $\Delta t_2$.
 
-```{r}
-startpars <- c(-30, 0.05, 0.05, 5)
-lower <- c(-50, 0, 0, 0)
-upper <- c(0, 0.2, 0.2, 30)
-
-opt <- cacheData("optim_n1000_4par", optim, startpars, errorFun, gr=NULL, echr, method="L-BFGS-B", lower=lower, upper=upper, control=list(trace=3), binDir=binDir, refresh=TRUE)
-
-pars <- vectorPar(opt$par)
-chr <- ChromCom3(pars, timepars=list(start=-90, stop=30, step=1))
-chr <- generateCells(chr, nsim=1000, method="simulation")
-plotTimelines(chr, expdata = echr)
+```{r, fig.width=5}
+pars <- c3pars(dt2=5)
+chr <- cacheData("fit_n1000_4par", fitChr, echr, pars, npar=4, nsim=1000, binDir=binDir)
+plotTimelines(chr, expdata = echr, withpars=TRUE)
 ```

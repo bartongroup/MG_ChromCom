@@ -344,7 +344,7 @@ plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', withpa
     if(withpars) title <- paste0(title, sprintf(", chi2=%.3g", chi2))
     g <- g + geom_line(data=exm, aes(colour=Colour), size=0.2)
   }
-  g <- g + labs(title=title)
+  g <- g + labs(title=title) + theme(plot.title = element_text(size=10))
   g
 }
 

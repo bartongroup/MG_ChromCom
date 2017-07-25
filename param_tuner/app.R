@@ -79,7 +79,7 @@ server <- shinyServer(function(input, output) {
     chr <- ChromCom3(pars)
     echr <- getData()
     chr <- generateCells(chr, method="simulation", nsim=getNsim())
-    chi2 <- round(oeError(chr, echr), 0)
+    chi2 <- round(oeError(chr, echr), 1)
     plotTimelines(chr, expdata=echr, xmin=-100, xmax=100, title=paste0(parstr(pars), ", chi2=", chi2))
   }
 
