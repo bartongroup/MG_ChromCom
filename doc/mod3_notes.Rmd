@@ -297,8 +297,7 @@ fitChr <- function(echr, pars, npar=3, nsim=1000, ntry=10) {
   
   chi2 <- 1e6
   for(i in 1:ntry) {
-    print(paste("Iteration", i))
-    print()
+    print(paste("=== Iteration", i))
     opt <- optim(p, errorFun, gr=NULL, echr, nsim, method="L-BFGS-B", lower=lower, upper=upper, control=list(trace=3))
     if(opt$value < chi2) {
       chi2 <- opt$value
