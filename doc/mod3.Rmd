@@ -84,9 +84,9 @@ where $t_{\rm BP}$ is the B$\rightarrow$P transition time, generated with the fi
 
 ### "Simulation" model
 
-This is a Markov chain approach. The next state is generated from the current state based on rules outlined above. The rates, $k$, are converted into probabilites over a given time step $\Delta t$ as $Pr = 1 - e^{1 - k\Delta t}$.
+This is a Markov chain approach. The next state is generated from the current state based on rules outlined above. The rates, $k$, are converted into probabilities over a given time step $\Delta t$ as $Pr = 1 - e^{1 - k\Delta t}$.
 
-With either approach the cell timeline is repeated for 3000 times and then the colour propotions are found at each time point.
+With either approach the cell timeline is repeated for 3000 times and then the colour proportions are found at each time point.
 
 ## Example
 
@@ -110,9 +110,9 @@ There is a [shiny app](https://shiny.compbio.dundee.ac.uk/marek_chromcom/param_t
 
 # Fitting model to the data
 
-I attempted fitting model to our data. It is not an easy task, as the model is stochastic. After some testing I found that modified BFGS (a quasi-Newton method, also known as a variable metric algorithm, by Broyden, Fletcher, Goldfarb and Shanno, 1970) which allowes box constraintes (Byrd et. al. 1995), gives reasonable results. Again, due to stochasticity of the model, this algorithm often finds false local minima. I run it several times to find the best minimum. It is a crude and time-consuming method, but gives results better than manual tuning.
+I attempted fitting model to our data. It is not an easy task, as the model is stochastic. After some testing I found that modified BFGS (a quasi-Newton method, also known as a variable metric algorithm, by Broyden, Fletcher, Goldfarb and Shanno, 1970) which allows box constraints (Byrd et. al. 1995), gives reasonable results. Again, due to stochasticity of the model, this algorithm often finds false local minima. I run it several times to find the best minimum. It is a crude and time-consuming method, but gives results better than manual tuning.
 
-Fitting is constrained to time points between -90 nd 30 min. The minimized quantity is
+Fitting is constrained to time points between -90 and 30 min. The minimized quantity is
 
 ${\rm rms} = \sqrt{\sum_{c \in \{B,P,R\}} \sum_i (O_{c,i} - E_{c,i})^2}$
 
@@ -120,7 +120,7 @@ that is, the square root of the sum of squared residuals over all time points an
 
 ## Scramble results
 
-First, I allow for $t_1$, $k_1$ nad $k_2$ to be free. $\Delta t_2$, $\Delta t_3$ and $k_3$ are fixed at zero. Then, I repeat the fit with $\Delta t_2$ allowed to be free. The three-parameter model result is on the left, the four-parameter model is on the right.
+First, I allow for $t_1$, $k_1$ and $k_2$ to be free. $\Delta t_2$, $\Delta t_3$ and $k_3$ are fixed at zero. Then, I repeat the fit with $\Delta t_2$ allowed to be free. The three-parameter model result is on the left, the four-parameter model is on the right.
 
 ```{r, fig.width=10}
 pars <- c3pars()

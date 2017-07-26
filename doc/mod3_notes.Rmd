@@ -165,7 +165,7 @@ $\dot{R} = k_2 P$
 
 $B + P + R = 1$
 
-However, I'm not sure if this is exacly the model I use in the simulation. In the simulation, we assumed that P->R transition can happen only after the B->P transition. 
+However, I'm not sure if this is exactly the model I use in the simulation. In the simulation, we assumed that P->R transition can happen only after the B->P transition. 
 
 Because proportions and their derivatives are observed, we can find the rates:
 
@@ -208,7 +208,7 @@ plotRates <- function(chr, k=20) {
 }
 ```
 
-Start with a model wiht 10,000 cells and 0.1 min time step. In this model $k_1 = 0.04$ and $k_2 = 0$.  Top panels show original data, lower panels - smoothed data.
+Start with a model with 10,000 cells and 0.1 min time step. In this model $k_1 = 0.04$ and $k_2 = 0$.  Top panels show original data, lower panels - smoothed data.
 
 ```{r, fig.width=8, fig.height=3}
 grid.arrange(plotTimelines(tchr), plotRates(tchr, k=1), ncol=2)
@@ -305,3 +305,4 @@ pars <- c3pars(dt2=10)
 chr3 <- cacheData("fit_NCAPD3_n3000_4par", fitChr, echr3, pars, npar=4, nsim=3000, ntry=16, ncores=8, binDir=binDir)
 plotTimelines(chr3, expdata = echr3, withpars=TRUE)
 ```
+
