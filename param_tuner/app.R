@@ -1,6 +1,6 @@
 .libPaths("/cluster/gjb_lab/mgierlinski/R/x86_64-redhat-linux-gnu-library/3.3")
 .libPaths("/home/mgierlinski/R/x86_64-pc-linux-gnu-library/3.4")
-
+.libPaths("/Users/mgierlinski/Library/R/3.4/library")
 
 library(shiny)
 library(ggplot2)
