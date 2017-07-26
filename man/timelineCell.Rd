@@ -4,7 +4,7 @@
 \alias{timelineCell}
 \title{Generate timeline for one cell}
 \usage{
-timelineCell(pars, timepars)
+timelineCell(pars, timepars, method = c("transition", "simulation"))
 }
 \arguments{
 \item{pars}{Model parameters}

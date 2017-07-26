@@ -4,7 +4,8 @@
 \alias{plotTimelines}
 \title{Plot time lines}
 \usage{
-plotTimelines(chr, smooth = FALSE, k = 5, expdata = NULL, ...)
+plotTimelines(chr, smooth = FALSE, k = 5, expdata = NULL, title = "",
+  withpars = FALSE, ...)
 }
 \arguments{
 \item{chr}{A \code{ChrCom3} object with data}
@@ -14,6 +15,10 @@ plotTimelines(chr, smooth = FALSE, k = 5, expdata = NULL, ...)
 \item{k}{Window size for smoothing}
 
 \item{expdata}{Experimental data to add to the plot (another \code{ChrCom3} object)}
+
+\item{title}{Title of the plot}
+
+\item{withpars}{Title will be replaced with model parameters}
 
 \item{...}{Other parameters passed to \code{\link{timelinePanel}}}
 }

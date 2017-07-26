@@ -8,10 +8,14 @@ output:
 ---
 
 ```{r}
+library(mylib)
 library(ChromCom)
 library(ggplot2)
 library(gridExtra)
 library(reshape2)
+library(parallel)
+
+binDir <- "../RData"
 ```
 
 ## 11/07/2017
@@ -24,11 +28,11 @@ Writing introduction. First script to do simulation.
 Let's try if it works. An example for $t_1 = -60$ min, $\Delta t = 0$, $k_1 = 0.04\ {\rm min}^{-1}$ and $k_2 = 0.04\ {\rm min}^{-1}$.
 
 ```{r, fig.width=5, fig.height=3}
-pars <- list(
+pars <- c3pars(
   t1 = -60,
-  dt = 0,
-  r1 = 0.04,
-  r2 = 0.04
+  dt2 = 0,
+  k1 = 0.04,
+  k2 = 0.04
 )
 chr <- ChromCom3(pars)
 chr <- generateCells(chr, nsim=1000)
@@ -38,17 +42,17 @@ plotTimelines(chr)
 Just to check if output is as expected. With $k_2=0$ we should have pure exponential decay. The yellow curve is $e^{-k_1 t}$.
 
 ```{r, fig.width=5}
-pars <- list(
+pars <- c3pars(
   t1 = -60,
-  dt = 0,
-  r1 = 0.04,
-  r2 = 0
+  dt2 = 0,
+  k1 = 0.04,
+  k2 = 0
 )
 tchr <- ChromCom3(pars)
 tchr <- generateCells(tchr, nsim=1000)
 
 x <- seq(from=pars$t1, to=100, by=1)
-y <- exp(-pars$r1 * (x - pars$t1))
+y <- exp(-pars$k1 * (x - pars$t1))
 g <- plotTimelines(tchr)
 g + geom_line(data=data.frame(x=x, y=y), aes(x,y), colour="yellow")
 ```
@@ -56,17 +60,17 @@ g + geom_line(data=data.frame(x=x, y=y), aes(x,y), colour="yellow")
 Close, but not perfect. Here is an example with much smaller time step (0.1) and larger number of cells (10,000).
 
 ```{r, fig.width=5}
-pars <- list(
+pars <- c3pars(
   t1 = -60,
-  dt = 0,
-  r1 = 0.04,
-  r2 = 0
+  dt2 = 0,
+  k1 = 0.04,
+  k2 = 0
 )
 tchr <- ChromCom3(pars, time = seq(from=-140, to=90, by=0.1))
 tchr <- generateCells(tchr, nsim=10000)
 
 x <- seq(from=pars$t1, to=100, by=1)
-y <- exp(-pars$r1 * (x - pars$t1))
+y <- exp(-pars$k1 * (x - pars$t1))
 g <- plotTimelines(tchr)
 g + geom_line(data=data.frame(x=x, y=y), aes(x,y), colour="yellow")
 ```
@@ -95,46 +99,46 @@ parameterGrid <- function(pars, par1, range1, par2, range2) {
 ```
 
 ```{r}
-pars <- list(
+pars <- c3pars(
   t1 = -30,
-  dt = 0,
-  r1 = 0.05,
-  r2 = 0.01
+  dt2 = 0,
+  k1 = 0.05,
+  k2 = 0.01
 )
 
 range1 <- c(0.01, 0.05, 0.08, 0.12)
 range2 <- c(0.01, 0.05, 0.08, 0.12)
-parameterGrid(pars, "r1", range1, "r2", range2)
+parameterGrid(pars, "k1", range1, "k2", range2)
 ```
  I think we need to introduce a delay between pink and red.
  
  
 ```{r}
-pars <- list(
+pars <- c3pars(
   t1 = -30,
-  dt = 10,
-  r1 = 0.05,
-  r2 = 0.01
+  dt2 = 10,
+  k1 = 0.05,
+  k2 = 0.01
 )
 
 range1 <- c(0.01, 0.03, 0.05, 0.10)
 range2 <- c(0.01, 0.05, 0.08, 0.12)
-parameterGrid(pars, "r1", range1, "r2", range2)
+parameterGrid(pars, "k1", range1, "k2", range2)
 ```
 
 What about range of delays?
 
 ```{r}
-pars <- list(
+pars <- c3pars(
   t1 = -30,
-  dt = 0,
-  r1 = 0.03,
-  r2 = 0.01
+  dt2 = 0,
+  k1 = 0.03,
+  k2 = 0.01
 )
 
 range1 <- c(0, 10, 20, 30)
 range2 <- c(0.01, 0.05, 0.08, 0.12)
-parameterGrid(pars, "dt", range1, "r2", range2)
+parameterGrid(pars, "dt", range1, "k2", range2)
 ```
 
 Experimental data.
@@ -161,7 +165,7 @@ $\dot{R} = k_2 P$
 
 $B + P + R = 1$
 
-However, I'm not sure if this is exacly the model I use in the simulation. In the simulation, we assumed that P->R transition can happen only after the BB->P transition. 
+However, I'm not sure if this is exactly the model I use in the simulation. In the simulation, we assumed that P->R transition can happen only after the B->P transition. 
 
 Because proportions and their derivatives are observed, we can find the rates:
 
@@ -191,7 +195,7 @@ timeDeriv <- function(chr, k=20) {
 ```{r}
 plotRates <- function(chr, k=20) {
   ts <- timeDeriv(chr, k=k)
-  k1 <- -ts$BB.diff / ts$BB
+  k1 <- -ts$B.diff / ts$B
   k2 <- ts$R.diff / ts$P
   k1[which(is.nan(k1))] <- NA
   k2[which(is.nan(k2))] <- NA
@@ -204,7 +208,7 @@ plotRates <- function(chr, k=20) {
 }
 ```
 
-Start with a model wiht 10,000 cells and 0.1 min time step. In this model $k_1 = 0.04$ and $k_2 = 0$.  Top panels show original data, lower panels - smoothed data.
+Start with a model with 10,000 cells and 0.1 min time step. In this model $k_1 = 0.04$ and $k_2 = 0$.  Top panels show original data, lower panels - smoothed data.
 
 ```{r, fig.width=8, fig.height=3}
 grid.arrange(plotTimelines(tchr), plotRates(tchr, k=1), ncol=2)
@@ -214,7 +218,7 @@ grid.arrange(plotTimelines(tchr, smooth=TRUE, k=200), plotRates(tchr, k=200), nc
 
 What happens if I use only 100 cells and 1 min time step in the model? This time $k_2 = 0.04$.
 
-```{r, fig.width=9, fig.height=3}
+```{r, fig.width=8, fig.height=3}
 chr <- generateCells(chr, nsim=100)
 grid.arrange(plotTimelines(chr, k=1), plotRates(chr, k=1), ncol=2)
 grid.arrange(plotTimelines(chr, smooth=TRUE, k=20), plotRates(chr, k=20), ncol=2)
@@ -223,12 +227,82 @@ grid.arrange(plotTimelines(chr, smooth=TRUE, k=20), plotRates(chr, k=20), ncol=2
 
 And now, for real data. Here are scramble data smoothed with running mean with window size of 10 time points.
 
-```{r, fig.width=9, fig.height=3}
+```{r, fig.width=8, fig.height=3}
 grid.arrange(plotTimelines(echr, smooth=TRUE, k=10), plotRates(echr, k=10), ncol=2)
 ```
 
 Now, smoothing with 80 points.
 
-```{r, fig.width=9, fig.height=3}
+```{r, fig.width=8, fig.height=3}
 grid.arrange(plotTimelines(echr, smooth=TRUE, k=80), plotRates(echr, k=80), ncol=2)
 ```
+
+## 25/07/2017
+
+Had a chat with Tomo and John yesterday. They wanted to add a score showing how far the model is from the experimental data. I did it by calculating $\chi^2$ summed over all three curves. It is now added to the figure in the shiny app.
+
+The next thing is to add transition P->B, with rate $k_3$. It can happen only after time $\Delta t_3$.
+
+I added a simulation method (step-by-step). Now testing it.
+
+```{r, fig.width=5, fig.height=3}
+pars <- c3pars(
+  t1 = -30,
+  k1 = 0.04,
+  k2 = 0.04,
+  k3 = 0.04,
+  dt2 = 10,
+  dt3 = 50
+)
+chr <- ChromCom3(pars)
+chr <- generateCells(chr, nsim=1000, method="simulation")
+plotTimelines(chr)
+```
+
+## 26/07/2017
+
+What about fitting model to the data? "nlm" doesn't work because model is stochastic. Method "SANN" from optim (that is stochastic simulated annealing) took very long time and went into a false minimum (negative $k_2$), as parameters cannot be constrained.
+
+Finally I used "L-BFGS-B" method which allows box constraints. Alas, this method is not very good at finding the real minimum, often ending up in a local one. I'm guessing this is because of my stochastic model. Therefore, I need to run it several times and search for the best minimum. Using "mclapply" to speed it up.
+
+I also changed the error score. $\chi^2$ doesn't work very well when expected counts are zero. And I cannot simply exclude them, because zero is an important number. Instead I calculate a simple RMS.
+
+```{r, fig.width=5}
+pars <- c3pars()
+chr <- cacheData("fit_scramble_n3000_3par", fitChr, echr, pars, npar=3, nsim=3000, ntry=16, binDir=binDir)
+plotTimelines(chr, expdata = echr, withpars=TRUE)
+```
+
+Now, the same, but with extra parameter, $\Delta t_2$.
+
+```{r, fig.width=5}
+pars <- c3pars(dt2=5)
+chr <- cacheData("fit_scramble_n3000_4par", fitChr, echr, pars, npar=4, nsim=3000, ntry=16, binDir=binDir)
+plotTimelines(chr, expdata = echr, withpars=TRUE)
+```
+
+And now the other two data sets.
+
+```{r, fig.width=5}
+echr2 <- experimentalData(dataFile$NCAPD2)
+pars <- c3pars()
+chr2 <- cacheData("fit_NCAPD2_n3000_3par", fitChr, echr2, pars, npar=3, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr2, expdata = echr2, withpars=TRUE)
+
+pars <- c3pars(dt2=10)
+chr2 <- cacheData("fit_NCAPD2_n3000_4par", fitChr, echr2, pars, npar=4, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr2, expdata = echr2, withpars=TRUE)
+```
+
+
+```{r, fig.width=5}
+echr3 <- experimentalData(dataFile$NCAPD3)
+pars <- c3pars()
+chr3 <- cacheData("fit_NCAPD3_n3000_3par", fitChr, echr3, pars, npar=3, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr3, expdata = echr3, withpars=TRUE)
+
+pars <- c3pars(dt2=10)
+chr3 <- cacheData("fit_NCAPD3_n3000_4par", fitChr, echr3, pars, npar=4, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr3, expdata = echr3, withpars=TRUE)
+```
+
