@@ -29,7 +29,7 @@ ui <- shinyUI(fluidPage(
     ),
 
     mainPanel(
-      p("This app helps finding the best model parameters to match experimental data. The parameters and background data in the figure can be changed in the side panel. There are three levels of model resolution, with increasing accuracy and smoothness but longer computation time."),
+      p("This app helps finding the best model parameters to match experimental data. The parameters and background data in the figure can be changed in the side panel. There are three levels of model resolution, with increasing accuracy and smoothness but longer computation time. The dashed vertical lines represent time delays. The solid vertical line indicates zero."),
       plotOutput("tPlot"),
       downloadButton('downloadPlot', 'Download Plot')
     )

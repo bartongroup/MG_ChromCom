@@ -13,6 +13,7 @@ library(ChromCom)
 library(ggplot2)
 library(gridExtra)
 library(reshape2)
+library(parallel)
 
 binDir <- "../RData"
 ```
@@ -260,62 +261,11 @@ plotTimelines(chr)
 
 What about fitting model to the data? "nlm" doesn't work because model is stochastic. Method "SANN" from optim (that is stochastic simulated annealing) took very long time and went into a false minimum (negative $k_2$), as parameters cannot be constrained.
 
-Finally I used "L-BFGS-B" method which allows box constraints.
-
-```{r}
-vectorPar <- function(p) {
-  pars <- c3pars(
-    t1 = p[1],
-    k1 = p[2],
-    k2 = p[3]
-  )
-  if(length(p) > 3) pars[["dt2"]] <- p[4]
-  return(pars)  
-}
-
-parVector <- function(pars, n=3) {
-  p <- c(pars$t1, pars$k1, pars$k2)
-  if(n > 3) p <- c(p, pars$dt2)
-  return(p)
-}
-
-errorFun <- function(p, echr, nsim) {
-  pars <- vectorPar(p)
-  chr <- ChromCom3(pars, timepars=list(start=-90, stop=30, step=1))
-  chr <- generateCells(chr, nsim=nsim, method="simulation")
-  err <- oeError(chr, echr)
-  return(err)
-}
-
-fitChr <- function(echr, pars, npar=3, nsim=1000, ntry=10) {
-  chr <- ChromCom3(pars)
-  p <- parVector(pars, n=npar)
-  lower <- c(-50, 0, 0, 0)
-  upper <- c(0, 0.2, 0.2, 30)
-  lower <- lower[1:npar]
-  upper <- upper[1:npar]
-  
-  chi2 <- 1e6
-  for(i in 1:ntry) {
-    print(paste("=== Iteration", i))
-    opt <- optim(p, errorFun, gr=NULL, echr, nsim, method="L-BFGS-B", lower=lower, upper=upper, control=list(trace=3))
-    if(opt$value < chi2) {
-      chi2 <- opt$value
-      p <- opt$par
-    }
-  }
-    
-  pars <- vectorPar(p)
-  chr <- ChromCom3(pars, timepars=list(start=-90, stop=30, step=1))
-  chr <- generateCells(chr, nsim=1000, method="simulation")
-  return(chr)
-}
-
-```
+Finally I used "L-BFGS-B" method which allows box constraints. Alas, this method is not very good at finding the real minimum, often ending up in a local one. I'm guessing this is because of my stochastic model. Therefore, I need to run it several times and search for the best minimum. Using "mclapply" to speed it up.
 
 ```{r, fig.width=5}
 pars <- c3pars()
-chr <- cacheData("fit_n1000_3par", fitChr, echr, pars, npar=3, nsim=1000, binDir=binDir)
+chr <- cacheData("fit_scramble_n3000_3par", fitChr, echr, pars, npar=3, nsim=3000, ntry=16, binDir=binDir)
 plotTimelines(chr, expdata = echr, withpars=TRUE)
 ```
 
@@ -323,6 +273,21 @@ Now, the same, but with extra parameter, $\Delta t_2$.
 
 ```{r, fig.width=5}
 pars <- c3pars(dt2=5)
-chr <- cacheData("fit_n1000_4par", fitChr, echr, pars, npar=4, nsim=1000, binDir=binDir)
+chr <- cacheData("fit_scramble_n3000_4par", fitChr, echr, pars, npar=4, nsim=3000, ntry=16, binDir=binDir)
 plotTimelines(chr, expdata = echr, withpars=TRUE)
+```
+
+And now the other two data sets.
+
+```{r}
+echr2 <- experimentalData(dataFile$NCAPD2)
+pars <- c3pars()
+chr2 <- cacheData("fit_NCAPD2_n3000_3par", fitChr, echr2, pars, npar=3, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr2, expdata = echr2, withpars=TRUE)
+
+pars <- c3pars(dt2=10)
+chr2 <- cacheData("fit_NCAPD2_n3000_4par", fitChr, echr2, pars, npar=4, nsim=3000, ntry=16, ncores=6, binDir=binDir)
+plotTimelines(chr2, expdata = echr2, withpars=TRUE)
+
+
 ```

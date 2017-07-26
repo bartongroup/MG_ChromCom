@@ -10,10 +10,12 @@ oeError(chr, echr, limits = c(-90, 30))
 \item{chr}{Model data}
 
 \item{echr}{Experimental data}
+
+\item{limits}{Limiting window for calculations.}
 }
 \value{
-chi-square
+RMS over all three curves
 }
 \description{
-Data-model error
+Using test of independence between observed and model counts in the limits window.
 }
