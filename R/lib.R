@@ -18,7 +18,12 @@ translateVector <- function(x) {
 dataFile <- list(
   scramble = "../data/scramble_noncoloured.csv",
   NCAPD2 = "../data/NCAPD2_uncoloured.csv",
-  NCAPD3 = "../data/NCAPD3_uncoloured.csv"
+  NCAPD3 = "../data/NCAPD3_uncoloured.csv",
+  SMC2  = "../data/SMC2_noncoloured.csv",
+  WAPL24  = "../data/WAPL_24hr_noncoloured.csv",
+  WAPL48  = "../data/WAPL_48hr_noncoloured.csv",
+  MK1775  = "../data/MK1775only_noncoloured.csv",
+  MK1775_ICRF193  = "../data/MK1775andICRF193_noncoloured.csv"
 )
 
 #' Simple theme for plotting
