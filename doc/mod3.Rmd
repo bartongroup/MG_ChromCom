@@ -118,52 +118,29 @@ ${\rm rms} = \sqrt{\sum_{c \in \{B,P,R\}} \sum_i (O_{c,i} - E_{c,i})^2}$
 
 that is, the square root of the sum of squared residuals over all time points and all colours.
 
-## Scramble results
+We apply the following strategy:
 
-First, I allow for $t_1$, $k_1$ and $k_2$ to be free. $\Delta t_2$, $\Delta t_3$ and $k_3$ are fixed at zero. Then, I repeat the fit with $\Delta t_2$ allowed to be free. The three-parameter model result is on the left, the four-parameter model is on the right.
+- fit scramble with $t_1$, $k_1$ and $k_2$ free
+- for NCAPD2 we expect only $k_2$ to change, so fix $k_1$ from scramble
+- for NCAPD3 we expect only $k_1$ to change, so fix $k_2$ from scramble; however, John tried this manually and it didn't work very well, so we might free both ks
+- for SMC2 $k_1$ fixed from NCAPD3, $k_2$ fixed from NCAPD2 and see if this matches; then do a fit
+- lets keep all $\Delta t$ fixed
 
-```{r, fig.width=10}
+## Scramble
+
+```{r, fig.width=5}
 pars <- c3pars()
-chr3 <- cacheData("fit_scramble_n3000_3par", fitChr, echr, pars, npar=3, nsim=3000, ntry=16, binDir=binDir)
-g1 <- plotTimelines(chr3, expdata = echr, withpars=TRUE)
-
-pars <- c3pars(dt2=5)
-chr4 <- cacheData("fit_scramble_n3000_4par", fitChr, echr, pars, npar=4, nsim=3000, ntry=16, binDir=binDir)
-g2 <- plotTimelines(chr4, expdata = echr, withpars=TRUE)
-grid.arrange(g1, g2, ncol=2)
+free <- c("t1", "k1", "k2")
+chr.scr <- cacheData("fit_scramble_n3000_t1_k1_k2", fitChr, echr, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr, expdata = echr, withpars=TRUE)
 ```
 
-## NCAPD2 results
+## NCAPD2
 
-As above, for NCAPD2 data.
-
-```{r, fig.width=10}
-echr.n2 <- experimentalData(dataFile$NCAPD2)
-pars <- c3pars()
-chr3.n2 <- cacheData("fit_NCAPD2_n3000_3par", fitChr, echr.n2, pars, npar=3, nsim=3000, ntry=16, binDir=binDir)
-g1 <- plotTimelines(chr3.n2, expdata = echr.n2, withpars=TRUE)
-
-pars <- c3pars(dt2=5)
-chr4.n2 <- cacheData("fit_NCAPD2_n3000_4par", fitChr, echr.n2, pars, npar=4, nsim=3000, ntry=16, binDir=binDir)
-g2 <- plotTimelines(chr4.n2, expdata = echr.n2, withpars=TRUE)
-grid.arrange(g1, g2, ncol=2)
-```
-
-Strangely, the four-parameter model has worse RMS. This is probably because the fitting procedure doesn't cope very well with stochastic models. I might have to redo this fit with more simulations.
-
-## NCAPD3 results
-
-As above, for NCAPD2 data.
-
-```{r, fig.width=10}
-echr.n3<- experimentalData(dataFile$NCAPD3)
-pars <- c3pars()
-chr3.n3 <- cacheData("fit_NCAPD3_n3000_3par", fitChr, echr.n3, pars, npar=3, nsim=3000, ntry=16, binDir=binDir)
-g1 <- plotTimelines(chr3.n3, expdata = echr.n3, withpars=TRUE)
-
-pars <- c3pars(dt2=10)
-chr4.n3 <- cacheData("fit_NCAPD3_n3000_4par", fitChr, echr.n3, pars, npar=4, nsim=3000, ntry=16, binDir=binDir)
-g2 <- plotTimelines(chr4.n3, expdata = echr.n3, withpars=TRUE)
-grid.arrange(g1, g2, ncol=2)
+```{r, fig.width=5}
+pars <- chr.scr$pars
+free <- c("t1", "k2")
+chr.d2 <- cacheData("fit_NCAPD2_n3000_t1_k2", fitChr, echr, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr, expdata = echr, withpars=TRUE)
 ```
 

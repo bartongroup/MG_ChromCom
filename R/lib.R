@@ -442,26 +442,22 @@ oeError.chi2 <- function(chr, echr, limits=c(-90, 30)) {
 
 
 # convert a vector of parameters used by optim into c3pars object
-vectorPar <- function(p) {
-  pars <- c3pars(
-    t1 = p[1],
-    k1 = p[2],
-    k2 = p[3]
-  )
-  if(length(p) > 3) pars[["dt2"]] <- p[4]
+vectorPar <- function(p, pars) {
+  pars[names(p)] <- p
   return(pars)
 }
 
 # convert a c3pars object into a vector of parameters used by optim
-parVector <- function(pars, n=3) {
-  p <- c(pars$t1, pars$k1, pars$k2)
-  if(n > 3) p <- c(p, pars$dt2)
+# parsel is a string of paramter names selected for fitting
+parVector <- function(pars, parsel) {
+  p <- as.numeric(pars[parsel])
+  names(p) <- parsel
   return(p)
 }
 
 # error function to minimize; p is a vector of parameters
-errorFun <- function(p, echr, nsim) {
-  pars <- vectorPar(p)
+errorFun <- function(p, pars, echr, nsim) {
+  pars <- vectorPar(p, pars)
   chr <- ChromCom3(pars, timepars=list(start=-90, stop=30, step=1))
   chr <- generateCells(chr, nsim=nsim, method="simulation")
   err <- oeError(chr, echr)
@@ -474,7 +470,7 @@ errorFun <- function(p, echr, nsim) {
 #' npar=3, only first three of them are used.
 #' @param echr A \code{ChromCom3} object with experimental data
 #' @param pars A \code{c3pars} object with initial parameters
-#' @param npar Number of parameters to use in minimization (3 or 4)
+#' @param freepars A character vector with names of free parameters
 #' @param nsim Number of cells to simulate
 #' @param ntry Number of tries in search
 #' @param ncores Number of cores
@@ -482,22 +478,22 @@ errorFun <- function(p, echr, nsim) {
 #' @return A \code{ChromCom3} object with the best-fitting model. "rms" field
 #'   is added. \code{\link{optim}} function is used for minimization with method "L-BFGS-B".
 #' @export
-fitChr <- function(echr, pars, npar=3, nsim=1000, ntry=10, ncores=4) {
+fitChr <- function(echr, pars, freepars, nsim=1000, ntry=10, ncores=4) {
   stopifnot(is(pars, "c3pars"))
 
   #chr <- ChromCom3(pars)
-  p <- parVector(pars, n=npar)
-  lower <- c(-50, 0, 0, 0)
-  upper <- c(0, 0.2, 0.2, 30)
-  lower <- lower[1:npar]
-  upper <- upper[1:npar]
+  p <- parVector(pars, freepars)
+  lower <- c(t1=-50, k1=0, k2=0, k3=0, dt2=0, dt3=0)
+  upper <- c(t1=30, k1=0.2, k2=0.2, k3=0.2, dt2=30, dt3=30)
+  lower <- lower[freepars]
+  upper <- upper[freepars]
 
   lopt <- mclapply(1:ntry, function(i) {
-    optim(p, errorFun, gr=NULL, echr, nsim, method="L-BFGS-B", lower=lower, upper=upper, control=list(trace=3))
+    optim(p, errorFun, gr=NULL, pars, echr, nsim, method="L-BFGS-B", lower=lower, upper=upper, control=list(trace=3))
   }, mc.cores = ncores)
 
   idx.min <- which.min(sapply(1:ntry, function(i) lopt[[i]]$value))
-  pars <- vectorPar(lopt[[idx.min]]$p)
+  pars <- vectorPar(lopt[[idx.min]]$par, pars)
   chr <- ChromCom3(pars, timepars=list(start=-90, stop=30, step=1))
   chr <- generateCells(chr, nsim=nsim, method="simulation")
   chr$rms <- lopt[[idx.min]]$value
