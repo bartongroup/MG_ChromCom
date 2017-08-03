@@ -30,20 +30,23 @@ opts_chunk$set(fig.path='../figure/mpd3-',
 # Data
 
 ```{r}
-echr <- experimentalData(dataFile$scramble)
+echr.scr <- experimentalData(dataFile$scramble)
+echr.d2 <- experimentalData(dataFile$NCAPD2)
+echr.d3 <- experimentalData(dataFile$NCAPD3)
+echr.smc <- experimentalData(dataFile$SMC2)
 smth <- 5
 ```
 
-In our data we distinguish four states, marked by colour: blue, brown, pink, red. For the purpose of the model we merge blue and brown together into one state. Here is the result of the experiment from `r nrow(echr$cells)` cells.
+In our data we distinguish four states, marked by colour: blue, brown, pink, red. For the purpose of the model we merge blue and brown together into one state. Here is the result of the experiment from `r nrow(echr.scr$cells)` cells.
 
 ```{r}
-plotCells(echr)
+plotCells(echr.scr)
 ```
 
 The next figure shows the proportions of each colour as a function of time. The curves are smoothed with a running mean over the window of `r smth` time points.
 
 ```{r}
-plotTimelines(echr, smooth=TRUE, k=smth)
+plotTimelines(echr.scr, smooth=TRUE, k=smth)
 ```
 
 
@@ -131,16 +134,65 @@ We apply the following strategy:
 ```{r, fig.width=5}
 pars <- c3pars()
 free <- c("t1", "k1", "k2")
-chr.scr <- cacheData("fit_scramble_n3000_t1_k1_k2", fitChr, echr, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
-plotTimelines(chr, expdata = echr, withpars=TRUE)
+chr.scr <- cacheData("fit_scramble_n3000_t1_k1_k2", fitChr, echr.scr, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr.scr, expdata = echr.scr, withpars=TRUE)
 ```
 
 ## NCAPD2
 
-```{r, fig.width=5}
+On the left, $k_1$ is fixed from scramble, on the right, for comparison, it is free.
+
+```{r, fig.width=10}
 pars <- chr.scr$pars
 free <- c("t1", "k2")
 chr.d2 <- cacheData("fit_NCAPD2_n3000_t1_k2", fitChr, echr, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
-plotTimelines(chr, expdata = echr, withpars=TRUE)
+g1 <- plotTimelines(chr.d2, expdata = echr.d2, withpars=TRUE)
+
+pars <- chr.scr$pars
+free <- c("t1", "k1", "k2")
+chr.d2.f <- cacheData("fit_NCAPD2_n3000_t1_k1_k2", fitChr, echr.d2, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+g2 <- plotTimelines(chr.d2.f, expdata = echr.d2, withpars=TRUE)
+
+grid.arrange(g1, g2, ncol=2)
 ```
 
+## NCAPD3
+
+On the left, $k_2$ is fixed from scramble, on the right, for comparison, it is free.
+
+```{r, fig.width=10}
+pars <- chr.scr$pars
+free <- c("t1", "k1")
+chr.d3 <- cacheData("fit_NCAPD3_n3000_t1_k1", fitChr, echr, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+g1 <- plotTimelines(chr.d3, expdata = echr.d3, withpars=TRUE)
+
+pars <- chr.scr$pars
+free <- c("t1", "k1", "k2")
+chr.d3.f <- cacheData("fit_NCAPD3_n3000_t1_k1_k2", fitChr, echr.d3, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+g2 <- plotTimelines(chr.d3.f, expdata = echr.d3, withpars=TRUE)
+
+grid.arrange(g1, g2, ncol=2)
+```
+
+
+## SMC2
+
+On the left, $k_1$ is fixed from NCAPD3, $k_2$ fixed from NCAPD2, on the right, for comparison, both are free.
+
+```{r, fig.width=10}
+pars <- chr.scr$pars
+pars$k1 <- chr.d3$pars$k1
+pars$k2 <- chr.d2$pars$k2
+free <- c("t1")
+chr.smc <- cacheData("fit_SMC2_n3000_t1", fitChr, echr.smc, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+g1 <- plotTimelines(chr.smc, expdata = echr.smc, withpars=TRUE)
+
+pars <- chr.scr$pars
+pars$k1 <- chr.d3$pars$k1
+pars$k2 <- chr.d2$pars$k2
+free <- c("t1", "k1", "k2")
+chr.smc.f <- cacheData("fit_SMC2_n3000_t1_k1_k2", fitChr, echr.smc, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+g2 <- plotTimelines(chr.smc.f, expdata = echr.smc, withpars=TRUE)
+
+grid.arrange(g1, g2, ncol=2)
+```

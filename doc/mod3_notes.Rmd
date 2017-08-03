@@ -326,7 +326,7 @@ Discussed new approach to fitting with John. The plan is as follows.
 pars <- c3pars()
 free <- c("t1", "k1", "k2")
 chr.scr <- cacheData("fit_scramble_n3000_t1_k1_k2", fitChr, echr.scr, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
-plotTimelines(chr.scr, expdata = echr, withpars=TRUE)
+plotTimelines(chr.scr, expdata = echr.scr, withpars=TRUE)
 ```
 ### NCAPD2
 
@@ -334,18 +334,18 @@ plotTimelines(chr.scr, expdata = echr, withpars=TRUE)
 pars <- chr.scr$pars
 free <- c("t1", "k2")
 chr.d2 <- cacheData("fit_NCAPD2_n3000_t1_k2", fitChr, echr.d2, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
-plotTimelines(chr.d2, expdata = echr, withpars=TRUE)
+plotTimelines(chr.d2, expdata = echr.d2, withpars=TRUE)
 ```
 
-And for comparison, NCAPD3 with $t_1$, $k_1$ and $k_2$ free.
+And for comparison, NCAPD2 with $t_1$, $k_1$ and $k_2$ free.
 
 ```{r, fig.width=5}
 pars <- chr.scr$pars
 free <- c("t1", "k1", "k2")
 chr.d2.f <- cacheData("fit_NCAPD2_n3000_t1_k1_k2", fitChr, echr.d2, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
-plotTimelines(chr.d2.f, expdata = echr, withpars=TRUE)
+plotTimelines(chr.d2.f, expdata = echr.d2, withpars=TRUE)
 ```
-
+## 3/08/2017
 
 ### NCAPD3
 
@@ -353,5 +353,38 @@ plotTimelines(chr.d2.f, expdata = echr, withpars=TRUE)
 pars <- chr.scr$pars
 free <- c("t1", "k1")
 chr.d3 <- cacheData("fit_NCAPD3_n3000_t1_k1", fitChr, echr.d3, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
-plotTimelines(chr.d3, expdata = echr, withpars=TRUE)
+plotTimelines(chr.d3, expdata = echr.d3, withpars=TRUE)
+```
+
+
+And for comparison, NCAPD3 with $t_1$, $k_1$ and $k_2$ free.
+
+```{r}
+pars <- chr.scr$pars
+free <- c("t1", "k1", "k2")
+chr.d3.f <- cacheData("fit_NCAPD3_n3000_t1_k1_k2", fitChr, echr.d3, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr.d3.f, expdata = echr.d3, withpars=TRUE)
+```
+
+
+### SMC2
+
+```{r, fig.width=5}
+pars <- chr.scr$pars
+pars$k1 <- chr.d3$pars$k1
+pars$k2 <- chr.d2$pars$k2
+free <- c("t1")
+chr.smc <- cacheData("fit_SMC2_n3000_t1", fitChr, echr.smc, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr.smc, expdata = echr.smc, withpars=TRUE)
+```
+
+And all free:
+
+```{r, fig.width=5}
+pars <- chr.scr$pars
+pars$k1 <- chr.d3$pars$k1
+pars$k2 <- chr.d2$pars$k2
+free <- c("t1", "k1", "k2")
+chr.smc.f <- cacheData("fit_SMC2_n3000_t1_k1_k2", fitChr, echr.smc, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr.smc.f, expdata = echr.smc, withpars=TRUE)
 ```
