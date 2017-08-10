@@ -12,6 +12,7 @@ output:
 library(ChromCom)
 library(knitr)
 library(mylib)
+library(ggplot2)
 library(gridExtra)
 binDir <- "../RData"
 opts_chunk$set(fig.path='../figure/mpd3-', 

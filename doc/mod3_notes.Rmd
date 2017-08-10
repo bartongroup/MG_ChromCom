@@ -5,6 +5,7 @@ output:
     toc: false
     toc_float: false
     code_folding: hide
+    css: nice_notebook.css
 ---
 
 ```{r}
@@ -18,12 +19,12 @@ library(parallel)
 binDir <- "../RData"
 ```
 
-## 11/07/2017
+# 11/07/2017
 
 Writing introduction. First script to do simulation.
 
 
-## 12/07/2017
+# 12/07/2017
 
 Let's try if it works. An example for $t_1 = -60$ min, $\Delta t = 0$, $k_1 = 0.04\ {\rm min}^{-1}$ and $k_2 = 0.04\ {\rm min}^{-1}$.
 
@@ -77,7 +78,7 @@ g + geom_line(data=data.frame(x=x, y=y), aes(x,y), colour="yellow")
 
 
 
-### Parameter grid
+## Parameter grid
 
 ```{r}
 parameterGrid <- function(pars, par1, range1, par2, range2) {
@@ -153,11 +154,11 @@ plotTimelines(echr.scr, smooth=TRUE, k=15)
 ```
 
 
-## 13/07/2017
+# 13/07/2017
 
 Prepared [shiny app](https://shiny.compbio.dundee.ac.uk/marek_chromcom/param_tuner/) for deployment.
 
-## 24/07/2017
+# 24/07/2017
 
 Tomo suggested that the model parameters can be derived directly from data. We can write the following equations
 
@@ -241,7 +242,7 @@ Now, smoothing with 80 points.
 grid.arrange(plotTimelines(echr.scr, smooth=TRUE, k=80), plotRates(echr.scr, k=80), ncol=2)
 ```
 
-## 25/07/2017
+# 25/07/2017
 
 Had a chat with Tomo and John yesterday. They wanted to add a score showing how far the model is from the experimental data. I did it by calculating $\chi^2$ summed over all three curves. It is now added to the figure in the shiny app.
 
@@ -263,7 +264,7 @@ chr <- generateCells(chr, nsim=1000, method="simulation")
 plotTimelines(chr)
 ```
 
-## 26/07/2017
+# 26/07/2017
 
 What about fitting model to the data? "nlm" doesn't work because model is stochastic. Method "SANN" from optim (that is stochastic simulated annealing) took very long time and went into a false minimum (negative $k_2$), as parameters cannot be constrained.
 
@@ -310,7 +311,7 @@ plotTimelines(chr3, expdata = echr.d3, withpars=TRUE)
 ```
 
 
-## 02/08/2017
+# 02/08/2017
 
 Discussed new approach to fitting with John. The plan is as follows.
 
@@ -320,7 +321,7 @@ Discussed new approach to fitting with John. The plan is as follows.
 - for SMC2 $k_1$ fixed from NCAPD3, $k_2$ fixed from NCAPD2 and see if this matches; then do a fit
 - lets keep all $\Delta t$ fixed
 
-### Scramble
+## Scramble
 
 ```{r, fig.width=5}
 pars <- c3pars()
@@ -328,7 +329,8 @@ free <- c("t1", "k1", "k2")
 chr.scr <- cacheData("fit_scramble_n3000_t1_k1_k2", fitChr, echr.scr, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
 plotTimelines(chr.scr, expdata = echr.scr, withpars=TRUE)
 ```
-### NCAPD2
+
+## NCAPD2
 
 ```{r, fig.width=5}
 pars <- chr.scr$pars
@@ -345,9 +347,9 @@ free <- c("t1", "k1", "k2")
 chr.d2.f <- cacheData("fit_NCAPD2_n3000_t1_k1_k2", fitChr, echr.d2, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
 plotTimelines(chr.d2.f, expdata = echr.d2, withpars=TRUE)
 ```
-## 3/08/2017
+# 3/08/2017
 
-### NCAPD3
+## NCAPD3
 
 ```{r, fig.width=5}
 pars <- chr.scr$pars
@@ -367,7 +369,7 @@ plotTimelines(chr.d3.f, expdata = echr.d3, withpars=TRUE)
 ```
 
 
-### SMC2
+## SMC2
 
 ```{r, fig.width=5}
 pars <- chr.scr$pars
@@ -388,3 +390,63 @@ free <- c("t1", "k1", "k2")
 chr.smc.f <- cacheData("fit_SMC2_n3000_t1_k1_k2", fitChr, echr.smc, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
 plotTimelines(chr.smc.f, expdata = echr.smc, withpars=TRUE)
 ```
+
+
+# 04/08/2017
+
+Models do not fit data well, mainly because at the start model predicts proportions of 0 and 1, while data are somewhere around 0.05 and 0.95. What if we squeeze the model towards the middle?
+
+\[P_s = 0.5 + (P - 0.5)(1 - 2s)\]
+
+where $s$ is a squeeze factor, $0 \leq s < 0.5$.
+
+```{r, fig.width=5}
+pars <- c3pars()
+pars$squeeze <- 0.05
+free <- c("t1", "k1", "k2", "squeeze")
+chr.scr.s <- cacheData("fit_scramble_n3000_t1_k1_k2_s", fitChr, echr.scr, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr.scr.s, expdata = echr.scr, withpars=TRUE)
+```
+
+Not very much different. Squeezing does not affect decay rates (fortunatelly!).
+
+
+# 10/08/2017
+
+E-mail from Tomo:
+
+```
+"How about asking Marek to fit the parameter values as follows (keep dt3=0, k3=0 for all):
+1) Keep scramble as it is (and, separately, fit all k1, k2, t1 and dt2; dt2 does not need to be zero)
+2) For NCAPD2, fix k1 and t1 (same as scramble), and fit k2 and dt2.
+3) For NCAPD3, fix k2 and dt2 (same as scramble), and fit k1 and t1.
+4) For SMC2, fix k1 and t1 from 3), fix k2 and dt2 from 2), and compare. Separately, fit all k1, k2, t1 and dt2.
+
+If it is difficult to fit all 4 parameters in ‘separately’ plans in 1) and 4), no need to try it."
+```
+
+## Scramble
+
+Fitting with $k_1$, $k_2$, $t_1$ and $\Delta t_2$ free.
+
+```{r, fig.width=5}
+pars <- c3pars()
+free <- c("t1", "k1", "k2", "dt2")
+chr.scr.dt2 <- cacheData("fit_scramble_n3000_t1_k1_k2_dt2", fitChr, echr.scr, pars, free, nsim=3000, ntry=32, ncores=8, binDir=binDir)
+plotTimelines(chr.scr.dt2, expdata = echr.scr, withpars=TRUE)
+```
+RMS is actually worse than with $\Delta t_2 = 0$. Alas, the model is stochastic, so hard to tell which is better. The difference is small, and the best-fitting $\Delta t_2$ is small, so I'd rather fix it at zero.
+
+
+
+## NCAPD2
+
+```{r, fig.width=5}
+pars <- chr.scr$pars
+free <- c("k2", "dt2")
+chr.d2.dt2 <- cacheData("fit_NCAPD2_n3000_k2_dt2", fitChr, echr.d2, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr.d2.dt2, expdata = echr.d2, withpars=TRUE)
+```
+
+
+

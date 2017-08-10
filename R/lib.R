@@ -109,12 +109,13 @@ c3pars <- function(
   k1 = 0.04,
   k2 = 0.04,
   k3 = 0,
+  squeeze = 0,
   dummy = FALSE
 ) {
   if(dummy) {
     pars = list()
   } else {
-    pars <- list(t1=t1, dt2=dt2, dt3=dt3, k1=k1, k2=k2, k3=k3)
+    pars <- list(t1=t1, dt2=dt2, dt3=dt3, k1=k1, k2=k2, k3=k3, squeeze=squeeze)
   }
   class(pars) <- append(class(pars), "c3pars")
   return(pars)
@@ -264,7 +265,6 @@ cellCount <- function(cells, time, colours) {
 generateCells <- function(chr, nsim=1000, method="transition") {
   cells <- t(replicate(nsim, timelineCell(chr$pars, chr$timepars, method)))
   cnt <- cellCount(cells, chr$time, chr$colours)
-
   chr$cells <- cells
   chr$cnt <- cnt
   chr$nsim <- nsim
@@ -278,6 +278,12 @@ smoothColours <- function(cnt, colours, k) {
   return(cnt)
 }
 
+squeeze <- function(p, s) {
+  if(!is.null(s) && s > 0) p <- 0.5 + (p - 0.5) * (1 - 2 * s)
+  p
+}
+
+
 #' Melt timelines for plotting
 #'
 #' @param chr A \code{ChrCom3} object with data
@@ -286,13 +292,14 @@ smoothColours <- function(cnt, colours, k) {
 #' @param smooth If TRUE, smoothing will be applied
 #' @param k Smoothing window size
 #'
-#' @return Melted data frame
+#' @return Melted data frame with proportions
 #' @export
 meltTimelines <- function(chr, label1="L1", label2="L2", smooth=FALSE, k=5) {
   cnt <- chr$cnt
   colours <- chr$colours
   cnt[,colours] <- cnt[,colours] / cnt$total
   if(smooth) cnt <- smoothColours(cnt, colours, k)
+  cnt <- squeeze(cnt, chr$pars$squeeze)
   m <- reshape2::melt(cnt, id.vars="Time", measure.vars=colours, variable.name="Colour", value.name="Count")
   m$X <- label1
   m$Y <- label2
@@ -335,7 +342,7 @@ plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', withpa
   m <- meltTimelines(chr, smooth=smooth, k=k)
   if(withpars) {
     title <- paste0(lapply(names(chr$pars), function(name) {
-      paste0(name, "=", sprintf("%.3g", chr$pars[[name]]))
+      ifelse(name=="squeeze", "", paste0(name, "=", sprintf("%.3g", chr$pars[[name]])))
     }
     ), collapse=", ")
   }
@@ -408,9 +415,11 @@ experimentalData <- function(file) {
 oeError <- function(chr, echr, limits=c(-90, 30)) {
 
   getProp <- function(ch, col) {
-    x <- ts(ch$cnt[[col]] / ch$cnt$total, start=ch$timepars$start, deltat=ch$timepars$step)
-    x[which(is.nan(x) | is.infinite(x))] <- NA
-    x <- window(x, start=limits[1], end=limits[2])
+    p <- ts(ch$cnt[[col]] / ch$cnt$total, start=ch$timepars$start, deltat=ch$timepars$step)
+    x[which(is.nan(p) | is.infinite(p))] <- NA
+    p <- window(p, start=limits[1], end=limits[2])
+    p <- squeeze(p, ch$pars$squeeze)
+    p
   }
 
   rms <- 0
@@ -483,8 +492,8 @@ fitChr <- function(echr, pars, freepars, nsim=1000, ntry=10, ncores=4) {
 
   #chr <- ChromCom3(pars)
   p <- parVector(pars, freepars)
-  lower <- c(t1=-50, k1=0, k2=0, k3=0, dt2=0, dt3=0)
-  upper <- c(t1=30, k1=0.2, k2=0.2, k3=0.2, dt2=30, dt3=30)
+  lower <- c(t1=-50, k1=0, k2=0, k3=0, dt2=0, dt3=0, squeeze=0)
+  upper <- c(t1=30, k1=0.2, k2=0.2, k3=0.2, dt2=30, dt3=30, squeeze=0.4)
   lower <- lower[freepars]
   upper <- upper[freepars]
 
