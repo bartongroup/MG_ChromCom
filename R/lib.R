@@ -416,7 +416,7 @@ oeError <- function(chr, echr, limits=c(-90, 30)) {
 
   getProp <- function(ch, col) {
     p <- ts(ch$cnt[[col]] / ch$cnt$total, start=ch$timepars$start, deltat=ch$timepars$step)
-    x[which(is.nan(p) | is.infinite(p))] <- NA
+    p[which(is.nan(p) | is.infinite(p))] <- NA
     p <- window(p, start=limits[1], end=limits[2])
     p <- squeeze(p, ch$pars$squeeze)
     p

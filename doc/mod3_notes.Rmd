@@ -432,10 +432,21 @@ Fitting with $k_1$, $k_2$, $t_1$ and $\Delta t_2$ free.
 ```{r, fig.width=5}
 pars <- c3pars()
 free <- c("t1", "k1", "k2", "dt2")
-chr.scr.dt2 <- cacheData("fit_scramble_n3000_t1_k1_k2_dt2", fitChr, echr.scr, pars, free, nsim=3000, ntry=32, ncores=8, binDir=binDir)
+chr.scr.dt2 <- cacheData("fit_scramble_n3000_t1_k1_k2_dt2", fitChr, echr.scr, pars, free, nsim=3000, ntry=32, ncores=6, binDir=binDir)
 plotTimelines(chr.scr.dt2, expdata = echr.scr, withpars=TRUE)
 ```
-RMS is actually worse than with $\Delta t_2 = 0$. Alas, the model is stochastic, so hard to tell which is better. The difference is small, and the best-fitting $\Delta t_2$ is small, so I'd rather fix it at zero.
+RMS is actually worse than with $\Delta t_2 = 0$. Alas, the model is stochastic, so hard to tell which is better. The difference is small, and the best-fitting $\Delta t_2$ is small, so I'd rather fix it at zero. 
+
+# 11/08/2017
+
+Fitting scramble once again, with $\Delta t_2 = 0$, but with very large `nsim` and `ntry`. This should be our reference fit. And it will take forever to calculate.
+
+```{r, fig.width=5}
+pars <- c3pars()
+free <- c("t1", "k1", "k2")
+chr.scr <- cacheData("fit_scramble_n10000.50_t1_k1_k2", fitChr, echr.scr, pars, free, nsim=10000, ntry=50, ncores=6, binDir=binDir)
+plotTimelines(chr.scr, expdata = echr.scr, withpars=TRUE)
+```
 
 
 
@@ -444,9 +455,56 @@ RMS is actually worse than with $\Delta t_2 = 0$. Alas, the model is stochastic,
 ```{r, fig.width=5}
 pars <- chr.scr$pars
 free <- c("k2", "dt2")
-chr.d2.dt2 <- cacheData("fit_NCAPD2_n3000_k2_dt2", fitChr, echr.d2, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
-plotTimelines(chr.d2.dt2, expdata = echr.d2, withpars=TRUE)
+chr.d2.2 <- cacheData("fit_NCAPD2_n10000_k2_dt2", fitChr, echr.d2, pars, free, nsim=10000, ntry=50, ncores=6, binDir=binDir)
+plotTimelines(chr.d2.2, expdata = echr.d2, withpars=TRUE)
+```
+
+Tiny differences in comparison to other NCAPD2 fits. Most likely negligible.
+
+
+## NCAPD3
+
+```{r, fig.width=5}
+pars <- chr.scr$pars
+free <- c("k1", "t1")
+chr.d3.2 <- cacheData("fit_NCAPD3_n10000_k1_t1", fitChr, echr.d3, pars, free, nsim=10000, ntry=50, ncores=6, binDir=binDir)
+plotTimelines(chr.d3.2, expdata = echr.d3, withpars=TRUE)
 ```
 
 
+
+## SMC2
+
+SMC2 long fit with parameters free.
+
+```{r, fig.width=5}
+pars <- chr.scr$pars
+free <- c("k1", "k2", "t1", "dt2")
+chr.smc.2 <- cacheData("fit_SMC2_n10000_k1_k2_t1_dt2", fitChr, echr.smc, pars, free, nsim=10000, ntry=50, ncores=6, binDir=binDir)
+plotTimelines(chr.smc.2, expdata = echr.smc, withpars=TRUE)
+```
+
+# 14/08/2017
+
+SMC2 with parameters fixed from NCAPD.
+
+```{r, fig.width=5}
+pars$k1 <- chr.d3.2$pars$k1
+pars$t1 <- chr.d3.2$pars$t1
+pars$k2 <- chr.d2.2$pars$k2
+pars$dt2 <- chr.d2.2$pars$dt2
+
+chr.smc.fixed <- chr.d3
+chr.smc.fixed$pars <- pars
+plotTimelines(chr.smc.fixed, expdata = echr.smc, withpars=TRUE)
+```
+
+# 16/08/2017
+
+Nice discussion with Tim Newman. A few new ideas:
+
+- replace $t_1$ with the exponential "decay" (going back in time) to smooth the cusp in the model; there will be still  one parameter here, exponential factor roughly about$1/t_1$
+- compare pairs coming from the same cell - John will send me the info - see if same-cell pairs are more corerlated than random
+- try aligning cells independnetly from the nuclear membrane breakdown, based on correlation
+- think of other properties, e.g.  in random walk there is "persistance", the fraction of drunks that do not fall over the cliff
 
