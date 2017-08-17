@@ -5,7 +5,7 @@
 \title{\code{c3pars} object constructor}
 \usage{
 c3pars(t1 = -30, dt2 = 0, dt3 = 0, k1 = 0.04, k2 = 0.04, k3 = 0,
-  dummy = FALSE)
+  squeeze = 0, dummy = FALSE)
 }
 \arguments{
 \item{t1}{Start time}

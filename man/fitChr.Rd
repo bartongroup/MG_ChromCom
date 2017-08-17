@@ -4,14 +4,14 @@
 \alias{fitChr}
 \title{Fit ChromCom data with a model}
 \usage{
-fitChr(echr, pars, npar = 3, nsim = 1000, ntry = 10, ncores = 4)
+fitChr(echr, pars, freepars, nsim = 1000, ntry = 10, ncores = 4)
 }
 \arguments{
 \item{echr}{A \code{ChromCom3} object with experimental data}
 
 \item{pars}{A \code{c3pars} object with initial parameters}
 
-\item{npar}{Number of parameters to use in minimization (3 or 4)}
+\item{freepars}{A character vector with names of free parameters}
 
 \item{nsim}{Number of cells to simulate}
 
