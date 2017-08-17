@@ -4,14 +4,14 @@
 \alias{fitChr}
 \title{Fit ChromCom data with a model}
 \usage{
-fitChr(echr, pars, npar = 3, nsim = 1000, ntry = 10, ncores = 4)
+fitChr(echr, pars, freepars, nsim = 1000, ntry = 10, ncores = 4)
 }
 \arguments{
 \item{echr}{A \code{ChromCom3} object with experimental data}
 
 \item{pars}{A \code{c3pars} object with initial parameters}
 
-\item{npar}{Number of parameters to use in minimization (3 or 4)}
+\item{freepars}{A character vector with names of free parameters}
 
 \item{nsim}{Number of cells to simulate}
 
@@ -24,6 +24,5 @@ A \code{ChromCom3} object with the best-fitting model. "rms" field
   is added. \code{\link{optim}} function is used for minimization with method "L-BFGS-B".
 }
 \description{
-Fits data with a model in which t1, k1, k2 and dt2 are free parameters. If
-npar=3, only first three of them are used.
+Fits data with a model in which \code{freepars} are free.
 }

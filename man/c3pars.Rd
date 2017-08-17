@@ -4,11 +4,11 @@
 \alias{c3pars}
 \title{\code{c3pars} object constructor}
 \usage{
-c3pars(t1 = -30, dt2 = 0, dt3 = 0, k1 = 0.04, k2 = 0.04, k3 = 0,
-  dummy = FALSE)
+c3pars(tau = -20, dt2 = 0, dt3 = 0, k1 = 0.04, k2 = 0.04, k3 = 0,
+  squeeze = 0, dummy = FALSE)
 }
 \arguments{
-\item{t1}{Start time}
+\item{tau}{Start time scale}
 
 \item{dt2}{Delay until P->R is possible}
 

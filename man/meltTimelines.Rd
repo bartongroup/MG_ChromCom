@@ -18,7 +18,7 @@ meltTimelines(chr, label1 = "L1", label2 = "L2", smooth = FALSE, k = 5)
 \item{k}{Smoothing window size}
 }
 \value{
-Melted data frame
+Melted data frame with proportions
 }
 \description{
 Melt timelines for plotting

@@ -4,7 +4,7 @@
 \alias{generateCells}
 \title{Perform simulation}
 \usage{
-generateCells(chr, nsim = 1000, method = "transition")
+generateCells(chr, nsim = 1000, method = "simulation")
 }
 \arguments{
 \item{chr}{Initial \code{ChrCom3} object with model parameters.}

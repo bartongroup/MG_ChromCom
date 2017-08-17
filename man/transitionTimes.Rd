@@ -2,7 +2,7 @@
 % Please edit documentation in R/lib.R
 \name{transitionTimes}
 \alias{transitionTimes}
-\title{Generate transition times}
+\title{Generate transition times (OBSOLETE)}
 \usage{
 transitionTimes(pars)
 }
@@ -13,5 +13,5 @@ transitionTimes(pars)
 A list with two transition times
 }
 \description{
-Generate transition times
+Generate transition times (OBSOLETE)
 }
