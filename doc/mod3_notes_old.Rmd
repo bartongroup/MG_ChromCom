@@ -1,0 +1,510 @@
+---
+title: "Chromosome compaction - simple three-state model"
+output: 
+  html_notebook:
+    toc: false
+    toc_float: false
+    code_folding: hide
+    css: nice_notebook.css
+---
+
+```{r}
+library(mylib)
+library(ChromCom)
+library(ggplot2)
+library(gridExtra)
+library(reshape2)
+library(parallel)
+
+binDir <- "../RData"
+```
+
+# 11/07/2017
+
+Writing introduction. First script to do simulation.
+
+
+# 12/07/2017
+
+Let's try if it works. An example for $t_1 = -60$ min, $\Delta t = 0$, $k_1 = 0.04\ {\rm min}^{-1}$ and $k_2 = 0.04\ {\rm min}^{-1}$.
+
+```{r, fig.width=5, fig.height=3}
+pars <- c3pars(
+  t1 = -60,
+  dt2 = 0,
+  k1 = 0.04,
+  k2 = 0.04
+)
+chr <- ChromCom3(pars)
+chr <- generateCells(chr, nsim=1000)
+plotTimelines(chr)
+```
+
+Just to check if output is as expected. With $k_2=0$ we should have pure exponential decay. The yellow curve is $e^{-k_1 t}$.
+
+```{r, fig.width=5}
+pars <- c3pars(
+  t1 = -60,
+  dt2 = 0,
+  k1 = 0.04,
+  k2 = 0
+)
+tchr <- ChromCom3(pars)
+tchr <- generateCells(tchr, nsim=1000)
+
+x <- seq(from=pars$t1, to=100, by=1)
+y <- exp(-pars$k1 * (x - pars$t1))
+g <- plotTimelines(tchr)
+g + geom_line(data=data.frame(x=x, y=y), aes(x,y), colour="yellow")
+```
+
+Close, but not perfect. Here is an example with much smaller time step (0.1) and larger number of cells (10,000).
+
+```{r, fig.width=5}
+pars <- c3pars(
+  t1 = -60,
+  dt2 = 0,
+  k1 = 0.04,
+  k2 = 0
+)
+tchr <- ChromCom3(pars, time = seq(from=-140, to=90, by=0.1))
+tchr <- generateCells(tchr, nsim=10000)
+
+x <- seq(from=pars$t1, to=100, by=1)
+y <- exp(-pars$k1 * (x - pars$t1))
+g <- plotTimelines(tchr)
+g + geom_line(data=data.frame(x=x, y=y), aes(x,y), colour="yellow")
+```
+
+
+
+## Parameter grid
+
+```{r}
+parameterGrid <- function(pars, par1, range1, par2, range2) {
+  melts <- NULL
+  for(p1 in range1) {
+    pars[[par1]] <- p1
+    for(p2 in range2) {
+      pars[[par2]] <- p2
+      chr <- ChromCom3(pars)
+      chr <- generateCells(chr)
+      label1 <- sprintf("%s = %.3g", par1, p1)
+      label2 <- sprintf("%s = %.3g", par2, p2)
+      m <- meltTimelines(chr, label1=label1, label2=label2)
+      melts <- rbind(melts, m)
+    }
+  }
+  timelinePanel(melts)
+}
+```
+
+```{r}
+pars <- c3pars(
+  t1 = -30,
+  dt2 = 0,
+  k1 = 0.05,
+  k2 = 0.01
+)
+
+range1 <- c(0.01, 0.05, 0.08, 0.12)
+range2 <- c(0.01, 0.05, 0.08, 0.12)
+parameterGrid(pars, "k1", range1, "k2", range2)
+```
+ I think we need to introduce a delay between pink and red.
+ 
+ 
+```{r}
+pars <- c3pars(
+  t1 = -30,
+  dt2 = 10,
+  k1 = 0.05,
+  k2 = 0.01
+)
+
+range1 <- c(0.01, 0.03, 0.05, 0.10)
+range2 <- c(0.01, 0.05, 0.08, 0.12)
+parameterGrid(pars, "k1", range1, "k2", range2)
+```
+
+What about range of delays?
+
+```{r}
+pars <- c3pars(
+  t1 = -30,
+  dt2 = 0,
+  k1 = 0.03,
+  k2 = 0.01
+)
+
+range1 <- c(0, 10, 20, 30)
+range2 <- c(0.01, 0.05, 0.08, 0.12)
+parameterGrid(pars, "dt", range1, "k2", range2)
+```
+
+Experimental data.
+
+```{r, warning=FALSE, fig.width=5}
+echr.scr <- experimentalData(dataFile$scramble)
+echr.d2 <- experimentalData(dataFile$NCAPD2)
+echr.d3 <- experimentalData(dataFile$NCAPD3)
+echr.smc <- experimentalData(dataFile$SMC2)
+
+plotTimelines(echr.scr, smooth=TRUE, k=15)
+```
+
+
+# 13/07/2017
+
+Prepared [shiny app](https://shiny.compbio.dundee.ac.uk/marek_chromcom/param_tuner/) for deployment.
+
+# 24/07/2017
+
+Tomo suggested that the model parameters can be derived directly from data. We can write the following equations
+
+$\dot{B} = -k_1 B$
+
+$\dot{P} = k_1 B - k_2 R$
+
+$\dot{R} = k_2 P$
+
+$B + P + R = 1$
+
+However, I'm not sure if this is exactly the model I use in the simulation. In the simulation, we assumed that P->R transition can happen only after the B->P transition. 
+
+Because proportions and their derivatives are observed, we can find the rates:
+
+$k_1 = - \frac{\dot{B}}{B}$
+
+$k_2 = \frac{\dot{R}}{P}$
+
+This will require a lot of smoothing, otherwise the derivatives will be all over the place.
+
+First, I see if I can recover rates from the generated data.
+
+```{r}
+timeDeriv <- function(chr, k=20) {
+  ts <- list()
+  for(col in chr$colours) {
+    x <- chr$cnt[[col]] / chr$cnt$total
+    x <- caTools::runmean(x, k)
+    x <- ts(x, start=chr$timepars$start, deltat=chr$timepars$step)
+    xdot <- diff(x)
+    ts[[col]] <- x
+    ts[[paste0(col, ".diff")]] <- xdot
+  }
+  ts
+}
+```
+
+```{r}
+plotRates <- function(chr, k=20) {
+  ts <- timeDeriv(chr, k=k)
+  k1 <- -ts$B.diff / ts$B
+  k2 <- ts$R.diff / ts$P
+  k1[which(is.nan(k1))] <- NA
+  k2[which(is.nan(k2))] <- NA
+  df <- data.frame(t=time(k1), k1=k1, k2=k2)
+  m <- melt(df, measure.vars = c("k1", "k2"))
+  m$value <- as.numeric(m$value)
+  m$value[which(m$value > 0.5)] <- 0.5
+  m$value[which(m$value < -0.5)] <- -0.5
+  ggplot(m, aes(x=t, y=value)) + geom_line(aes(colour=variable)) 
+}
+```
+
+Start with a model with 10,000 cells and 0.1 min time step. In this model $k_1 = 0.04$ and $k_2 = 0$.  Top panels show original data, lower panels - smoothed data.
+
+```{r, fig.width=8, fig.height=3}
+grid.arrange(plotTimelines(tchr), plotRates(tchr, k=1), ncol=2)
+grid.arrange(plotTimelines(tchr, smooth=TRUE, k=200), plotRates(tchr, k=200), ncol=2)
+```
+
+
+What happens if I use only 100 cells and 1 min time step in the model? This time $k_2 = 0.04$.
+
+```{r, fig.width=8, fig.height=3}
+chr <- generateCells(chr, nsim=100)
+grid.arrange(plotTimelines(chr, k=1), plotRates(chr, k=1), ncol=2)
+grid.arrange(plotTimelines(chr, smooth=TRUE, k=20), plotRates(chr, k=20), ncol=2)
+```
+
+
+And now, for real data. Here are scramble data smoothed with running mean with window size of 10 time points.
+
+```{r, fig.width=8, fig.height=3}
+grid.arrange(plotTimelines(echr.scr, smooth=TRUE, k=10), plotRates(echr.scr, k=10), ncol=2)
+```
+
+Now, smoothing with 80 points.
+
+```{r, fig.width=8, fig.height=3}
+grid.arrange(plotTimelines(echr.scr, smooth=TRUE, k=80), plotRates(echr.scr, k=80), ncol=2)
+```
+
+# 25/07/2017
+
+Had a chat with Tomo and John yesterday. They wanted to add a score showing how far the model is from the experimental data. I did it by calculating $\chi^2$ summed over all three curves. It is now added to the figure in the shiny app.
+
+The next thing is to add transition P->B, with rate $k_3$. It can happen only after time $\Delta t_3$.
+
+I added a simulation method (step-by-step). Now testing it.
+
+```{r, fig.width=5, fig.height=3}
+pars <- c3pars(
+  t1 = -30,
+  k1 = 0.04,
+  k2 = 0.04,
+  k3 = 0.04,
+  dt2 = 10,
+  dt3 = 50
+)
+chr <- ChromCom3(pars)
+chr <- generateCells(chr, nsim=1000, method="simulation")
+plotTimelines(chr)
+```
+
+# 26/07/2017
+
+What about fitting model to the data? "nlm" doesn't work because model is stochastic. Method "SANN" from optim (that is stochastic simulated annealing) took very long time and went into a false minimum (negative $k_2$), as parameters cannot be constrained.
+
+Finally I used "L-BFGS-B" method which allows box constraints. Alas, this method is not very good at finding the real minimum, often ending up in a local one. I'm guessing this is because of my stochastic model. Therefore, I need to run it several times and search for the best minimum. Using "mclapply" to speed it up.
+
+I also changed the error score. $\chi^2$ doesn't work very well when expected counts are zero. And I cannot simply exclude them, because zero is an important number. Instead I calculate a simple RMS.
+
+```{r, fig.width=5}
+pars <- c3pars()
+chr <- cacheData("fit_scramble_n3000_3par", fitChr, echr.scr, pars, npar=3, nsim=3000, ntry=16, binDir=binDir)
+plotTimelines(chr, expdata = echr.scr, withpars=TRUE)
+```
+
+Now, the same, but with extra parameter, $\Delta t_2$.
+
+```{r, fig.width=5}
+pars <- c3pars(dt2=5)
+chr <- cacheData("fit_scramble_n3000_4par", fitChr, echr.scr, pars, npar=4, nsim=3000, ntry=16, binDir=binDir)
+plotTimelines(chr, expdata = echr.scr, withpars=TRUE)
+```
+
+And now the other two data sets.
+
+```{r, fig.width=5}
+pars <- c3pars()
+chr2 <- cacheData("fit_NCAPD2_n3000_3par", fitChr, echr.d2, pars, npar=3, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr2, expdata = echr.d2, withpars=TRUE)
+
+pars <- c3pars(dt2=10)
+chr2 <- cacheData("fit_NCAPD2_n3000_4par", fitChr, echr.d2, pars, npar=4, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr2, expdata = echr.d2, withpars=TRUE)
+```
+
+
+```{r, fig.width=5}
+echr.d3 <- experimentalData(dataFile$NCAPD3)
+pars <- c3pars()
+chr3 <- cacheData("fit_NCAPD3_n3000_3par", fitChr, echr.d3, pars, npar=3, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr3, expdata = echr.d3, withpars=TRUE)
+
+pars <- c3pars(dt2=10)
+chr3 <- cacheData("fit_NCAPD3_n3000_4par", fitChr, echr.d3, pars, npar=4, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr3, expdata = echr.d3, withpars=TRUE)
+```
+
+
+# 02/08/2017
+
+Discussed new approach to fitting with John. The plan is as follows.
+
+- fit scramble with $t_1$, $k_1$ and $k_2$ free
+- for NCAPD2 we expect only $k_2$ to change, so fix $k_1$ from scramble
+- for NCAPD3 we expect only $k_1$ to change, so fix $k_2$ from scramble; however, John tried this manually and it didn't work very well, so we might free both ks
+- for SMC2 $k_1$ fixed from NCAPD3, $k_2$ fixed from NCAPD2 and see if this matches; then do a fit
+- lets keep all $\Delta t$ fixed
+
+## Scramble
+
+```{r, fig.width=5}
+pars <- c3pars()
+free <- c("t1", "k1", "k2")
+chr.scr <- cacheData("fit_scramble_n3000_t1_k1_k2", fitChr, echr.scr, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr.scr, expdata = echr.scr, withpars=TRUE)
+```
+
+## NCAPD2
+
+```{r, fig.width=5}
+pars <- chr.scr$pars
+free <- c("t1", "k2")
+chr.d2 <- cacheData("fit_NCAPD2_n3000_t1_k2", fitChr, echr.d2, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr.d2, expdata = echr.d2, withpars=TRUE)
+```
+
+And for comparison, NCAPD2 with $t_1$, $k_1$ and $k_2$ free.
+
+```{r, fig.width=5}
+pars <- chr.scr$pars
+free <- c("t1", "k1", "k2")
+chr.d2.f <- cacheData("fit_NCAPD2_n3000_t1_k1_k2", fitChr, echr.d2, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr.d2.f, expdata = echr.d2, withpars=TRUE)
+```
+# 3/08/2017
+
+## NCAPD3
+
+```{r, fig.width=5}
+pars <- chr.scr$pars
+free <- c("t1", "k1")
+chr.d3 <- cacheData("fit_NCAPD3_n3000_t1_k1", fitChr, echr.d3, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr.d3, expdata = echr.d3, withpars=TRUE)
+```
+
+
+And for comparison, NCAPD3 with $t_1$, $k_1$ and $k_2$ free.
+
+```{r}
+pars <- chr.scr$pars
+free <- c("t1", "k1", "k2")
+chr.d3.f <- cacheData("fit_NCAPD3_n3000_t1_k1_k2", fitChr, echr.d3, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr.d3.f, expdata = echr.d3, withpars=TRUE)
+```
+
+
+## SMC2
+
+```{r, fig.width=5}
+pars <- chr.scr$pars
+pars$k1 <- chr.d3$pars$k1
+pars$k2 <- chr.d2$pars$k2
+free <- c("t1")
+chr.smc <- cacheData("fit_SMC2_n3000_t1", fitChr, echr.smc, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr.smc, expdata = echr.smc, withpars=TRUE)
+```
+
+And all free:
+
+```{r, fig.width=5}
+pars <- chr.scr$pars
+pars$k1 <- chr.d3$pars$k1
+pars$k2 <- chr.d2$pars$k2
+free <- c("t1", "k1", "k2")
+chr.smc.f <- cacheData("fit_SMC2_n3000_t1_k1_k2", fitChr, echr.smc, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr.smc.f, expdata = echr.smc, withpars=TRUE)
+```
+
+
+# 04/08/2017
+
+Models do not fit data well, mainly because at the start model predicts proportions of 0 and 1, while data are somewhere around 0.05 and 0.95. What if we squeeze the model towards the middle?
+
+\[P_s = 0.5 + (P - 0.5)(1 - 2s)\]
+
+where $s$ is a squeeze factor, $0 \leq s < 0.5$.
+
+```{r, fig.width=5}
+pars <- c3pars()
+pars$squeeze <- 0.05
+free <- c("t1", "k1", "k2", "squeeze")
+chr.scr.s <- cacheData("fit_scramble_n3000_t1_k1_k2_s", fitChr, echr.scr, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
+plotTimelines(chr.scr.s, expdata = echr.scr, withpars=TRUE)
+```
+
+Not very much different. Squeezing does not affect decay rates (fortunatelly!).
+
+
+# 10/08/2017
+
+E-mail from Tomo:
+
+```
+"How about asking Marek to fit the parameter values as follows (keep dt3=0, k3=0 for all):
+1) Keep scramble as it is (and, separately, fit all k1, k2, t1 and dt2; dt2 does not need to be zero)
+2) For NCAPD2, fix k1 and t1 (same as scramble), and fit k2 and dt2.
+3) For NCAPD3, fix k2 and dt2 (same as scramble), and fit k1 and t1.
+4) For SMC2, fix k1 and t1 from 3), fix k2 and dt2 from 2), and compare. Separately, fit all k1, k2, t1 and dt2.
+
+If it is difficult to fit all 4 parameters in ‘separately’ plans in 1) and 4), no need to try it."
+```
+
+## Scramble
+
+Fitting with $k_1$, $k_2$, $t_1$ and $\Delta t_2$ free.
+
+```{r, fig.width=5}
+pars <- c3pars()
+free <- c("t1", "k1", "k2", "dt2")
+chr.scr.dt2 <- cacheData("fit_scramble_n3000_t1_k1_k2_dt2", fitChr, echr.scr, pars, free, nsim=3000, ntry=32, ncores=6, binDir=binDir)
+plotTimelines(chr.scr.dt2, expdata = echr.scr, withpars=TRUE)
+```
+RMS is actually worse than with $\Delta t_2 = 0$. Alas, the model is stochastic, so hard to tell which is better. The difference is small, and the best-fitting $\Delta t_2$ is small, so I'd rather fix it at zero. 
+
+# 11/08/2017
+
+Fitting scramble once again, with $\Delta t_2 = 0$, but with very large `nsim` and `ntry`. This should be our reference fit. And it will take forever to calculate.
+
+```{r, fig.width=5}
+pars <- c3pars()
+free <- c("t1", "k1", "k2")
+chr.scr <- cacheData("fit_scramble_n10000.50_t1_k1_k2", fitChr, echr.scr, pars, free, nsim=10000, ntry=50, ncores=6, binDir=binDir)
+plotTimelines(chr.scr, expdata = echr.scr, withpars=TRUE)
+```
+
+
+
+## NCAPD2
+
+```{r, fig.width=5}
+pars <- chr.scr$pars
+free <- c("k2", "dt2")
+chr.d2.2 <- cacheData("fit_NCAPD2_n10000_k2_dt2", fitChr, echr.d2, pars, free, nsim=10000, ntry=50, ncores=6, binDir=binDir)
+plotTimelines(chr.d2.2, expdata = echr.d2, withpars=TRUE)
+```
+
+Tiny differences in comparison to other NCAPD2 fits. Most likely negligible.
+
+
+## NCAPD3
+
+```{r, fig.width=5}
+pars <- chr.scr$pars
+free <- c("k1", "t1")
+chr.d3.2 <- cacheData("fit_NCAPD3_n10000_k1_t1", fitChr, echr.d3, pars, free, nsim=10000, ntry=50, ncores=6, binDir=binDir)
+plotTimelines(chr.d3.2, expdata = echr.d3, withpars=TRUE)
+```
+
+
+
+## SMC2
+
+SMC2 long fit with parameters free.
+
+```{r, fig.width=5}
+pars <- chr.scr$pars
+free <- c("k1", "k2", "t1", "dt2")
+chr.smc.2 <- cacheData("fit_SMC2_n10000_k1_k2_t1_dt2", fitChr, echr.smc, pars, free, nsim=10000, ntry=50, ncores=6, binDir=binDir)
+plotTimelines(chr.smc.2, expdata = echr.smc, withpars=TRUE)
+```
+
+# 14/08/2017
+
+SMC2 with parameters fixed from NCAPD.
+
+```{r, fig.width=5}
+pars$k1 <- chr.d3.2$pars$k1
+pars$t1 <- chr.d3.2$pars$t1
+pars$k2 <- chr.d2.2$pars$k2
+pars$dt2 <- chr.d2.2$pars$dt2
+
+chr.smc.fixed <- chr.d3
+chr.smc.fixed$pars <- pars
+plotTimelines(chr.smc.fixed, expdata = echr.smc, withpars=TRUE)
+```
+
+# 16/08/2017
+
+Nice discussion with Tim Newman. A few new ideas:
+
+- replace $t_1$ with the exponential "decay" (going back in time) to smooth the cusp in the model; there will be still  one parameter here, exponential factor roughly about$1/t_1$
+- compare pairs coming from the same cell - John will send me the info - see if same-cell pairs are more corerlated than random
+- try aligning cells independnetly from the nuclear membrane breakdown, based on correlation
+- think of other properties, e.g.  in random walk there is "persistance", the fraction of drunks that do not fall over the cliff
+

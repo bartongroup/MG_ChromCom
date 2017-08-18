@@ -348,7 +348,7 @@ plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', withpa
     }
     ), collapse=", ")
   }
-  g <- timelinePanel(m, single=TRUE, ...) +
+  g <- timelinePanel(m, single=TRUE, ...)
     #geom_vline(xintercept=chr$pars$t1, colour="skyblue", linetype=2) +
     #geom_vline(xintercept=(chr$pars$t1+chr$pars$dt2), colour="salmon", linetype=2) +
     #geom_vline(xintercept=(chr$pars$t1+chr$pars$dt3), colour="brown", linetype=2)
