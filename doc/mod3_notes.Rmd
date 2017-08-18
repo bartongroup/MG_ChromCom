@@ -68,6 +68,16 @@ It looks like we need to free $\Delta t_2$.
 ```{r, fig.width=5}
 pars <- c3pars()
 free <- c("tau", "k1", "k2", "dt2")
-chr.scr.d2 <- cacheData("fitv_scramble_n3000_tau_k1_k2_dt2", fitChr, echr.scr, pars, free, nsim=3000, ntry=32, ncores=6, binDir=binDir)
-plotTimelines(chr.scr.d2, expdata = echr.scr, withpars=TRUE)
+chr.scr <- cacheData("fitv_scramble_n3000_tau_k1_k2_dt2", fitChr, echr.scr, pars, free, nsim=3000, ntry=32, ncores=6, binDir=binDir)
+plotTimelines(chr.scr, expdata = echr.scr, withpars=TRUE)
 ```
+
+## NCAPD2
+
+```{r, fig.width=5}
+pars <- c3pars()
+free <- c("tau", "k1", "k2", "dt2")
+chr.d2 <- cacheData("fitv_NCAPD2_n3000_tau_k1_k2_dt2", fitChr, echr.d2, pars, free, nsim=3000, ntry=32, ncores=6, binDir=binDir)
+plotTimelines(chr.d2, expdata = echr.d2, withpars=TRUE)
+```
+
