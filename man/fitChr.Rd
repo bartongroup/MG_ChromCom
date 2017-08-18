@@ -24,6 +24,5 @@ A \code{ChromCom3} object with the best-fitting model. "rms" field
   is added. \code{\link{optim}} function is used for minimization with method "L-BFGS-B".
 }
 \description{
-Fits data with a model in which t1, k1, k2 and dt2 are free parameters. If
-npar=3, only first three of them are used.
+Fits data with a model in which \code{freepars} are free.
 }

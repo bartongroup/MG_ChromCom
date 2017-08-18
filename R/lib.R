@@ -92,7 +92,7 @@ ChromCom3 <- function(pars, time=NULL, cells=NULL, timepars=list(start=-140, sto
 
 #' \code{c3pars} object constructor
 #'
-#' @param t1 Start time
+#' @param tau Start time scale
 #' @param dt2 Delay until P->R is possible
 #' @param dt3 Delay until P>B is possible
 #' @param k1 B->P rate
@@ -103,7 +103,7 @@ ChromCom3 <- function(pars, time=NULL, cells=NULL, timepars=list(start=-140, sto
 #' @return Model parameters object
 #' @export
 c3pars <- function(
-  t1 = -30,
+  tau = -20,
   dt2 = 0,
   dt3 = 0,
   k1 = 0.04,
@@ -115,14 +115,14 @@ c3pars <- function(
   if(dummy) {
     pars = list()
   } else {
-    pars <- list(t1=t1, dt2=dt2, dt3=dt3, k1=k1, k2=k2, k3=k3, squeeze=squeeze)
+    pars <- list(tau=tau, dt2=dt2, dt3=dt3, k1=k1, k2=k2, k3=k3, squeeze=squeeze)
   }
   class(pars) <- append(class(pars), "c3pars")
   return(pars)
 }
 
 
-#' Generate transition times
+#' Generate transition times (OBSOLETE)
 #'
 #' @param pars Parameters of the simulation (t1, dt2, k1, k2)
 #'
@@ -146,6 +146,7 @@ transitionTimes <- function(pars) {
 timeIndex <- function(t, tp, maxn=10000) {
   i <- round((t - tp$start) / tp$step) + 1
   if(i > maxn) i <- maxn
+  if(i < 1) i <- 1
   return(i)
 }
 
@@ -195,9 +196,10 @@ stateTransition <- function(state, i, i2, i3, p1, p2, p3) {
 #' @return A cell
 tcSimulation <- function(pars, timepars) {
   cell <- rep("-", timepars$n)
-  i1 <- timeIndex(pars$t1, timepars)
-  i2 <- timeIndex(pars$t1 + pars$dt2, timepars)
-  i3 <- timeIndex(pars$t1 + pars$dt3, timepars)
+  t1 <- -rexp(1, 1 / pars$tau)  # generate random t1 with exponential dist
+  i1 <- timeIndex(t1, timepars)
+  i2 <- timeIndex(t1 + pars$dt2, timepars)
+  i3 <- timeIndex(t1 + pars$dt3, timepars)
   p1 <- 1 - exp(-timepars$step * pars$k1)
   p2 <- 1 - exp(-timepars$step * pars$k2)
   p3 <- 1 - exp(-timepars$step * pars$k3)
@@ -262,7 +264,7 @@ cellCount <- function(cells, time, colours) {
 #'
 #' @return A \code{ChrCom3} object with simulation results.
 #' @export
-generateCells <- function(chr, nsim=1000, method="transition") {
+generateCells <- function(chr, nsim=1000, method="simulation") {
   cells <- t(replicate(nsim, timelineCell(chr$pars, chr$timepars, method)))
   cnt <- cellCount(cells, chr$time, chr$colours)
   chr$cells <- cells
@@ -347,9 +349,9 @@ plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', withpa
     ), collapse=", ")
   }
   g <- timelinePanel(m, single=TRUE, ...) +
-    geom_vline(xintercept=chr$pars$t1, colour="skyblue", linetype=2) +
-    geom_vline(xintercept=(chr$pars$t1+chr$pars$dt2), colour="salmon", linetype=2) +
-    geom_vline(xintercept=(chr$pars$t1+chr$pars$dt3), colour="brown", linetype=2)
+    #geom_vline(xintercept=chr$pars$t1, colour="skyblue", linetype=2) +
+    #geom_vline(xintercept=(chr$pars$t1+chr$pars$dt2), colour="salmon", linetype=2) +
+    #geom_vline(xintercept=(chr$pars$t1+chr$pars$dt3), colour="brown", linetype=2)
   if(!is.null(expdata)) {
     exm <- meltTimelines(expdata, smooth=TRUE, k=15)
     rms <- oeError(chr, expdata)
@@ -475,8 +477,7 @@ errorFun <- function(p, pars, echr, nsim) {
 
 #' Fit ChromCom data with a model
 #'
-#' Fits data with a model in which t1, k1, k2 and dt2 are free parameters. If
-#' npar=3, only first three of them are used.
+#' Fits data with a model in which \code{freepars} are free.
 #' @param echr A \code{ChromCom3} object with experimental data
 #' @param pars A \code{c3pars} object with initial parameters
 #' @param freepars A character vector with names of free parameters
@@ -492,8 +493,8 @@ fitChr <- function(echr, pars, freepars, nsim=1000, ntry=10, ncores=4) {
 
   #chr <- ChromCom3(pars)
   p <- parVector(pars, freepars)
-  lower <- c(t1=-50, k1=0, k2=0, k3=0, dt2=0, dt3=0, squeeze=0)
-  upper <- c(t1=30, k1=0.2, k2=0.2, k3=0.2, dt2=30, dt3=30, squeeze=0.4)
+  lower <- c(tau=3, k1=0, k2=0, k3=0, dt2=0, dt3=0, squeeze=0)
+  upper <- c(tau=50, k1=0.2, k2=0.2, k3=0.2, dt2=30, dt3=30, squeeze=0.4)
   lower <- lower[freepars]
   upper <- upper[freepars]
 

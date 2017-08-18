@@ -30,7 +30,7 @@ Let's try if it works. An example for $t_1 = -60$ min, $\Delta t = 0$, $k_1 = 0.
 
 ```{r, fig.width=5, fig.height=3}
 pars <- c3pars(
-  t1 = -60,
+  tau = 30,
   dt2 = 0,
   k1 = 0.04,
   k2 = 0.04
