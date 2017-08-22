@@ -336,11 +336,12 @@ timelinePanel <- function(m, single=FALSE, xmin=as.numeric(NA), xmax=as.numeric(
 #' @param k Window size for smoothing
 #' @param expdata Experimental data to add to the plot (another \code{ChrCom3} object)
 #' @param title Title of the plot
+#' @param title.size Font size for the title
 #' @param withpars Title will be replaced with model parameters
 #' @param ... Other parameters passed to \code{\link{timelinePanel}}
 #'
 #' @export
-plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', withpars=FALSE, ...) {
+plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', title.size=10, withpars=FALSE, ...) {
   m <- meltTimelines(chr, smooth=smooth, k=k)
   if(!is.null(expdata)) {
     exm <- meltTimelines(expdata, smooth=TRUE, k=15)
@@ -358,7 +359,7 @@ plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', withpa
   if(!is.null(expdata)) {
     g <- g + geom_line(data=exm, aes(colour=Colour), size=0.2)
   }
-  g <- g + labs(title=title) + theme(plot.title = element_text(size=12))
+  g <- g + labs(title=title) + theme(plot.title = element_text(size=title.size))
   g
 }
 

@@ -5,7 +5,7 @@
 \title{Plot time lines}
 \usage{
 plotTimelines(chr, smooth = FALSE, k = 5, expdata = NULL, title = "",
-  withpars = FALSE, ...)
+  title.size = 10, withpars = FALSE, ...)
 }
 \arguments{
 \item{chr}{A \code{ChrCom3} object with data}
@@ -17,6 +17,8 @@ plotTimelines(chr, smooth = FALSE, k = 5, expdata = NULL, title = "",
 \item{expdata}{Experimental data to add to the plot (another \code{ChrCom3} object)}
 
 \item{title}{Title of the plot}
+
+\item{title.size}{Font size for the title}
 
 \item{withpars}{Title will be replaced with model parameters}
 

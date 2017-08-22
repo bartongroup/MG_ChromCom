@@ -1,6 +1,9 @@
-.libPaths("/cluster/gjb_lab/mgierlinski/R/x86_64-redhat-linux-gnu-library/3.3")
-.libPaths("/home/mgierlinski/R/x86_64-pc-linux-gnu-library/3.4")
-.libPaths("/Users/mgierlinski/Library/R/3.4/library")
+paths <- c(
+  "/cluster/gjb_lab/mgierlinski/R/x86_64-redhat-linux-gnu-library/3.3",
+  "/home/mgierlinski/R/x86_64-pc-linux-gnu-library/3.4",
+  "/Users/mgierlinski/Library/R/3.4/library"
+)
+for(path in paths) if(dir.exists(path)) .libPaths(path)
 
 library(shiny)
 library(ggplot2)
@@ -20,7 +23,7 @@ ui <- shinyUI(fluidPage(
     sidebarPanel(
       radioButtons("dataSelection", "Background data selection", choices=names(dataFile)),
       radioButtons("modelResolution", "Model resolution", choices=list(Low = "low", Medium = "medium", High = "high")),
-      sliderInput("t1", "Start time", min=-80, max=20, value=-27, step=1),
+      sliderInput("tau", "Start timescale", min=0, max=80, value=20, step=0.1),
       sliderInput("k1", "B->P rate", min=0, max=0.2, value=0.05, step=0.001),
       sliderInput("k2", "P->R rate", min=0, max=0.2, value=0.03, step=0.001),
       sliderInput("k3", "P->B rate", min=0, max=0.2, value=0, step=0.001),
@@ -43,7 +46,7 @@ server <- shinyServer(function(input, output) {
 
   sliderValues <- reactive({
     c3pars(
-      t1 = input$t1,
+      tau = input$tau,
       k1 = input$k1,
       k2 = input$k2,
       k3 = input$k3,

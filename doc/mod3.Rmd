@@ -71,28 +71,10 @@ The model consists of three states and a set of rules.
 - P$\rightarrow$R occurs after $-t_1 + \Delta t_2$ with rate $k_2$
 - P$\rightarrow$B occurs after $-t_1 + \Delta t_3$ with rate $k_3$
 
-## Details
 
-There are two ways the model can be calculated. The transition model is simpler, but does not allow for P$\rightarrow$B transitions. The simulation model is more flexible and, at this moment, applied as default.
+I use a Markov chain approach. The next state is generated from the current state based on rules outlined above. The rates, $k$, are converted into probabilities over a given time step $\Delta t$ as $Pr = 1 - e^{1 - k\Delta t}$. The transition time, $t_1$, is generated before the simulation starts for a given cell.
 
-### "Transition" model
-
-For each cell we generate two transitions times (B$\rightarrow$P and P$\rightarrow$R) according to an exponential distribution, 
-
-\[
-\begin{eqnarray}
-Pr(B \rightarrow P; t) & = & 1 - e^{-k_1 (t - t_1)} \\
-Pr(P \rightarrow R; t) & = & 1 - e^{-k_2 \left[t - (t_1 + t_{\rm BP} + \Delta t_2\right]}
-\end{eqnarray}
-\]
-
-where $t_{\rm BP}$ is the B$\rightarrow$P transition time, generated with the first distribution. The exponential distribution describes a process with constant probability of the event happening. From transition times we build the timeline of the cell, its state as a function of time. 
-
-### "Simulation" model
-
-This is a Markov chain approach. The next state is generated from the current state based on rules outlined above. The rates, $k$, are converted into probabilities over a given time step $\Delta t$ as $Pr = 1 - e^{1 - k\Delta t}$.
-
-With either approach the cell timeline is repeated for 10000 times and then the colour proportions are found at each time point.
+The cell timeline is repeated for $n_{\rm cell}$ times and then the colour proportions are found at each time point.
 
 ## Example
 
@@ -124,7 +106,50 @@ ${\rm rms} = \sqrt{\sum_{c \in \{B,P,R\}} \sum_i (O_{c,i} - E_{c,i})^2}$
 
 that is, the square root of the sum of squared residuals over all time points and all colours.
 
-We apply the following strategy:
+## Four parameters free
+
+First, we fit the model with $\tau$, $\Delta t_2$, $k_1$ and $k_2$ free. To improve the chances of finding the correct global minimum, I run the fit with 10,000 cells and 100 tries.
+
+### Scramble
+
+```{r, fig.width=5}
+pars <- c3pars()
+free <- c("tau", "k1", "k2", "dt2")
+chr.scr <- cacheData("fitv_scramble_n10000_tau_k1_k2_dt2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+plotTimelines(chr.scr, expdata = echr.scr, withpars=TRUE)
+```
+
+### NCAPD2
+
+```{r, fig.width=5}
+pars <- c3pars()
+free <- c("tau", "k1", "k2", "dt2")
+chr.d2 <- cacheData("fitv_NCAPD2_n10000_tau_k1_k2_dt2", fitChr, echr.d2, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+plotTimelines(chr.d2, expdata = echr.d2, withpars=TRUE)
+```
+
+
+### NCAPD3
+
+```{r, fig.width=5}
+pars <- c3pars()
+free <- c("tau", "k1", "k2", "dt2")
+chr.d3 <- cacheData("fitv_NCAPD3_n10000_tau_k1_k2_dt2", fitChr, echr.d3, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+plotTimelines(chr.d3, expdata = echr.d3, withpars=TRUE)
+```
+
+### SMC2
+
+```{r, fig.width=5}
+pars <- c3pars()
+free <- c("tau", "k1", "k2", "dt2")
+chr.smc <- cacheData("fitv_SMC2_n10000_tau_k1_k2_dt2", fitChr, echr.smc, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+plotTimelines(chr.smc, expdata = echr.smc, withpars=TRUE)
+```
+
+## Some parameters fixed
+
+This was an older idea, do we want to do someting similar again?
 
 - fit scramble with $t_1$, $k_1$ and $k_2$ free
 - for NCAPD2 we expect only $k_2$ to change, so fix $k_1$ from scramble
@@ -132,70 +157,3 @@ We apply the following strategy:
 - for SMC2 $k_1$ fixed from NCAPD3, $k_2$ fixed from NCAPD2 and see if this matches; then do a fit
 - lets keep all $\Delta t$ fixed
 
-## Scramble
-
-```{r, fig.width=5}
-pars <- c3pars()
-free <- c("t1", "k1", "k2")
-chr.scr <- cacheData("fit_scramble_n3000_t1_k1_k2", fitChr, echr.scr, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
-plotTimelines(chr.scr, expdata = echr.scr, withpars=TRUE)
-```
-
-## NCAPD2
-
-On the left, $k_1$ is fixed from scramble, on the right, for comparison, it is free.
-
-```{r, fig.width=10}
-pars <- chr.scr$pars
-free <- c("t1", "k2")
-chr.d2 <- cacheData("fit_NCAPD2_n3000_t1_k2", fitChr, echr, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
-g1 <- plotTimelines(chr.d2, expdata = echr.d2, withpars=TRUE)
-
-pars <- chr.scr$pars
-free <- c("t1", "k1", "k2")
-chr.d2.f <- cacheData("fit_NCAPD2_n3000_t1_k1_k2", fitChr, echr.d2, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
-g2 <- plotTimelines(chr.d2.f, expdata = echr.d2, withpars=TRUE)
-
-grid.arrange(g1, g2, ncol=2)
-```
-
-## NCAPD3
-
-On the left, $k_2$ is fixed from scramble, on the right, for comparison, it is free.
-
-```{r, fig.width=10}
-pars <- chr.scr$pars
-free <- c("t1", "k1")
-chr.d3 <- cacheData("fit_NCAPD3_n3000_t1_k1", fitChr, echr, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
-g1 <- plotTimelines(chr.d3, expdata = echr.d3, withpars=TRUE)
-
-pars <- chr.scr$pars
-free <- c("t1", "k1", "k2")
-chr.d3.f <- cacheData("fit_NCAPD3_n3000_t1_k1_k2", fitChr, echr.d3, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
-g2 <- plotTimelines(chr.d3.f, expdata = echr.d3, withpars=TRUE)
-
-grid.arrange(g1, g2, ncol=2)
-```
-
-
-## SMC2
-
-On the left, $k_1$ is fixed from NCAPD3, $k_2$ fixed from NCAPD2, on the right, for comparison, both are free.
-
-```{r, fig.width=10}
-pars <- chr.scr$pars
-pars$k1 <- chr.d3$pars$k1
-pars$k2 <- chr.d2$pars$k2
-free <- c("t1")
-chr.smc <- cacheData("fit_SMC2_n3000_t1", fitChr, echr.smc, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
-g1 <- plotTimelines(chr.smc, expdata = echr.smc, withpars=TRUE)
-
-pars <- chr.scr$pars
-pars$k1 <- chr.d3$pars$k1
-pars$k2 <- chr.d2$pars$k2
-free <- c("t1", "k1", "k2")
-chr.smc.f <- cacheData("fit_SMC2_n3000_t1_k1_k2", fitChr, echr.smc, pars, free, nsim=3000, ntry=16, ncores=8, binDir=binDir)
-g2 <- plotTimelines(chr.smc.f, expdata = echr.smc, withpars=TRUE)
-
-grid.arrange(g1, g2, ncol=2)
-```
