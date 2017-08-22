@@ -15,4 +15,5 @@ Imports:
     reshape2,
     ggplot2,
     caTools,
-    gridExtra
+    gridExtra,
+    latex2exp

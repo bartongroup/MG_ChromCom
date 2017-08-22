@@ -14,6 +14,7 @@ library(knitr)
 library(mylib)
 library(ggplot2)
 library(gridExtra)
+library(latex2exp)
 binDir <- "../RData"
 opts_chunk$set(fig.path='../figure/mpd3-', 
                cache.path='../cache/mod3-', 
@@ -64,10 +65,11 @@ The model consists of three states and a set of rules.
 ## Rules
 
 - Simulation is carried out at a discrete time step of 1 min
-- The cell is in state B before time $t_1$.
-- B$\rightarrow$P occurs after $t_1$ with rate $k_1$
-- P$\rightarrow$R occurs after $t_1 + \Delta t_2$ with rate $k_2$
-- P$\rightarrow$B occurs after $t_1 + \Delta t_3$ with rate $k_3$
+- Time $t_1$ is a random variable with exponential distirbution with time scale $\tau$
+- The cell is in state B before time $-t_1$.
+- B$\rightarrow$P occurs after $-t_1$ with rate $k_1$
+- P$\rightarrow$R occurs after $-t_1 + \Delta t_2$ with rate $k_2$
+- P$\rightarrow$B occurs after $-t_1 + \Delta t_3$ with rate $k_3$
 
 ## Details
 
@@ -90,7 +92,7 @@ where $t_{\rm BP}$ is the B$\rightarrow$P transition time, generated with the fi
 
 This is a Markov chain approach. The next state is generated from the current state based on rules outlined above. The rates, $k$, are converted into probabilities over a given time step $\Delta t$ as $Pr = 1 - e^{1 - k\Delta t}$.
 
-With either approach the cell timeline is repeated for 3000 times and then the colour proportions are found at each time point.
+With either approach the cell timeline is repeated for 10000 times and then the colour proportions are found at each time point.
 
 ## Example
 
@@ -98,7 +100,7 @@ Here is an example of the model.
 
 ```{r, fig.width=4, fig.height=3}
 pars <- c3pars(
-  t1 = -30,
+  tau = 20,
   dt2 = 0,
   k1 = 0.05,
   k2 = 0.03

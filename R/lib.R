@@ -342,26 +342,46 @@ timelinePanel <- function(m, single=FALSE, xmin=as.numeric(NA), xmax=as.numeric(
 #' @export
 plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', withpars=FALSE, ...) {
   m <- meltTimelines(chr, smooth=smooth, k=k)
+  if(!is.null(expdata)) {
+    exm <- meltTimelines(expdata, smooth=TRUE, k=15)
+    rms <- oeError(chr, expdata)
+  } else {
+    rms <- NULL
+  }
   if(withpars) {
-    title <- paste0(lapply(names(chr$pars), function(name) {
-      ifelse(name=="squeeze", "", paste0(name, "=", sprintf("%.3g", chr$pars[[name]])))
-    }
-    ), collapse=", ")
+    title <- parsString(chr$pars, rms)
   }
   g <- timelinePanel(m, single=TRUE, ...)
     #geom_vline(xintercept=chr$pars$t1, colour="skyblue", linetype=2) +
     #geom_vline(xintercept=(chr$pars$t1+chr$pars$dt2), colour="salmon", linetype=2) +
     #geom_vline(xintercept=(chr$pars$t1+chr$pars$dt3), colour="brown", linetype=2)
   if(!is.null(expdata)) {
-    exm <- meltTimelines(expdata, smooth=TRUE, k=15)
-    rms <- oeError(chr, expdata)
-    if(withpars) title <- paste0(title, sprintf(", rms=%.3g", rms))
     g <- g + geom_line(data=exm, aes(colour=Colour), size=0.2)
   }
-  g <- g + labs(title=title) + theme(plot.title = element_text(size=10))
+  g <- g + labs(title=title) + theme(plot.title = element_text(size=12))
   g
 }
 
+parsString <- function(pars, rms) {
+  texNames <- list(
+    tau = "\\tau",
+    dt2 = "\\Delta t_2",
+    dt3 = "\\Delta t_3",
+    k1 = "k_1",
+    k2 = "k_2",
+    k3 = "k_3",
+    squeeze = "S",
+    rms = "rms"
+  )
+  if(!is.null(rms)) pars$rms <- rms
+
+  nms <- grep("squeeze", names(pars), value=TRUE, invert=TRUE)
+  txt <- paste0(lapply(nms, function(name) {
+    paste0("$", texNames[[name]], " = ", sprintf("%.3g", pars[[name]]), "$")
+  }
+  ), collapse=",  ")
+  TeX(txt)
+}
 
 #' Plot cell colour map
 #'
