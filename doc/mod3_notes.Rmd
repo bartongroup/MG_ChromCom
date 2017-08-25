@@ -15,7 +15,7 @@ library(ggplot2)
 library(gridExtra)
 library(reshape2)
 library(parallel)
-
+library(latex2exp)
 binDir <- "../RData"
 ```
 
@@ -44,6 +44,7 @@ echr.scr <- experimentalData(dataFile$scramble)
 echr.d2 <- experimentalData(dataFile$NCAPD2)
 echr.d3 <- experimentalData(dataFile$NCAPD3)
 echr.smc <- experimentalData(dataFile$SMC2)
+echr.rad <- experimentalData(dataFile$RAD21)
 
 plotTimelines(echr.scr, smooth=TRUE, k=15)
 ```
@@ -59,8 +60,8 @@ Fitting with $k_1$, $k_2$ and $tau$ free.
 ```{r, fig.width=5}
 pars <- c3pars()
 free <- c("tau", "k1", "k2")
-chr.scr <- cacheData("fitv_scramble_n3000_tau_k1_k2", fitChr, echr.scr, pars, free, nsim=3000, ntry=32, ncores=6, binDir=binDir)
-plotTimelines(chr.scr, expdata = echr.scr, withpars=TRUE)
+#chr.scr <- cacheData("fitv_scramble_n10000_tau_k1_k2", fitChr, echr.scr, pars, free, nsim=3000, ntry=32, ncores=6, binDir=binDir)
+#plotTimelines(chr.scr, expdata = echr.scr, withpars=TRUE)
 ```
 
 It looks like we need to free $\Delta t_2$.
@@ -97,4 +98,12 @@ pars <- c3pars()
 free <- c("tau", "k1", "k2", "dt2")
 chr.smc <- cacheData("fitv_SMC2_n10000_tau_k1_k2_dt2", fitChr, echr.smc, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
 plotTimelines(chr.smc, expdata = echr.smc, withpars=TRUE)
+```
+
+# 25/08/2017
+
+Downloaded new data sets that John emailed me a few days ago. New set RAD21 and corrected sets SMC2, MK1775only and MK1775andICRF193.
+
+```{r, fig.width=5}
+plotTimelines(chr.smc, expdata = echr.rad, withpars=TRUE)
 ```
