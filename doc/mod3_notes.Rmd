@@ -45,6 +45,8 @@ echr.d2 <- experimentalData(dataFile$NCAPD2)
 echr.d3 <- experimentalData(dataFile$NCAPD3)
 echr.smc <- experimentalData(dataFile$SMC2)
 echr.rad <- experimentalData(dataFile$RAD21)
+echr.mk <- experimentalData(dataFile$MK1775)
+#echr.mki <- experimentalData(dataFile$MK1775_ICRF193)
 
 plotTimelines(echr.scr, smooth=TRUE, k=15)
 ```
@@ -97,7 +99,7 @@ plotTimelines(chr.d3, expdata = echr.d3, withpars=TRUE)
 pars <- c3pars()
 free <- c("tau", "k1", "k2", "dt2")
 chr.smc <- cacheData("fitv_SMC2_n10000_tau_k1_k2_dt2", fitChr, echr.smc, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
-plotTimelines(chr.smc, expdata = echr.smc, withpars=TRUE)
+#plotTimelines(chr.smc, expdata = echr.smc, withpars=TRUE)
 ```
 
 # 25/08/2017
@@ -107,3 +109,9 @@ Downloaded new data sets that John emailed me a few days ago. New set RAD21 and 
 ```{r, fig.width=5}
 plotTimelines(chr.smc, expdata = echr.rad, withpars=TRUE)
 ```
+
+Talking to John and Tomo:
+
+
+- change $\Delta t_n$ into $\tau_n$, that is, randomize it.
+- for scramble add one more param: shift zero. Our definition of zero is not very accurate, so there might be a shift of a few minutes. Start with freezing $t_0$ for scramble.
