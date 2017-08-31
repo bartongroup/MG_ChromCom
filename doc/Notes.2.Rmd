@@ -115,3 +115,4 @@ Talking to John and Tomo:
 
 - change $\Delta t_n$ into $\tau_n$, that is, randomize it.
 - for scramble add one more param: shift zero. Our definition of zero is not very accurate, so there might be a shift of a few minutes. Start with freezing $t_0$ for scramble.
+

@@ -1,0 +1,37 @@
+---
+title: "Chromosome compaction - simple three-state model"
+output: 
+  html_notebook:
+    toc: false
+    toc_float: false
+    code_folding: hide
+    css: nice_notebook.css
+---
+
+```{r}
+library(mylib)
+library(ChromCom)
+library(ggplot2)
+library(gridExtra)
+library(reshape2)
+library(parallel)
+library(latex2exp)
+binDir <- "../RData"
+```
+
+This is a continuation of the previous notebook, [Notes.2](), with a new model.
+
+
+# 31/08/2017
+
+Implementing changes as outlined in the discussion.
+
+
+## Scramble
+
+```{r, fig.width=5}
+pars <- c3pars()
+free <- c("tau1", "k1", "k2", "tau2")
+chr.scr <- cacheData("fitv_scramble_n10000_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=100, ntry=20, ncores=6, binDir=binDir)
+plotTimelines(chr.scr, expdata = echr.scr, withpars=TRUE)
+```

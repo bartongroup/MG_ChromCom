@@ -93,9 +93,9 @@ ChromCom3 <- function(pars, time=NULL, cells=NULL, timepars=list(start=-140, sto
 
 #' \code{c3pars} object constructor
 #'
-#' @param tau Start time scale
-#' @param dt2 Delay until P->R is possible
-#' @param dt3 Delay until P>B is possible
+#' @param tau1 Timescale for onset of B->P transition
+#' @param tau2 Timescale for delay of P->R transition (zero if no delay)
+#' @param tau3 Timescale for delay of P->B transition (zero if no delay)
 #' @param k1 B->P rate
 #' @param k2 P->R rate
 #' @param k3 R->B rate
@@ -104,9 +104,9 @@ ChromCom3 <- function(pars, time=NULL, cells=NULL, timepars=list(start=-140, sto
 #' @return Model parameters object
 #' @export
 c3pars <- function(
-  tau = -20,
-  dt2 = 0,
-  dt3 = 0,
+  tau1 = -20,
+  tau2 = 0,
+  tau3 = 0,
   k1 = 0.04,
   k2 = 0.04,
   k3 = 0,
@@ -116,7 +116,7 @@ c3pars <- function(
   if(dummy) {
     pars = list()
   } else {
-    pars <- list(tau=tau, dt2=dt2, dt3=dt3, k1=k1, k2=k2, k3=k3, squeeze=squeeze)
+    pars <- list(tau1=tau1, tau2=tau2, tau3=tau3, k1=k1, k2=k2, k3=k3, squeeze=squeeze)
   }
   class(pars) <- append(class(pars), "c3pars")
   return(pars)
@@ -153,7 +153,7 @@ timeIndex <- function(t, tp, maxn=10000) {
 
 
 
-#' Create a cell using transition method
+#' Create a cell using transition method (OBSOLETE)
 #'
 #' @param pars Model parameters
 #' @param timepars Time parameters
@@ -197,10 +197,18 @@ stateTransition <- function(state, i, i2, i3, p1, p2, p3) {
 #' @return A cell
 tcSimulation <- function(pars, timepars) {
   cell <- rep("-", timepars$n)
-  t1 <- -rexp(1, 1 / pars$tau)  # generate random t1 with exponential dist
+
+  # Find three onset timepoints
+  t1 <- -rexp(1, 1 / pars$tau1)  # generate random t1 with exponential distribution
+  t2 <- t1 + ifelse(pars$tau2 > 0, rexp(1, 1/pars$tau2), 0)
+  t3 <- t1 + ifelse(pars$tau3 > 0, rexp(1, 1/pars$tau3), 0)
+
+  # integer indexes in the time table
   i1 <- timeIndex(t1, timepars)
-  i2 <- timeIndex(t1 + pars$dt2, timepars)
-  i3 <- timeIndex(t1 + pars$dt3, timepars)
+  i2 <- timeIndex(t2, timepars)
+  i3 <- timeIndex(t3, timepars)
+
+  # transition probabilities from rates
   p1 <- 1 - exp(-timepars$step * pars$k1)
   p2 <- 1 - exp(-timepars$step * pars$k2)
   p3 <- 1 - exp(-timepars$step * pars$k3)
@@ -366,9 +374,9 @@ plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', title.
 
 parsString <- function(pars, rms) {
   texNames <- list(
-    tau = "\\tau",
-    dt2 = "\\Delta t_2",
-    dt3 = "\\Delta t_3",
+    tau1 = "\\tau_1",
+    tau2 = "\\tau_2",
+    tau3 = "\\tau_3",
     k1 = "k_1",
     k2 = "k_2",
     k3 = "k_3",
@@ -515,8 +523,8 @@ fitChr <- function(echr, pars, freepars, nsim=1000, ntry=10, ncores=4) {
 
   #chr <- ChromCom3(pars)
   p <- parVector(pars, freepars)
-  lower <- c(tau=3, k1=0, k2=0, k3=0, dt2=0, dt3=0, squeeze=0)
-  upper <- c(tau=50, k1=0.2, k2=0.2, k3=0.2, dt2=30, dt3=30, squeeze=0.4)
+  lower <- c(tau1=3, k1=0, k2=0, k3=0, tau2=3, tau3=3, squeeze=0)
+  upper <- c(tau1=50, k1=0.2, k2=0.2, k3=0.2, tau2=50, tau3=50, squeeze=0.4)
   lower <- lower[freepars]
   upper <- upper[freepars]
 
