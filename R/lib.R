@@ -93,6 +93,7 @@ ChromCom3 <- function(pars, time=NULL, cells=NULL, timepars=list(start=-140, sto
 
 #' \code{c3pars} object constructor
 #'
+#' @param t0 Nuclear envelope breakdown time (should be zero)
 #' @param tau1 Timescale for onset of B->P transition
 #' @param tau2 Timescale for delay of P->R transition (zero if no delay)
 #' @param tau3 Timescale for delay of P->B transition (zero if no delay)
@@ -104,7 +105,8 @@ ChromCom3 <- function(pars, time=NULL, cells=NULL, timepars=list(start=-140, sto
 #' @return Model parameters object
 #' @export
 c3pars <- function(
-  tau1 = -20,
+  t0 = 0,
+  tau1 = 20,
   tau2 = 0,
   tau3 = 0,
   k1 = 0.04,
@@ -116,7 +118,7 @@ c3pars <- function(
   if(dummy) {
     pars = list()
   } else {
-    pars <- list(tau1=tau1, tau2=tau2, tau3=tau3, k1=k1, k2=k2, k3=k3, squeeze=squeeze)
+    pars <- list(t0=t0, tau1=tau1, tau2=tau2, tau3=tau3, k1=k1, k2=k2, k3=k3, squeeze=squeeze)
   }
   class(pars) <- append(class(pars), "c3pars")
   return(pars)
@@ -199,7 +201,7 @@ tcSimulation <- function(pars, timepars) {
   cell <- rep("-", timepars$n)
 
   # Find three onset timepoints
-  t1 <- -rexp(1, 1 / pars$tau1)  # generate random t1 with exponential distribution
+  t1 <- pars$t0 -rexp(1, 1 / pars$tau1)  # generate random t1 with exponential distribution
   t2 <- t1 + ifelse(pars$tau2 > 0, rexp(1, 1/pars$tau2), 0)
   t3 <- t1 + ifelse(pars$tau3 > 0, rexp(1, 1/pars$tau3), 0)
 
@@ -374,6 +376,7 @@ plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', title.
 
 parsString <- function(pars, rms) {
   texNames <- list(
+    t0 = "t_0",
     tau1 = "\\tau_1",
     tau2 = "\\tau_2",
     tau3 = "\\tau_3",
@@ -385,7 +388,7 @@ parsString <- function(pars, rms) {
   )
   if(!is.null(rms)) pars$rms <- rms
 
-  nms <- grep("squeeze", names(pars), value=TRUE, invert=TRUE)
+  nms <- grep("squeeze|k1", names(pars), value=TRUE, invert=TRUE, perl=TRUE)
   txt <- paste0(lapply(nms, function(name) {
     paste0("$", texNames[[name]], " = ", sprintf("%.3g", pars[[name]]), "$")
   }
@@ -523,8 +526,8 @@ fitChr <- function(echr, pars, freepars, nsim=1000, ntry=10, ncores=4) {
 
   #chr <- ChromCom3(pars)
   p <- parVector(pars, freepars)
-  lower <- c(tau1=3, k1=0, k2=0, k3=0, tau2=3, tau3=3, squeeze=0)
-  upper <- c(tau1=50, k1=0.2, k2=0.2, k3=0.2, tau2=50, tau3=50, squeeze=0.4)
+  lower <- c(t0=-50, tau1=3, k1=0, k2=0, k3=0, tau2=3, tau3=3, squeeze=0)
+  upper <- c(t0=50, tau1=50, k1=0.2, k2=0.2, k3=0.2, tau2=50, tau3=50, squeeze=0.4)
   lower <- lower[freepars]
   upper <- upper[freepars]
 

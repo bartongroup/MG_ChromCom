@@ -19,19 +19,67 @@ library(latex2exp)
 binDir <- "../RData"
 ```
 
+
+```{r, warning=FALSE}
+echr.scr <- experimentalData(dataFile$scramble)
+echr.d2 <- experimentalData(dataFile$NCAPD2)
+echr.d3 <- experimentalData(dataFile$NCAPD3)
+echr.smc <- experimentalData(dataFile$SMC2)
+echr.rad <- experimentalData(dataFile$RAD21)
+echr.mk <- experimentalData(dataFile$MK1775)
+#echr.mki <- experimentalData(dataFile$MK1775_ICRF193)
+```
+
+
 This is a continuation of the previous notebook, [Notes.2](), with a new model.
 
 
 # 31/08/2017
 
-Implementing changes as outlined in the discussion.
+Implementing changes as outlined in the discussion. Now we can force pink to peak before zero, by tweaking the $t_0$ parameter.
+
+```{r, fig.width=5, fig.height=3}
+pars <- c3pars(
+  t0 = -10,
+  tau1 = 10,
+  tau2 = 10,
+  k1 = 0.05,
+  k2 = 0.04
+)
+chr <- ChromCom3(pars)
+chr <- generateCells(chr, nsim=1000)
+plotTimelines(chr)
+```
 
 
 ## Scramble
 
-```{r, fig.width=5}
-pars <- c3pars()
+I did try to fit with five parameters (including $t_0$), but `optim` crashed sooner or later with uncomprehensible error messages. We need to fix $t_0$.
+
+```{r}
+pars <- c3pars(
+  t0 = -10,
+  tau1 = 15.3,
+  tau2 = 9,
+  k1 = 0.047,
+  k2 = 0.064
+)
 free <- c("tau1", "k1", "k2", "tau2")
-chr.scr <- cacheData("fitv_scramble_n10000_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=100, ntry=20, ncores=6, binDir=binDir)
-plotTimelines(chr.scr, expdata = echr.scr, withpars=TRUE)
+chr.scr.10 <- cacheData("fitt_scramble_n10000_t.10_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+
+pars$t0 <- -5
+chr.scr.5 <- cacheData("fitt_scramble_n10000_t.5_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+
+pars$t0 <- -15
+chr.scr.15 <- cacheData("fitt_scramble_n10000_t.15_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+
+pars$t0 <- 0
+chr.scr.0 <- cacheData("fitt_scramble_n10000_t.0_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+```
+
+
+```{r, fig.width=5}
+plotTimelines(chr.scr.5, expdata = echr.scr, withpars=TRUE)
+plotTimelines(chr.scr.10, expdata = echr.scr, withpars=TRUE)
+plotTimelines(chr.scr.15, expdata = echr.scr, withpars=TRUE)
 ```
