@@ -388,7 +388,7 @@ parsString <- function(pars, rms) {
   )
   if(!is.null(rms)) pars$rms <- rms
 
-  nms <- grep("squeeze|k1", names(pars), value=TRUE, invert=TRUE, perl=TRUE)
+  nms <- grep("squeeze|k3", names(pars), value=TRUE, invert=TRUE, perl=TRUE)
   txt <- paste0(lapply(nms, function(name) {
     paste0("$", texNames[[name]], " = ", sprintf("%.3g", pars[[name]]), "$")
   }

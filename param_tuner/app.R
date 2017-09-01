@@ -23,12 +23,13 @@ ui <- shinyUI(fluidPage(
     sidebarPanel(
       radioButtons("dataSelection", "Background data selection", choices=names(dataFile)),
       radioButtons("modelResolution", "Model resolution", choices=list(Low = "low", Medium = "medium", High = "high")),
-      sliderInput("tau", "Start timescale", min=0, max=80, value=20, step=0.1),
+      sliderInput("t0", "NEB correction", min=-30, max=30, value=0, step=0.1),
+      sliderInput("tau1", "Initial timescale", min=0, max=80, value=20, step=0.1),
       sliderInput("k1", "B->P rate", min=0, max=0.2, value=0.05, step=0.001),
       sliderInput("k2", "P->R rate", min=0, max=0.2, value=0.03, step=0.001),
       sliderInput("k3", "P->B rate", min=0, max=0.2, value=0, step=0.001),
-      sliderInput("dt2", "P->R delay", min=0, max=50, value=0, step=1),
-      sliderInput("dt3", "P->B delay", min=0, max=150, value=0, step=1)
+      sliderInput("tau2", "P->R delay timescale", min=0, max=80, value=0, step=0.1),
+      sliderInput("tau3", "P->B delay timescale", min=0, max=80, value=0, step=0.11)
     ),
 
     mainPanel(
@@ -46,12 +47,13 @@ server <- shinyServer(function(input, output) {
 
   sliderValues <- reactive({
     c3pars(
-      tau = input$tau,
+      t0 = input$t0,
+      tau1 = input$tau1,
       k1 = input$k1,
       k2 = input$k2,
       k3 = input$k3,
-      dt2 = input$dt2,
-      dt3 = input$dt3
+      tau2 = input$tau2,
+      tau3 = input$tau3
     )
   })
 
