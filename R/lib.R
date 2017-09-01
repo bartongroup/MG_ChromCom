@@ -23,7 +23,7 @@ dataFile <- list(
   WAPL24  = "../data/WAPL_24hr_noncoloured.csv",
   WAPL48  = "../data/WAPL_48hr_noncoloured.csv",
   MK1775  = "../data/MK1775only_noncoloured.csv",
-  MK1775_ICRF193  = "../data/MK1775andICRF193_noncoloured.csv",
+#  MK1775_ICRF193  = "../data/MK1775andICRF193_noncoloured.csv", # issues with the file
   RAD21 = "../data/RAD21_48hr_noncoloured.csv"
 )
 
