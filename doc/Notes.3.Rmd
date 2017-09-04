@@ -10,12 +10,13 @@ output:
 
 ```{r}
 library(mylib)
-library(ChromCom)
 library(ggplot2)
 library(gridExtra)
 library(reshape2)
 library(parallel)
 library(latex2exp)
+
+source("../R/lib.R")
 binDir <- "../RData"
 ```
 
@@ -74,7 +75,7 @@ pars$t0 <- -15
 chr.scr.15 <- cacheData("fitt_scramble_n10000_t.15_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
 
 pars$t0 <- 0
-#chr.scr.0 <- cacheData("fitt_scramble_n10000_t.0_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+chr.scr.0 <- cacheData("fitt_scramble_n10000_t.0_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
 ```
 
 
