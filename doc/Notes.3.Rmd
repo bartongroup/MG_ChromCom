@@ -94,8 +94,8 @@ script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.Rs"
 logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
 
 for(set in c("NCAPD2", "NCAPD3", "SMC2")) {
-  name <- paste0("fitt_", set, "t0_n100000_tau1_k1_k2_tau2.RData")
+  name <- paste0("fitt_", set, "_t0_n100000_tau1_k1_k2_tau2.RData")
   cmd <- paste("Rscript", script, set, name)
-  qsub(cmd, logDir, name="name", dryrun=TRUE)
+  qsub(cmd, logDir, name=name)
 }
 ```

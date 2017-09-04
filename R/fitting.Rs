@@ -15,7 +15,10 @@ set <- args[1]
 name <- args[2]
 stopifnot(!is.null(dataFile[[set]]))
 
+print(paste("Fitting", set))
+
 echr <- experimentalData(dataFile[[set]])
+str(echr)
 
 pars <- c3pars(
   t0 = 0,
