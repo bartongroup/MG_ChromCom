@@ -93,7 +93,7 @@ Need to do this on the cluster. Made a little script `fitting.Rs` to fit one set
 script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.Rs"
 logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
 
-for(set in c("NCAPD2", "NCAPD3", "SMC2")) {
+for(set in names(dataFile)) {
   name <- paste0("fitt_", set, "_t0_n100000_tau1_k1_k2_tau2.RData")
   cmd <- paste("Rscript", script, set, name)
   qsub(cmd, logDir, name=name)
