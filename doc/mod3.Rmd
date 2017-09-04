@@ -65,11 +65,14 @@ The model consists of three states and a set of rules.
 ## Rules
 
 - Simulation is carried out at a discrete time step of 1 min
-- Time $t_1$ is a random variable with exponential distirbution with time scale $\tau$
-- The cell is in state B before time $-t_1$.
-- B$\rightarrow$P occurs after $-t_1$ with rate $k_1$
-- P$\rightarrow$R occurs after $-t_1 + \Delta t_2$ with rate $k_2$
-- P$\rightarrow$B occurs after $-t_1 + \Delta t_3$ with rate $k_3$
+- There is a fixed time for nuclear envelope breakdown, $t_0 = 0$; $t_0$ can be changed if necessary
+- Time $t_1$ is a random variable with exponential distirbution with time scale $\tau_1$
+- Time $\Delta t_2$ is a random variable with exponential distirbution with time scale $\tau_2$
+- Time $\Delta t_3$ is a random variable with exponential distirbution with time scale $\tau_3$
+- The cell is in state B before time $t_0-t_1$.
+- B$\rightarrow$P occurs after $t_0-t_1$ with rate $k_1$
+- P$\rightarrow$R occurs after $t_0-t_1 + \Delta t_2$ with rate $k_2$
+- P$\rightarrow$B occurs after $t_0-t_1 + \Delta t_3$ with rate $k_3$
 
 
 I use a Markov chain approach. The next state is generated from the current state based on rules outlined above. The rates, $k$, are converted into probabilities over a given time step $\Delta t$ as $Pr = 1 - e^{1 - k\Delta t}$. The transition time, $t_1$, is generated before the simulation starts for a given cell.
@@ -82,10 +85,11 @@ Here is an example of the model.
 
 ```{r, fig.width=4, fig.height=3}
 pars <- c3pars(
-  tau = 20,
-  dt2 = 0,
+  t0 = -10,
+  tau1 = 10,
+  tau2 = 10,
   k1 = 0.05,
-  k2 = 0.03
+  k2 = 0.04
 )
 chr <- ChromCom3(pars)
 chr <- generateCells(chr, nsim=3000)
@@ -108,16 +112,41 @@ that is, the square root of the sum of squared residuals over all time points an
 
 ## Four parameters free
 
-First, we fit the model with $\tau$, $\Delta t_2$, $k_1$ and $k_2$ free. To improve the chances of finding the correct global minimum, I run the fit with 10,000 cells and 100 tries.
+First, we fit the model with $\tau_1$, $\tau_2$, $k_1$ and $k_2$ free. To improve the chances of finding the correct global minimum, I run the fit with 10,000 cells and 100 tries.
 
 ### Scramble
 
-```{r, fig.width=5}
-pars <- c3pars()
-free <- c("tau", "k1", "k2", "dt2")
-chr.scr <- cacheData("fitv_scramble_n10000_tau_k1_k2_dt2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
-plotTimelines(chr.scr, expdata = echr.scr, withpars=TRUE)
+We suspect that $t_0$ might not be exactly zero. Hence I fit the model with $t_0 = 0, -5, -10, -15$ minutes.
+
+```{r, include=FALSE}
+pars <- c3pars(
+  t0 = -10,
+  tau1 = 15.3,
+  tau2 = 9,
+  k1 = 0.047,
+  k2 = 0.064
+)
+free <- c("tau1", "k1", "k2", "tau2")
+chr.scr.10 <- cacheData("fitt_scramble_n10000_t.10_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+
+pars$t0 <- -5
+chr.scr.5 <- cacheData("fitt_scramble_n10000_t.5_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+
+pars$t0 <- -15
+chr.scr.15 <- cacheData("fitt_scramble_n10000_t.15_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+
+pars$t0 <- 0
+chr.scr.0 <- cacheData("fitt_scramble_n10000_t.0_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
 ```
+
+```{r, fig.width=5}
+plotTimelines(chr.scr.0, expdata = echr.scr, withpars=TRUE)
+plotTimelines(chr.scr.5, expdata = echr.scr, withpars=TRUE)
+plotTimelines(chr.scr.10, expdata = echr.scr, withpars=TRUE)
+plotTimelines(chr.scr.15, expdata = echr.scr, withpars=TRUE)
+```
+
+
 
 ### NCAPD2
 

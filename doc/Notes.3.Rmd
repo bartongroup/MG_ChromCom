@@ -80,7 +80,22 @@ chr.scr.0 <- cacheData("fitt_scramble_n10000_t.0_tau1_k1_k2_tau2", fitChr, echr.
 
 
 ```{r, fig.width=5}
+plotTimelines(chr.scr.0, expdata = echr.scr, withpars=TRUE)
 plotTimelines(chr.scr.5, expdata = echr.scr, withpars=TRUE)
 plotTimelines(chr.scr.10, expdata = echr.scr, withpars=TRUE)
 plotTimelines(chr.scr.15, expdata = echr.scr, withpars=TRUE)
+```
+# 04/09/2017
+
+Need to do this on the cluster. Made a little script `fitting.Rs` to fit one set. Lets try is.
+
+```{r eval=FALSE}
+script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.Rs"
+logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
+
+for(set in c("NCAPD2", "NCAPD3", "SMC2")) {
+  name <- paste0("fitt_", set, "t0_n100000_tau1_k1_k2_tau2.RData")
+  cmd <- paste("Rscript", script, set, name)
+  qsub(cmd, logDir, name="name", dryrun=TRUE)
+}
 ```
