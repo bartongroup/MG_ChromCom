@@ -9,13 +9,15 @@ output:
 
 
 ```{r setup, include=FALSE}
-library(ChromCom)
 library(knitr)
 library(mylib)
 library(ggplot2)
 library(gridExtra)
 library(latex2exp)
+
+source("../R/lib.R")
 binDir <- "../RData"
+
 opts_chunk$set(fig.path='../figure/mpd3-', 
                cache.path='../cache/mod3-', 
                fig.align='center',
@@ -27,28 +29,25 @@ opts_chunk$set(fig.path='../figure/mpd3-',
                fig.width=4,
                fig.height=3
               )
+smth <- 5
 ```
 
 # Data
 
-```{r}
-echr.scr <- experimentalData(dataFile$scramble)
-echr.d2 <- experimentalData(dataFile$NCAPD2)
-echr.d3 <- experimentalData(dataFile$NCAPD3)
-echr.smc <- experimentalData(dataFile$SMC2)
-smth <- 5
+```{r read_experimental_data}
+echr <- lapply(dataFile, experimentalData)
 ```
 
-In our data we distinguish four states, marked by colour: blue, brown, pink, red. For the purpose of the model we merge blue and brown together into one state. Here is the result of the experiment from `r nrow(echr.scr$cells)` cells.
+In our data we distinguish four states, marked by colour: blue, brown, pink, red. For the purpose of the model we merge blue and brown together into one state. Here is the result of the experiment from `r nrow(echr$scramble$cells)` cells.
 
-```{r}
-plotCells(echr.scr)
+```{r fig_cells}
+plotCells(echr$scramble)
 ```
 
 The next figure shows the proportions of each colour as a function of time. The curves are smoothed with a running mean over the window of `r smth` time points.
 
-```{r}
-plotTimelines(echr.scr, smooth=TRUE, k=smth)
+```{r fig_timeline}
+plotTimelines(echr$scramble, smooth=TRUE, k=smth)
 ```
 
 
@@ -83,7 +82,7 @@ The cell timeline is repeated for $n_{\rm cell}$ times and then the colour propo
 
 Here is an example of the model.
 
-```{r, fig.width=4, fig.height=3}
+```{r model_example, fig.width=4, fig.height=3}
 pars <- c3pars(
   t0 = -10,
   tau1 = 10,
@@ -118,7 +117,7 @@ First, we fit the model with $\tau_1$, $\tau_2$, $k_1$ and $k_2$ free. To improv
 
 We suspect that $t_0$ might not be exactly zero. Hence I fit the model with $t_0 = 0, -5, -10, -15$ minutes.
 
-```{r, include=FALSE}
+```{r scramble_t0, include=FALSE}
 pars <- c3pars(
   t0 = -10,
   tau1 = 15.3,
@@ -127,62 +126,40 @@ pars <- c3pars(
   k2 = 0.064
 )
 free <- c("tau1", "k1", "k2", "tau2")
-chr.scr.10 <- cacheData("fitt_scramble_n10000_t.10_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
 
-pars$t0 <- -5
-chr.scr.5 <- cacheData("fitt_scramble_n10000_t.5_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
-
-pars$t0 <- -15
-chr.scr.15 <- cacheData("fitt_scramble_n10000_t.15_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
-
-pars$t0 <- 0
-chr.scr.0 <- cacheData("fitt_scramble_n10000_t.0_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+neb <- c(0, -5, -10, -15)
+chr.scr <- lapply(neb, function(t0) {
+  name <- paste0("fitt_scramble_n10000_t.", -t0, "_tau1_k1_k2_tau2")
+  cacheData(name, fitChr, echr$scramble, pars, free, nsim=10000, ntry=100, ncores=4, binDir=binDir, cacheonly=TRUE)
+})
+names(chr.scr) <- as.character(-neb)
 ```
 
-```{r, fig.width=5}
-plotTimelines(chr.scr.0, expdata = echr.scr, withpars=TRUE)
-plotTimelines(chr.scr.5, expdata = echr.scr, withpars=TRUE)
-plotTimelines(chr.scr.10, expdata = echr.scr, withpars=TRUE)
-plotTimelines(chr.scr.15, expdata = echr.scr, withpars=TRUE)
+```{r fig_scramble_t0, fig.width=5}
+for(t0 in names(chr.scr)) {
+  print(plotTimelines(chr.scr[[t0]], expdata = echr$scramble, withpars=TRUE))
+}
+```
+
+I think the issue here is not $t_0$ but the fact that the red curve growths is too fast and the model cannot do it.
+
+### All conditions
+
+Here are fit results for all conditions with $t_0$ fixed at zero and four parameters free: $\tau_1$, $\tau_2$, $k_1$ and $k_2$.
+
+```{r all_conditions}
+chr <- lapply(names(dataFile), function(set) {
+  name <- paste0("fitt_", set, "_t0_n100000_tau1_k1_k2_tau2.RData")
+  cacheData(name, binDir=binDir, cacheonly=TRUE)
+})
+names(chr) <- names(dataFile)
 ```
 
 
-
-### NCAPD2
-
-```{r, fig.width=5}
-pars <- c3pars()
-free <- c("tau", "k1", "k2", "dt2")
-chr.d2 <- cacheData("fitv_NCAPD2_n10000_tau_k1_k2_dt2", fitChr, echr.d2, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
-plotTimelines(chr.d2, expdata = echr.d2, withpars=TRUE)
+```{r fig_all_conditions, fig.width=5}
+for(name in names(dataFile)) {
+  print(plotTimelines(chr[[name]], expdata = echr[[name]], withpars=TRUE, title=name))
+}
 ```
 
-
-### NCAPD3
-
-```{r, fig.width=5}
-pars <- c3pars()
-free <- c("tau", "k1", "k2", "dt2")
-chr.d3 <- cacheData("fitv_NCAPD3_n10000_tau_k1_k2_dt2", fitChr, echr.d3, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
-plotTimelines(chr.d3, expdata = echr.d3, withpars=TRUE)
-```
-
-### SMC2
-
-```{r, fig.width=5}
-pars <- c3pars()
-free <- c("tau", "k1", "k2", "dt2")
-chr.smc <- cacheData("fitv_SMC2_n10000_tau_k1_k2_dt2", fitChr, echr.smc, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
-plotTimelines(chr.smc, expdata = echr.smc, withpars=TRUE)
-```
-
-## Some parameters fixed
-
-This was an older idea, do we want to do someting similar again?
-
-- fit scramble with $t_1$, $k_1$ and $k_2$ free
-- for NCAPD2 we expect only $k_2$ to change, so fix $k_1$ from scramble
-- for NCAPD3 we expect only $k_1$ to change, so fix $k_2$ from scramble; however, John tried this manually and it didn't work very well, so we might free both ks
-- for SMC2 $k_1$ fixed from NCAPD3, $k_2$ fixed from NCAPD2 and see if this matches; then do a fit
-- lets keep all $\Delta t$ fixed
 

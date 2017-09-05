@@ -22,15 +22,8 @@ binDir <- "../RData"
 
 
 ```{r, warning=FALSE}
-echr.scr <- experimentalData(dataFile$scramble)
-echr.d2 <- experimentalData(dataFile$NCAPD2)
-echr.d3 <- experimentalData(dataFile$NCAPD3)
-echr.smc <- experimentalData(dataFile$SMC2)
-echr.rad <- experimentalData(dataFile$RAD21)
-echr.mk <- experimentalData(dataFile$MK1775)
-#echr.mki <- experimentalData(dataFile$MK1775_ICRF193)
+echr <- lapply(dataFile, experimentalData)
 ```
-
 
 This is a continuation of the previous notebook, [Notes.2](), with a new model.
 
@@ -66,24 +59,24 @@ pars <- c3pars(
   k2 = 0.064
 )
 free <- c("tau1", "k1", "k2", "tau2")
-chr.scr.10 <- cacheData("fitt_scramble_n10000_t.10_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+chr.scr.10 <- cacheData("fitt_scramble_n10000_t.10_tau1_k1_k2_tau2", fitChr, echr$scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
 
 pars$t0 <- -5
-chr.scr.5 <- cacheData("fitt_scramble_n10000_t.5_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+chr.scr.5 <- cacheData("fitt_scramble_n10000_t.5_tau1_k1_k2_tau2", fitChr, echr$scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
 
 pars$t0 <- -15
-chr.scr.15 <- cacheData("fitt_scramble_n10000_t.15_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+chr.scr.15 <- cacheData("fitt_scramble_n10000_t.15_tau1_k1_k2_tau2", fitChr, echr$scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
 
 pars$t0 <- 0
-chr.scr.0 <- cacheData("fitt_scramble_n10000_t.0_tau1_k1_k2_tau2", fitChr, echr.scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
+chr.scr.0 <- cacheData("fitt_scramble_n10000_t.0_tau1_k1_k2_tau2", fitChr, echr$scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
 ```
 
 
 ```{r, fig.width=5}
-plotTimelines(chr.scr.0, expdata = echr.scr, withpars=TRUE)
-plotTimelines(chr.scr.5, expdata = echr.scr, withpars=TRUE)
-plotTimelines(chr.scr.10, expdata = echr.scr, withpars=TRUE)
-plotTimelines(chr.scr.15, expdata = echr.scr, withpars=TRUE)
+plotTimelines(chr.scr.0, expdata = echr$scr, withpars=TRUE)
+plotTimelines(chr.scr.5, expdata = echr$scr, withpars=TRUE)
+plotTimelines(chr.scr.10, expdata = echr$scr, withpars=TRUE)
+plotTimelines(chr.scr.15, expdata = echr$scr, withpars=TRUE)
 ```
 # 04/09/2017
 
@@ -99,3 +92,25 @@ for(set in names(dataFile)) {
   qsub(cmd, logDir, name=name)
 }
 ```
+
+# 05/09/2017
+
+Fit results are ready. Lets have a look
+
+```{r}
+chr <- lapply(names(dataFile), function(set) {
+  name <- paste0("fitt_", set, "_t0_n10000_tau1_k1_k2_tau2.RData")
+  cacheData(name, fitChr, binDir=binDir)
+})
+names(chr) <- names(dataFile)
+```
+
+
+```{r fig.width=6, fig.height=4}
+for(name in names(dataFile)) {
+  print(plotTimelines(chr[[name]], expdata = echr[[name]], withpars=TRUE, title=name))
+}
+```
+
+
+There are serious issues with data file MK1775andICRF193_noncoloured.csv. First, there are strings "ICRF" in it. Second, there seem to be 6 empty columns at the end. It needs redoing.

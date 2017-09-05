@@ -23,7 +23,7 @@ dataFile <- list(
   WAPL24  = "../data/WAPL_24hr_noncoloured.csv",
   WAPL48  = "../data/WAPL_48hr_noncoloured.csv",
   MK1775  = "../data/MK1775only_noncoloured.csv",
-#  MK1775_ICRF193  = "../data/MK1775andICRF193_noncoloured.csv", # issues with the file
+  #MK1775_ICRF193  = "../data/MK1775andICRF193_noncoloured.csv",
   RAD21 = "../data/RAD21_48hr_noncoloured.csv"
 )
 
@@ -361,7 +361,7 @@ plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', title.
     rms <- NULL
   }
   if(withpars) {
-    title <- parsString(chr$pars, rms)
+    title <- parsString(chr$pars, rms, title)
   }
   g <- timelinePanel(m, single=TRUE, ...)
     #geom_vline(xintercept=chr$pars$t1, colour="skyblue", linetype=2) +
@@ -374,7 +374,7 @@ plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', title.
   g
 }
 
-parsString <- function(pars, rms) {
+parsString <- function(pars, rms, name) {
   texNames <- list(
     t0 = "t_0",
     tau1 = "\\tau_1",
@@ -393,6 +393,7 @@ parsString <- function(pars, rms) {
     paste0("$", texNames[[name]], " = ", sprintf("%.3g", pars[[name]]), "$")
   }
   ), collapse=",  ")
+  if(!is.null(name)) txt <- paste(name, txt)
   TeX(txt)
 }
 
