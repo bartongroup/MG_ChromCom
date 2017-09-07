@@ -85,7 +85,7 @@ server <- shinyServer(function(input, output) {
     echr <- getData()
     chr <- generateCells(chr, method="simulation", nsim=getNsim())
     rms <- round(oeError(chr, echr), 1)
-    plotTimelines(chr, expdata=echr, xmin=-100, xmax=100, title=paste0(parstr(pars), ", rms=", rms))
+    plotTimelines(chr, expdata=echr, xmin=-100, xmax=100, withpars = TRUE)
   }
 
   output$tPlot <- renderPlot({
