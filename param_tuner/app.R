@@ -9,6 +9,8 @@ library(shiny)
 library(ggplot2)
 library(reshape2)
 library(caTools)
+library(latex2exp)
+
 
 source("../R/lib.R")
 
