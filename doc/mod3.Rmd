@@ -149,7 +149,7 @@ Here are fit results for all conditions with $t_0$ fixed at zero and four parame
 
 ```{r all_conditions}
 chr <- lapply(names(dataFile), function(set) {
-  name <- paste0("fitt_", set, "_t0_n100000_tau1_k1_k2_tau2.RData")
+  name <- paste0("fitt_", set, "_t0_n100000_tau1_k1_k2_tau2")
   cacheData(name, binDir=binDir, cacheonly=TRUE)
 })
 names(chr) <- names(dataFile)
