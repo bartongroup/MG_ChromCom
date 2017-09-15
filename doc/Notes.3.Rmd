@@ -97,7 +97,7 @@ for(set in names(dataFile)) {
 
 Fit results are ready. Lets have a look
 
-```{r}
+```{r eval=FALSE}
 nm <- names(dataFile)
 nm <- nm[which(nm != "MK1775_ICRF193")]
 chr <- lapply(nm, function(set) {
@@ -108,7 +108,7 @@ names(chr) <- names(dataFile)
 ```
 
 
-```{r fig.width=6, fig.height=4}
+```{r eval=FALSE, fig.width=6, fig.height=4}
 for(name in names(dataFile)) {
   print(plotTimelines(chr[[name]], expdata = echr[[name]], withpars=TRUE, title=name))
 }
@@ -139,3 +139,71 @@ qsub(cmd, logDir, name=name)
 - fit range from -50 to +30
 - modify model: add a switch $t_2 = t_1 + R(\tau_2)$ or $t_2 = t_0 + R(\tau_2)$; this can help with red curves that seem to all go up at 0, for all conditions
 - later: fit by changing only one param from data to data
+
+
+The model is changed. See the switch difference.
+
+```{r, fig.width=5, fig.height=3}
+pars <- c3pars(
+  t0 = 0,
+  tau1 = 40,
+  tau2 = 40,
+  k1 = 0.05,
+  k2 = 0.04,
+  t2ref = 1
+)
+chr <- ChromCom3(pars)
+chr <- generateCells(chr, nsim=1000)
+plotTimelines(chr, withpars = TRUE)
+```
+
+```{r, fig.width=5, fig.height=3}
+pars <- c3pars(
+  t0 = 0,
+  tau1 = 40,
+  tau2 = 10,
+  k1 = 0.02,
+  k2 = 0.04,
+  t2ref = 0
+)
+chr <- ChromCom3(pars)
+chr <- generateCells(chr, nsim=1000)
+plotTimelines(chr, withpars=TRUE)
+```
+
+A quick scramble fit with the new switch.
+
+```{r}
+pars <- c3pars(
+  t0 = -10,
+  tau1 = 120,
+  tau2 = 4,
+  k1 = 0.02,
+  k2 = 0.064,
+  t2ref = 0
+)
+free <- c("tau1", "k1", "k2", "tau2")
+chrs.scr <- fitChr(echr$scr, pars, free, nsim=100, ntry=10, ncores=6)
+```
+
+```{r, fig.width=5}
+plotTimelines(chrs.scr, expdata = echr$scr, withpars=TRUE)
+```
+
+
+
+
+
+Submitting jobs to the cluster and naively expecting for them not to crash over the weekend. Since the t2ref=0 model look dodgy, I only run t2ref=1.
+
+```{r eval=FALSE}
+script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.Rs"
+logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
+switch <- 1
+
+for(set in names(dataFile)) {
+  name <- paste0("fits_", set, "ref1_t0_n100000_tau1_k1_k2_tau2")
+  cmd <- paste("Rscript", script, set, name, switch)
+  qsub(cmd, logDir, name=name)
+}
+```

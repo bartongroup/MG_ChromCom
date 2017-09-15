@@ -100,6 +100,7 @@ ChromCom3 <- function(pars, time=NULL, cells=NULL, timepars=list(start=-140, sto
 #' @param k1 B->P rate
 #' @param k2 P->R rate
 #' @param k3 R->B rate
+#' @param t2ref Reference point for time t2, either 1 for "t1" or 0 for "t0"
 #' @param dummy Logical, if set empty list is returned
 #'
 #' @return Model parameters object
@@ -112,13 +113,14 @@ c3pars <- function(
   k1 = 0.04,
   k2 = 0.04,
   k3 = 0,
+  t2ref = 1,
   squeeze = 0,
   dummy = FALSE
 ) {
   if(dummy) {
     pars = list()
   } else {
-    pars <- list(t0=t0, tau1=tau1, tau2=tau2, tau3=tau3, k1=k1, k2=k2, k3=k3, squeeze=squeeze)
+    pars <- list(t0=t0, tau1=tau1, tau2=tau2, tau3=tau3, k1=k1, k2=k2, k3=k3, t2ref=t2ref, squeeze=squeeze)
   }
   class(pars) <- append(class(pars), "c3pars")
   return(pars)
@@ -202,7 +204,8 @@ tcSimulation <- function(pars, timepars) {
 
   # Find three onset timepoints
   t1 <- pars$t0 -rexp(1, 1 / pars$tau1)  # generate random t1 with exponential distribution
-  t2 <- t1 + ifelse(pars$tau2 > 0, rexp(1, 1/pars$tau2), 0)
+  t2base <- ifelse(pars$t2ref == 1, t1, pars$t0)  # reference point for t2 (model switch)
+  t2 <- t2base + ifelse(pars$tau2 > 0, rexp(1, 1/pars$tau2), 0)
   t3 <- t1 + ifelse(pars$tau3 > 0, rexp(1, 1/pars$tau3), 0)
 
   # integer indexes in the time table
@@ -383,6 +386,7 @@ parsString <- function(pars, rms, name) {
     k1 = "k_1",
     k2 = "k_2",
     k3 = "k_3",
+    t2ref = "t_{ref}",
     squeeze = "S",
     rms = "rms"
   )
@@ -503,7 +507,7 @@ parVector <- function(pars, parsel) {
 # error function to minimize; p is a vector of parameters
 errorFun <- function(p, pars, echr, nsim) {
   pars <- vectorPar(p, pars)
-  chr <- ChromCom3(pars, timepars=list(start=-90, stop=30, step=1))
+  chr <- ChromCom3(pars, timepars=list(start=-50, stop=30, step=1))
   chr <- generateCells(chr, nsim=nsim, method="simulation")
   err <- oeError(chr, echr)
   return(err)
@@ -524,6 +528,7 @@ errorFun <- function(p, pars, echr, nsim) {
 #' @export
 fitChr <- function(echr, pars, freepars, nsim=1000, ntry=10, ncores=4) {
   stopifnot(is(pars, "c3pars"))
+  stopifnot(is(echr, "ChromCom3"))
 
   #chr <- ChromCom3(pars)
   p <- parVector(pars, freepars)
