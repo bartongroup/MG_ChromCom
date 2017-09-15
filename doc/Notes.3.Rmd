@@ -98,9 +98,11 @@ for(set in names(dataFile)) {
 Fit results are ready. Lets have a look
 
 ```{r}
-chr <- lapply(names(dataFile), function(set) {
+nm <- names(dataFile)
+nm <- nm[which(nm != "MK1775_ICRF193")]
+chr <- lapply(nm, function(set) {
   name <- paste0("fitt_", set, "_t0_n10000_tau1_k1_k2_tau2")
-  cacheData(name, fitChr, binDir=binDir)
+  cacheData(name, fitChr, binDir=binDir, cacheonly=TRUE)
 })
 names(chr) <- names(dataFile)
 ```
@@ -129,3 +131,11 @@ name <- paste0("fitt_", set, "_t0_n100000_tau1_k1_k2_tau2")
 cmd <- paste("Rscript", script, set, name)
 qsub(cmd, logDir, name=name)
 ```
+
+## Meeting with Tomo and John
+
+- change slider rates - upper limit to 0.5
+- change font size so rms is visible
+- fit range from -50 to +30
+- modify model: add a switch $t_2 = t_1 + R(\tau_2)$ or $t_2 = t_0 + R(\tau_2)$; this can help with red curves that seem to all go up at 0, for all conditions
+- later: fit by changing only one param from data to data
