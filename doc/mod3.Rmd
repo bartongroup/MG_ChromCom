@@ -147,16 +147,16 @@ I think the issue here is not $t_0$ but the fact that the red curve growths is t
 
 Here are fit results for all conditions with $t_0$ fixed at zero and four parameters free: $\tau_1$, $\tau_2$, $k_1$ and $k_2$.
 
-```{r all_conditions, eval=FALSE}
+```{r all_conditions}
 chr <- lapply(names(dataFile), function(set) {
-  name <- paste0("fitt_", set, "_t0_n100000_tau1_k1_k2_tau2")
+  name <- paste0("fits_", set, "_t0_n100000_tau1_k1_k2_tau2")
   cacheData(name, binDir=binDir, cacheonly=TRUE)
 })
 names(chr) <- names(dataFile)
 ```
 
 
-```{r fig_all_conditions, eval=FALSE, fig.width=5}
+```{r fig_all_conditions,fig.width=5}
 for(name in names(dataFile)) {
   print(plotTimelines(chr[[name]], expdata = echr[[name]], withpars=TRUE, title=name))
 }

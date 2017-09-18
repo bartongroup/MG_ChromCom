@@ -202,7 +202,7 @@ logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
 switch <- 1
 
 for(set in names(dataFile)) {
-  name <- paste0("fits_", set, "ref1_t0_n100000_tau1_k1_k2_tau2")
+  name <- paste0("fits_", set, "_ref1_t0_n100000_tau1_k1_k2_tau2")
   cmd <- paste("Rscript", script, set, name, switch)
   qsub(cmd, logDir, name=name)
 }
