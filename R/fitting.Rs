@@ -10,7 +10,7 @@ library(parallel)
 library(methods)
 
 args <- commandArgs(TRUE)
-stopifnot(length(args) < 3)
+stopifnot(length(args) >= 3)
 set <- args[1]
 name <- args[2]
 t2ref <- args[3]
