@@ -229,3 +229,15 @@ for(set in names(dataFile)) {
   qsub(cmd, logDir, name=name)
 }
 ```
+
+Looking at data I have an impression that red curves start a bit earlier than 0. Try the same model but $t_0 = -10$.
+
+```{r eval=FALSE}
+switch <- 0
+
+for(set in names(dataFile)) {
+  name <- paste0("fits_", set, "_ref0_t10_n1000_tau1_k1_k2_tau2")
+  cmd <- paste("Rscript", script, set, name, switch, 1000, 30, -10)
+  qsub(cmd, logDir, name=name)
+}
+```

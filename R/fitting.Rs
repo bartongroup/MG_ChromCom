@@ -23,6 +23,8 @@ if(!is.null(args[4])) nsim <- args[4]
 ntry <- 100
 if(!is.null(args[5])) ntry <- args[5]
 
+t0 <- 0
+if(!is.null(args[6])) t0 <- args[6]
 
 print(paste("Fitting", set))
 
@@ -30,7 +32,7 @@ echr <- experimentalData(dataFile[[set]])
 str(echr)
 
 pars <- c3pars(
-  t0 = 0,
+  t0 = t0,
   tau1 = 15,
   tau2 = 10,
   k1 = 0.05,

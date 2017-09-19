@@ -167,9 +167,9 @@ I think the issue here is not $t_0$ but the fact that the red curve growths is t
 
 ### All conditions
 
-Somehow, the wrong versio was used to do fitting and pars$t2ref is a string. Need to convert (only once).
-
 ```{r, eval=FALSE}
+# Somehow, the wrong version was used to do fitting and pars$t2ref is a string.
+# Need to convert (only once).
 for(set in names(dataFile)) {
   name <- paste0("fits_", set, "_ref1_t0_n100000_tau1_k1_k2_tau2")
   chr <- cacheData(name, binDir=binDir, cacheonly=TRUE)
