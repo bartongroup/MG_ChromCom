@@ -7,6 +7,9 @@ output:
     number_sections: true
 ---
 
+Collaborators: Tomo Tanaka, John Eykelenboom.
+
+[shiny app](https://shiny.compbio.dundee.ac.uk/marek_chromcom/param_tuner/)
 
 ```{r setup, include=FALSE}
 library(knitr)
@@ -40,13 +43,13 @@ echr <- lapply(dataFile, experimentalData)
 
 In our data we distinguish four states, marked by colour: blue, brown, pink, red. For the purpose of the model we merge blue and brown together into one state. Here is the result of the experiment from `r nrow(echr$scramble$cells)` cells.
 
-```{r fig_cells}
+```{r fig_cells, fig.width=5}
 plotCells(echr$scramble)
 ```
 
 The next figure shows the proportions of each colour as a function of time. The curves are smoothed with a running mean over the window of `r smth` time points.
 
-```{r fig_timeline}
+```{r fig_timeline, fig.width=5}
 plotTimelines(echr$scramble, smooth=TRUE, k=smth)
 ```
 
@@ -70,9 +73,10 @@ The model consists of three states and a set of rules.
 - Time $\Delta t_3$ is a random variable with exponential distirbution with time scale $\tau_3$
 - The cell is in state B before time $t_0-t_1$.
 - B$\rightarrow$P occurs after $t_0-t_1$ with rate $k_1$
-- P$\rightarrow$R occurs after $t_0-t_1 + \Delta t_2$ with rate $k_2$
+- P$\rightarrow$R occurs after $t_0-t_1 + \Delta t_2$ with rate $k_2$*
 - P$\rightarrow$B occurs after $t_0-t_1 + \Delta t_3$ with rate $k_3$
 
+\* A switch, $t_{2, ref}$ was introduced to the model, selecting the reference for time $t_2$. In the default position ($t_{2, ref} = 1$) the B$\rightarrow$P activation time is $t_0-t_1 + \Delta t_2$. When the switch is set to $t_{2, ref} = 0$, the activation time is $t_0 + \Delta t_2$, that is, it can only occur after the nuclear envelope breakdown. The idea of the switch was to separate pink and red curves, as observed in some datasets.
 
 I use a Markov chain approach. The next state is generated from the current state based on rules outlined above. The rates, $k$, are converted into probabilities over a given time step $\Delta t$ as $Pr = 1 - e^{1 - k\Delta t}$. The transition time, $t_1$, is generated before the simulation starts for a given cell.
 
@@ -82,18 +86,36 @@ The cell timeline is repeated for $n_{\rm cell}$ times and then the colour propo
 
 Here is an example of the model.
 
-```{r model_example, fig.width=4, fig.height=3}
+```{r model_example_t1, fig.width=4, fig.height=3}
 pars <- c3pars(
-  t0 = -10,
+  t0 = 0,
   tau1 = 10,
   tau2 = 10,
   k1 = 0.05,
-  k2 = 0.04
+  k2 = 0.04,
+  t2ref = 1
 )
 chr <- ChromCom3(pars)
 chr <- generateCells(chr, nsim=3000)
 plotTimelines(chr, withpars=TRUE)
 ```
+
+And here is an example of the the model where P$\rightarrow$R transition can occur only after $t_0 = 0$.
+
+```{r model_example_t0, fig.width=4, fig.height=3}
+pars <- c3pars(
+  t0 = -10,
+  tau1 = 10,
+  tau2 = 10,
+  k1 = 0.06,
+  k2 = 0.03,
+  t2re = 0
+)
+chr <- ChromCom3(pars)
+chr <- generateCells(chr, nsim=3000)
+plotTimelines(chr, withpars=TRUE)
+```
+
 
 ## Parameter tuner
 
@@ -103,13 +125,13 @@ There is a [shiny app](https://shiny.compbio.dundee.ac.uk/marek_chromcom/param_t
 
 I attempted fitting model to our data. It is not an easy task, as the model is stochastic. After some testing I found that modified BFGS (a quasi-Newton method, also known as a variable metric algorithm, by Broyden, Fletcher, Goldfarb and Shanno, 1970) which allows box constraints (Byrd et. al. 1995), gives reasonable results. Again, due to stochasticity of the model, this algorithm often finds false local minima. I run it several times to find the best minimum. It is a crude and time-consuming method, but gives results better than manual tuning.
 
-Fitting is constrained to time points between -90 and 30 min. The minimized quantity is
+Fitting is constrained to time points between -50 and 30 min. The minimized quantity is
 
 ${\rm rms} = \sqrt{\sum_{c \in \{B,P,R\}} \sum_i (O_{c,i} - E_{c,i})^2}$
 
 that is, the square root of the sum of squared residuals over all time points and all colours.
 
-## Four parameters free
+## Default model
 
 First, we fit the model with $\tau_1$, $\tau_2$, $k_1$ and $k_2$ free. To improve the chances of finding the correct global minimum, I run the fit with 10,000 cells and 100 tries.
 
@@ -145,11 +167,24 @@ I think the issue here is not $t_0$ but the fact that the red curve growths is t
 
 ### All conditions
 
+Somehow, the wrong versio was used to do fitting and pars$t2ref is a string. Need to convert (only once).
+
+```{r, eval=FALSE}
+for(set in names(dataFile)) {
+  name <- paste0("fits_", set, "_ref1_t0_n100000_tau1_k1_k2_tau2")
+  chr <- cacheData(name, binDir=binDir, cacheonly=TRUE)
+  chr$pars$t2ref <- 1L
+  file <- paste0(binDir, "/", name, ".RData")
+  obj <- chr
+  save(obj, file=file)
+}
+```
+
 Here are fit results for all conditions with $t_0$ fixed at zero and four parameters free: $\tau_1$, $\tau_2$, $k_1$ and $k_2$.
 
 ```{r all_conditions}
 chr <- lapply(names(dataFile), function(set) {
-  name <- paste0("fits_", set, "_t0_n100000_tau1_k1_k2_tau2")
+  name <- paste0("fits_", set, "_ref1_t0_n100000_tau1_k1_k2_tau2")
   cacheData(name, binDir=binDir, cacheonly=TRUE)
 })
 names(chr) <- names(dataFile)
@@ -158,8 +193,12 @@ names(chr) <- names(dataFile)
 
 ```{r fig_all_conditions,fig.width=5}
 for(name in names(dataFile)) {
-  print(plotTimelines(chr[[name]], expdata = echr[[name]], withpars=TRUE, title=name))
+  print(plotTimelines(chr[[name]], expdata = echr[[name]], withpars=TRUE, title=name, title.size=9))
 }
 ```
+
+
+
+## Switch: P$\rightarrow$R only after zero
 
 

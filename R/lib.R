@@ -355,7 +355,7 @@ timelinePanel <- function(m, single=FALSE, xmin=as.numeric(NA), xmax=as.numeric(
 #' @param ... Other parameters passed to \code{\link{timelinePanel}}
 #'
 #' @export
-plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', title.size=10, withpars=FALSE, ...) {
+plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title=NULL, title.size=10, withpars=FALSE, ...) {
   m <- meltTimelines(chr, smooth=smooth, k=k)
   if(!is.null(expdata)) {
     exm <- meltTimelines(expdata, smooth=TRUE, k=15)
@@ -363,9 +363,8 @@ plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', title.
   } else {
     rms <- NULL
   }
-  if(withpars) {
-    title <- parsString(chr$pars, rms, title)
-  }
+  title <- ifelse(is.null(title), "Model", title)
+  param.str <- ifelse(withpars, parsStringTxt(chr$pars, rms), "")
   g <- timelinePanel(m, single=TRUE, ...)
     #geom_vline(xintercept=chr$pars$t1, colour="skyblue", linetype=2) +
     #geom_vline(xintercept=(chr$pars$t1+chr$pars$dt2), colour="salmon", linetype=2) +
@@ -373,11 +372,13 @@ plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title='', title.
   if(!is.null(expdata)) {
     g <- g + geom_line(data=exm, aes(colour=Colour), size=0.2)
   }
-  g <- g + labs(title=title) + theme(plot.title = element_text(size=title.size))
+  g <- g + labs(title=paste0(title, "\n", param.str))
+
+  g <- g + theme(plot.title = element_text(size=title.size))
   g
 }
 
-parsString <- function(pars, rms, name) {
+parsStringTex <- function(pars, rms) {
   texNames <- list(
     t0 = "t_0",
     tau1 = "\\tau_1",
@@ -397,9 +398,58 @@ parsString <- function(pars, rms, name) {
     paste0("$", texNames[[name]], " = ", sprintf("%.3g", pars[[name]]), "$")
   }
   ), collapse=",  ")
-  if(!is.null(name)) txt <- paste(name, txt)
-  TeX(txt)
+  tex <- TeX(txt)
 }
+
+parsStringTxt <- function(pars, rms) {
+  nms <- grep("squeeze|k3|tau3|t0", names(pars), value=TRUE, invert=TRUE, perl=TRUE)
+  txt <- paste0(lapply(nms, function(name) {
+    paste0(name, " = ", sprintf("%.3g", pars[[name]]))
+  }
+  ), collapse=",  ")
+  if(!is.null(rms)) txt <- paste0(txt, sprintf("\nrms=%.3g", rms))
+  txt
+}
+
+
+parsStringExp <- function(pars, rms) {
+  texNames <- list(
+    t0 = "t[0]",
+    tau1 = "tau[1]",
+    tau2 = "tau[2]",
+    tau3 = "tau[3]",
+    k1 = "k[1]",
+    k2 = "k[2]",
+    k3 = "k[3]",
+    t2ref = "t[ref]",
+    squeeze = "S",
+    rms = "rms"
+  )
+  if(!is.null(rms)) pars$rms <- rms
+
+  nms <- grep("squeeze|k3", names(pars), value=TRUE, invert=TRUE, perl=TRUE)
+  txt <- paste0(lapply(nms, function(name) {
+    paste0(texNames[[name]], " = ", sprintf("%.3g", pars[[name]]))
+  }
+  ), collapse=",  ")
+  txt
+}
+
+
+element_custom <- function() {
+  structure(list(), class = c("element_custom", "element_text"))
+}
+
+element_grob.element_custom <- function(element, label="", ...)  {
+
+  mytheme <- ttheme_minimal(core = list(fg_params = list(parse=TRUE,
+                                                         hjust=0, x=0.1)))
+  disect <- strsplit(label, "\\n")[[1]]
+  tableGrob(as.matrix(disect), theme=mytheme)
+}
+
+# default method is unreliable
+heightDetails.gtable <- function(x) sum(x$heights)
 
 #' Plot cell colour map
 #'
@@ -452,7 +502,7 @@ experimentalData <- function(file) {
 #'
 #' @return RMS over all three curves
 #' @export
-oeError <- function(chr, echr, limits=c(-90, 30)) {
+oeError <- function(chr, echr, limits=c(-50, 30)) {
 
   getProp <- function(ch, col) {
     p <- ts(ch$cnt[[col]] / ch$cnt$total, start=ch$timepars$start, deltat=ch$timepars$step)
@@ -505,11 +555,11 @@ parVector <- function(pars, parsel) {
 }
 
 # error function to minimize; p is a vector of parameters
-errorFun <- function(p, pars, echr, nsim) {
+errorFun <- function(p, pars, echr, nsim, limits) {
   pars <- vectorPar(p, pars)
-  chr <- ChromCom3(pars, timepars=list(start=-50, stop=30, step=1))
+  chr <- ChromCom3(pars, timepars=list(start=limits[1], stop=limits[2], step=1))
   chr <- generateCells(chr, nsim=nsim, method="simulation")
-  err <- oeError(chr, echr)
+  err <- oeError(chr, echr, limits)
   return(err)
 }
 
@@ -522,11 +572,12 @@ errorFun <- function(p, pars, echr, nsim) {
 #' @param nsim Number of cells to simulate
 #' @param ntry Number of tries in search
 #' @param ncores Number of cores
+#' @param limtis A two-element vector with fit limits (in minutes)
 #'
 #' @return A \code{ChromCom3} object with the best-fitting model. "rms" field
 #'   is added. \code{\link{optim}} function is used for minimization with method "L-BFGS-B".
 #' @export
-fitChr <- function(echr, pars, freepars, nsim=1000, ntry=10, ncores=4) {
+fitChr <- function(echr, pars, freepars, nsim=1000, ntry=10, ncores=4, limits=c(-50, 30)) {
   stopifnot(is(pars, "c3pars"))
   stopifnot(is(echr, "ChromCom3"))
 
@@ -538,12 +589,12 @@ fitChr <- function(echr, pars, freepars, nsim=1000, ntry=10, ncores=4) {
   upper <- upper[freepars]
 
   lopt <- mclapply(1:ntry, function(i) {
-    optim(p, errorFun, gr=NULL, pars, echr, nsim, method="L-BFGS-B", lower=lower, upper=upper, control=list(trace=3))
+    optim(p, errorFun, gr=NULL, pars, echr, nsim, limits, method="L-BFGS-B", lower=lower, upper=upper, control=list(trace=3))
   }, mc.cores = ncores)
 
   idx.min <- which.min(sapply(1:ntry, function(i) lopt[[i]]$value))
   pars <- vectorPar(lopt[[idx.min]]$par, pars)
-  chr <- ChromCom3(pars, timepars=list(start=-90, stop=30, step=1))
+  chr <- ChromCom3(pars, timepars=list(start=limits[1], stop=limits[2], step=1))
   chr <- generateCells(chr, nsim=nsim, method="simulation")
   chr$rms <- lopt[[idx.min]]$value
   return(chr)

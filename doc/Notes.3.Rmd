@@ -207,3 +207,25 @@ for(set in names(dataFile)) {
   qsub(cmd, logDir, name=name)
 }
 ```
+
+# 18/09/2017
+
+There were some problems with fit limtis. I think I should fit it again.
+
+Struggling with TeX expression and multi-line title. Reverting to simple text.
+
+# 19/09/2017
+
+Doing interviews today, so very little time. Trying running the new switch model.
+
+```{r eval=FALSE}
+script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.Rs"
+logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
+switch <- 0
+
+for(set in names(dataFile)) {
+  name <- paste0("fits_", set, "_ref0_t0_n1000_tau1_k1_k2_tau2")
+  cmd <- paste("Rscript", script, set, name, switch, 1000, 30)
+  qsub(cmd, logDir, name=name)
+}
+```
