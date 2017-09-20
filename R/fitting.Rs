@@ -13,7 +13,7 @@ args <- commandArgs(TRUE)
 stopifnot(length(args) >= 3)
 set <- args[1]
 name <- args[2]
-t2ref <- args[3]
+t2ref <- as.integer(args[3])
 stopifnot(!is.null(dataFile[[set]]))
 stopifnot(t2ref %in% c(0, 1))
 
@@ -24,7 +24,7 @@ ntry <- 100
 if(!is.null(args[5])) ntry <- args[5]
 
 t0 <- 0
-if(!is.null(args[6])) t0 <- args[6]
+if(!is.null(args[6])) t0 <- as.numeric(args[6])
 
 print(paste("Fitting", set))
 
@@ -39,5 +39,7 @@ pars <- c3pars(
   k2 = 0.06,
   t2ref = t2ref
 )
+str(pars)
+
 free <- c("tau1", "k1", "k2", "tau2")
 chr <- cacheData(name, fitChr, echr, pars, free, nsim=nsim, ntry=ntry, ncores=4, binDir=binDir)

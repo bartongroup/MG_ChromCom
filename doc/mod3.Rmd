@@ -202,3 +202,19 @@ for(name in names(dataFile)) {
 ## Switch: P$\rightarrow$R only after zero
 
 
+
+
+```{r all_conditions}
+chr <- lapply(names(dataFile), function(set) {
+  name <- paste0("fits_", set, "_ref0_t0_n1000_tau1_k1_k2_tau2")
+  cacheData(name, binDir=binDir, cacheonly=TRUE)
+})
+names(chr) <- names(dataFile)
+```
+
+
+```{r fig_all_conditions,fig.width=5}
+for(name in names(dataFile)) {
+  print(plotTimelines(chr[[name]], expdata = echr[[name]], withpars=TRUE, title=name, title.size=9))
+}
+```

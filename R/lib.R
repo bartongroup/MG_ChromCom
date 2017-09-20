@@ -404,7 +404,7 @@ parsStringTex <- function(pars, rms) {
 parsStringTxt <- function(pars, rms) {
   nms <- grep("squeeze|k3|tau3|t0", names(pars), value=TRUE, invert=TRUE, perl=TRUE)
   txt <- paste0(lapply(nms, function(name) {
-    paste0(name, " = ", sprintf("%.3g", pars[[name]]))
+    paste0(name, " = ", sprintf("%.3g", as.numeric(pars[[name]])))
   }
   ), collapse=",  ")
   if(!is.null(rms)) txt <- paste0(txt, sprintf("\nrms=%.3g", rms))
@@ -429,7 +429,7 @@ parsStringExp <- function(pars, rms) {
 
   nms <- grep("squeeze|k3", names(pars), value=TRUE, invert=TRUE, perl=TRUE)
   txt <- paste0(lapply(nms, function(name) {
-    paste0(texNames[[name]], " = ", sprintf("%.3g", pars[[name]]))
+    paste0(texNames[[name]], " = ", sprintf("%.3g", as.numeric(pars[[name]])))
   }
   ), collapse=",  ")
   txt

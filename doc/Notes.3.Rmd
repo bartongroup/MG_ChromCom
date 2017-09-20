@@ -241,3 +241,8 @@ for(set in names(dataFile)) {
   qsub(cmd, logDir, name=name)
 }
 ```
+
+# 20/09/2017
+
+The last batch of fits crashed. Inside mclapply, that is in the optim, but don't know the error.
+
