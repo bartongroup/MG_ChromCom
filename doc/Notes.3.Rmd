@@ -224,8 +224,8 @@ logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
 switch <- 0
 
 for(set in names(dataFile)) {
-  name <- paste0("fits_", set, "_ref0_t0_n1000_tau1_k1_k2_tau2")
-  cmd <- paste("Rscript", script, set, name, switch, 1000, 30)
+  name <- paste0("fits_", set, "_ref0_t0_n10000_tau1_k1_k2_tau2")
+  cmd <- paste("Rscript", script, set, name, switch, 10000, 100)
   qsub(cmd, logDir, name=name)
 }
 ```
@@ -233,11 +233,13 @@ for(set in names(dataFile)) {
 Looking at data I have an impression that red curves start a bit earlier than 0. Try the same model but $t_0 = -10$.
 
 ```{r eval=FALSE}
+script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.Rs"
+logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
 switch <- 0
 
 for(set in names(dataFile)) {
-  name <- paste0("fits_", set, "_ref0_t10_n1000_tau1_k1_k2_tau2")
-  cmd <- paste("Rscript", script, set, name, switch, 1000, 30, -10)
+  name <- paste0("fits_", set, "_ref0_t10_n10000_tau1_k1_k2_tau2")
+  cmd <- paste("Rscript", script, set, name, switch, 10000, 100, -10)
   qsub(cmd, logDir, name=name)
 }
 ```
@@ -245,4 +247,6 @@ for(set in names(dataFile)) {
 # 20/09/2017
 
 The last batch of fits crashed. Inside mclapply, that is in the optim, but don't know the error.
+
+It seems text-numeric type conflicts. I explicitly convert parameters into numeric now and fits are OK. Running them again, deeper.
 

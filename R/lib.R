@@ -402,7 +402,7 @@ parsStringTex <- function(pars, rms) {
 }
 
 parsStringTxt <- function(pars, rms) {
-  nms <- grep("squeeze|k3|tau3|t0", names(pars), value=TRUE, invert=TRUE, perl=TRUE)
+  nms <- grep("squeeze|k3|tau3", names(pars), value=TRUE, invert=TRUE, perl=TRUE)
   txt <- paste0(lapply(nms, function(name) {
     paste0(name, " = ", sprintf("%.3g", as.numeric(pars[[name]])))
   }
