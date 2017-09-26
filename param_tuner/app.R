@@ -25,7 +25,7 @@ ui <- shinyUI(fluidPage(
     sidebarPanel(
       radioButtons("dataSelection", "Background data selection", choices=names(dataFile)),
       radioButtons("modelResolution", "Model resolution", choices=list(Low = "low", Medium = "medium", High = "high")),
-      radioButtons("modelSwitch", "Model switch", choices=c(0, 1)),
+      radioButtons("modelSwitch", "P->R trigger", choices=c("t1", "t0")),
       sliderInput("t0", "NEB correction", min=-30, max=30, value=0, step=0.1),
       sliderInput("tau1", "Initial timescale", min=0, max=80, value=20, step=0.1),
       sliderInput("k1", "B->P rate", min=0, max=0.5, value=0.05, step=0.001),
@@ -60,7 +60,8 @@ server <- shinyServer(function(input, output) {
     )
   })
   t2ref <- reactive({
-    input$modelSwitch
+    s <- input$modelSwitch
+    ifelse(s == "t0", 0, 1)
   })
 
   getData <- function() {
