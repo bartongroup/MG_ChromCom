@@ -1,3 +1,5 @@
+# Rscript fitting.Rs set name switch nsim ntry t0
+
 setwd("/cluster/gjb_lab/mgierlinski/projects/chromcomR/doc")
 source("../../mylib/R/lib.R")
 source("../R/lib.R")
