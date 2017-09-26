@@ -25,6 +25,7 @@ ui <- shinyUI(fluidPage(
     sidebarPanel(
       radioButtons("dataSelection", "Background data selection", choices=names(dataFile)),
       radioButtons("modelResolution", "Model resolution", choices=list(Low = "low", Medium = "medium", High = "high")),
+      radioButtons("modelSwitch", "Model switch", choices=c(0, 1)),
       sliderInput("t0", "NEB correction", min=-30, max=30, value=0, step=0.1),
       sliderInput("tau1", "Initial timescale", min=0, max=80, value=20, step=0.1),
       sliderInput("k1", "B->P rate", min=0, max=0.5, value=0.05, step=0.001),
@@ -58,6 +59,9 @@ server <- shinyServer(function(input, output) {
       tau3 = input$tau3
     )
   })
+  t2ref <- reactive({
+    input$modelSwitch
+  })
 
   getData <- function() {
     dat <- D[[input$dataSelection]]
@@ -83,7 +87,7 @@ server <- shinyServer(function(input, output) {
   }
 
   tPlot <- function(pars) {
-    chr <- ChromCom3(pars)
+    chr <- ChromCom3(pars, timepars=list(start=-50, stop=30, step=1))
     echr <- getData()
     chr <- generateCells(chr, method="simulation", nsim=getNsim())
     rms <- round(oeError(chr, echr), 1)
@@ -92,6 +96,7 @@ server <- shinyServer(function(input, output) {
 
   output$tPlot <- renderPlot({
     pars <- sliderValues()
+    pars$t2ref <- t2ref()
     tPlot(pars)
   }, res=120)
 
