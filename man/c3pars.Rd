@@ -4,21 +4,25 @@
 \alias{c3pars}
 \title{\code{c3pars} object constructor}
 \usage{
-c3pars(tau = -20, dt2 = 0, dt3 = 0, k1 = 0.04, k2 = 0.04, k3 = 0,
-  squeeze = 0, dummy = FALSE)
+c3pars(t0 = 0, tau1 = 20, tau2 = 0, tau3 = 0, k1 = 0.04, k2 = 0.04,
+  k3 = 0, t2ref = 1, squeeze = 0, dummy = FALSE)
 }
 \arguments{
-\item{tau}{Start time scale}
+\item{t0}{Nuclear envelope breakdown time (should be zero)}
 
-\item{dt2}{Delay until P->R is possible}
+\item{tau1}{Timescale for onset of B->P transition}
 
-\item{dt3}{Delay until P>B is possible}
+\item{tau2}{Timescale for delay of P->R transition (zero if no delay)}
+
+\item{tau3}{Timescale for delay of P->B transition (zero if no delay)}
 
 \item{k1}{B->P rate}
 
 \item{k2}{P->R rate}
 
 \item{k3}{R->B rate}
+
+\item{t2ref}{Reference point for time t2, either 1 for "t1" or 0 for "t0"}
 
 \item{dummy}{Logical, if set empty list is returned}
 }

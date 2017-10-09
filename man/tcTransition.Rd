@@ -2,7 +2,7 @@
 % Please edit documentation in R/lib.R
 \name{tcTransition}
 \alias{tcTransition}
-\title{Create a cell using transition method}
+\title{Create a cell using transition method (OBSOLETE)}
 \usage{
 tcTransition(pars, timepars)
 }
@@ -15,5 +15,5 @@ tcTransition(pars, timepars)
 A cell
 }
 \description{
-Create a cell using transition method
+Create a cell using transition method (OBSOLETE)
 }

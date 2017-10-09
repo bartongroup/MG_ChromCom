@@ -4,7 +4,7 @@
 \alias{oeError}
 \title{Data-model error}
 \usage{
-oeError(chr, echr, limits = c(-90, 30))
+oeError(chr, echr, limits = c(-50, 30))
 }
 \arguments{
 \item{chr}{Model data}

@@ -4,7 +4,8 @@
 \alias{fitChr}
 \title{Fit ChromCom data with a model}
 \usage{
-fitChr(echr, pars, freepars, nsim = 1000, ntry = 10, ncores = 4)
+fitChr(echr, pars, freepars, nsim = 1000, ntry = 10, ncores = 4,
+  limits = c(-50, 30), mlimits = c(-150, 50))
 }
 \arguments{
 \item{echr}{A \code{ChromCom3} object with experimental data}
@@ -18,6 +19,10 @@ fitChr(echr, pars, freepars, nsim = 1000, ntry = 10, ncores = 4)
 \item{ntry}{Number of tries in search}
 
 \item{ncores}{Number of cores}
+
+\item{mlimits}{A two-element vector with model limits (for display only)}
+
+\item{limtis}{A two-element vector with fit limits (in minutes)}
 }
 \value{
 A \code{ChromCom3} object with the best-fitting model. "rms" field

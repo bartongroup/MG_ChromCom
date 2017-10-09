@@ -4,7 +4,7 @@
 \alias{plotTimelines}
 \title{Plot time lines}
 \usage{
-plotTimelines(chr, smooth = FALSE, k = 5, expdata = NULL, title = "",
+plotTimelines(chr, smooth = FALSE, k = 5, expdata = NULL, title = NULL,
   title.size = 10, withpars = FALSE, ...)
 }
 \arguments{

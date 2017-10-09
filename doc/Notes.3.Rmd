@@ -252,5 +252,9 @@ It seems text-numeric type conflicts. I explicitly convert parameters into numer
 
 # 25/09/2017
 
-After a few days off work due to illnes, I'm putting all of this together in the mod3 document. The original model (ref1) needs to be re-fitted on the smae time interval as the new one. Running fits agai.
+After a few days off work due to illnes, I'm putting all of this together in the mod3 document. The original model (ref1) needs to be re-fitted on the smae time interval as the new one. Running fits again.
+
+# 9/10/2017
+
+Extended model for display (not for rms) in the Shiny app.
 
