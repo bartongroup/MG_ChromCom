@@ -258,3 +258,8 @@ After a few days off work due to illnes, I'm putting all of this together in the
 
 Extended model for display (not for rms) in the Shiny app.
 
+# 20/11/2017
+
+Adding two new data files. Need to update `experimentalData` function as it did not work with data file with an empty cell (converted it quietly into NAs).
+
+

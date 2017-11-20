@@ -24,7 +24,9 @@ dataFile <- list(
   WAPL48  = "../data/WAPL_48hr_noncoloured.csv",
   MK1775  = "../data/MK1775only_noncoloured.csv",
   MK1775_ICRF193  = "../data/MK1775andICRF193_noncoloured.csv",
-  RAD21 = "../data/RAD21_48hr_noncoloured.csv"
+  RAD21 = "../data/RAD21_48hr_noncoloured.csv",
+  TT103 = "../data/TT103_uncoloured.csv",
+  TT108 = "../data/TT108_untreated_noncoloured.csv"
 )
 
 #' Simple theme for plotting
@@ -482,6 +484,7 @@ experimentalData <- function(file) {
   dat <- read.delim(file, header=TRUE, sep=",")
   time <- dat[,1] / 60
   dat <- dat[,2:ncol(dat)]
+  dat[is.na(dat)] <- ""
   # the last non-empty time point
   cut <- max(which(s <- rowSums(dat != '') > 0))
   time <- time[1:cut]
