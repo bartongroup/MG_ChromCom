@@ -17,6 +17,7 @@ library(mylib)
 library(ggplot2)
 library(gridExtra)
 library(latex2exp)
+library(kableExtra)
 
 source("../R/lib.R")
 binDir <- "../RData"
@@ -184,7 +185,7 @@ for(set in names(dataFile)) {
 plotAllConditions <- function(suffix) {
   chr <- lapply(names(dataFile), function(set) {
     name <- paste0("fits_", set, "_", suffix)
-  cacheData(name, binDir=binDir, cacheonly=TRUE)
+    cacheData(name, binDir=binDir, cacheonly=TRUE)
   })
   names(chr) <- names(dataFile)
   P <- list()
@@ -200,8 +201,8 @@ Here are fit results for all conditions with $t_0$ fixed at zero and four parame
 
 
 ```{r fig_all_conditions, fig.width=12, fig.height=20}
-P <- plotAllConditions("ref1_t0_n10000_tau1_k1_k2_tau2")
-grid.arrange(grobs=P, ncol=2)
+#P <- plotAllConditions("ref1_t0_n10000_tau1_k1_k2_tau2")
+#grid.arrange(grobs=P, ncol=2)
 ```
 
 
@@ -212,8 +213,39 @@ Here are results from a modified model, where P$\rightarrow$R transition can hap
 We can also see that the pink curve is more peaked, as opposed to the smooth rise and decay in the default model.
 
 ```{r fig_all_conditions_switch, fig.width=12, fig.height=28}
-P1 <- plotAllConditions("ref0_t0_n1000_tau1_k1_k2_tau2")
-P2 <- plotAllConditions("ref0_t10_n1000_tau1_k1_k2_tau2")
-P <- c(rbind(P1, P2))  # interleave lists (beautiful trick!)
-grid.arrange(grobs=P, ncol=2)
+#P1 <- plotAllConditions("ref0_t0_n1000_tau1_k1_k2_tau2")
+#P2 <- plotAllConditions("ref0_t10_n1000_tau1_k1_k2_tau2")
+#P <- c(rbind(P1, P2))  # interleave lists (beautiful trick!)
+#grid.arrange(grobs=P, ncol=2)
+```
+
+# Four-colour plots
+
+Here I create cell-line plots for all data sets using four colours.
+
+
+```{r four_colour}
+echr4 <- lapply(dataFile, function(file) experimentalData(file, map=model.colours.extended))
+P <- lapply(names(echr4), function(nm) plotCells(echr4[[nm]], palette=c("blue", "chocolate4", "pink", "red")) + labs(title=nm))
+names(P) <- names(echr4)
+```
+
+```{r fig_four_colours, fig.width=12, fig.height=28}
+grid.arrange(grobs=P, ncol=2) 
+```
+
+PDF files:
+
+```{r four_colours_pdf}
+public_html <- "http://www.compbio.dundee.ac.uk/user/mgierlinski/chromcom/"
+df <- NULL
+for(nm in names(P)) {
+  file <- paste0(nm, "_4colour.pdf")
+  remote.file <- paste0("/home/mgierlinski/projects/chromcom/pdf/", file)
+  url <- paste0(public_html, "pdf/", file)
+  link <- paste0("[", nm, "](", url, ")")
+  df <- rbind(df, data.frame(link=link))
+  ggsave(remote.file, P[[nm]], device="pdf")
+}
+kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
 ```

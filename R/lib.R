@@ -8,8 +8,9 @@ data.colours <- c("", "_blue_", "_blueDark_g", "_blueDark_r",
                   "_brown_g", "_brown_r", "_brownDark_g", "_brownDark_r",
                   "_pink_", "_pinkDark_", "anaphase")
 model.colours <- c(NA, "B", "B", "B", "B", "B", "B", "B", "P", "R", NA)
-translateVector <- function(x) {
-  model.colours[match(x, data.colours)]
+model.colours.extended <- c(NA, "B", "B", "B", "N", "N", "N", "N", "P", "R", NA)
+translateVector <- function(x, map=model.colours) {
+  map[match(x, data.colours)]
 }
 
 
@@ -458,15 +459,14 @@ heightDetails.gtable <- function(x) sum(x$heights)
 #' @param chr A \code{ChrCom3} object with data
 #'
 #' @export
-plotCells <- function(chr) {
+plotCells <- function(chr, palette=c("blue", "pink", "red")) {
   cells <- chr$cells
   colnames(cells) <- chr$time
   m <- reshape2::melt(cells, varnames=c("Cell", "Time"))
-  cPalette <- c("blue", "pink", "red")
   ggplot(m, aes(Time, Cell, fill=value)) +
     simple_theme_grid +
     geom_tile() +
-    scale_fill_manual(values=cPalette) +
+    scale_fill_manual(values=palette) +
     theme(legend.position="none") +
     labs(x="Time (min)", y="Cell")
 }
@@ -480,7 +480,7 @@ plotCells <- function(chr) {
 #'
 #' @return A \code{ChrCom3} object
 #' @export
-experimentalData <- function(file) {
+experimentalData <- function(file, map=model.colours) {
   dat <- read.delim(file, header=TRUE, sep=",")
   time <- dat[,1] / 60
   dat <- dat[,2:ncol(dat)]
@@ -489,9 +489,9 @@ experimentalData <- function(file) {
   cut <- max(which(s <- rowSums(dat != '') > 0))
   time <- time[1:cut]
   dat <- dat[1:cut,]
-  tdat <- apply(dat, 1, translateVector)
+  tdat <- apply(dat, 1, function(x) translateVector(x, map=map))
   pars <- c3pars()
-  echr <- ChromCom3(pars, time=time, cells=tdat)
+  echr <- ChromCom3(pars, time=time, cells=tdat, colours=unique(na.omit(map)))
 }
 
 
