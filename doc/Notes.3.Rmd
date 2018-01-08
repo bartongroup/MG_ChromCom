@@ -263,3 +263,26 @@ Extended model for display (not for rms) in the Shiny app.
 Adding two new data files. Need to update `experimentalData` function as it did not work with data file with an empty cell (converted it quietly into NAs).
 
 
+# 8/01/2018
+
+Looking for ways of finding confidence intervals on fit parameters. Not much found. Asked question on StackOverflow.
+
+Fitting new data sets.
+
+```{r eval=FALSE}
+script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.Rs"
+logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
+switch <- 0
+
+host <- "login-gjb-1.compbio.dundee.ac.uk"
+
+for(set in c("TT103", "TT108")) {
+  name <- paste0("fits_", set, "_ref0_t0_n10000_tau1_k1_k2_tau2")
+  cmd <- paste("Rscript", script, set, name, switch, 10000, 100, 0)
+  qsub(cmd, logDir, name=name, host=host)
+  
+  name <- paste0("fits_", set, "_ref0_t10_n10000_tau1_k1_k2_tau2")
+  cmd <- paste("Rscript", script, set, name, switch, 10000, 100, -10)
+  qsub(cmd, logDir, name=name, host=host)
+}
+```
