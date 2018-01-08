@@ -286,3 +286,16 @@ for(set in c("TT103", "TT108")) {
   qsub(cmd, logDir, name=name, host=host)
 }
 ```
+
+## Meeting Tomo and John
+
+Distribution of colour length: if Poisson process, then it should be exponential. test in different windows. Early window (<-20 min), see how brown behaves.
+
+New data set: early G2. Late G2 is our data up to -20 min.
+
+Look at density distribution of brown.
+
+Distribution of brown  - are they Poisson, ranodm, or is there a pattern, like clumping. Do cumulative dist. on intervals and see if it is exponential.
+
+How to correct for the lenght of cell available (that is brow-to-brown distance will be biased for short cells, longer intervals missing)?
+
