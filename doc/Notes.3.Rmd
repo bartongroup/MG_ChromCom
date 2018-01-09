@@ -279,10 +279,22 @@ host <- "login-gjb-1.compbio.dundee.ac.uk"
 for(set in c("TT103", "TT108")) {
   name <- paste0("fits_", set, "_ref0_t0_n10000_tau1_k1_k2_tau2")
   cmd <- paste("Rscript", script, set, name, switch, 10000, 100, 0)
-  qsub(cmd, logDir, name=name, host=host)
+  qsub(cmd, logDir)
   
   name <- paste0("fits_", set, "_ref0_t10_n10000_tau1_k1_k2_tau2")
   cmd <- paste("Rscript", script, set, name, switch, 10000, 100, -10)
-  qsub(cmd, logDir, name=name, host=host)
+  qsub(cmd, logDir)
+}
+
+switch <- 1
+for(set in c("TT103", "TT108")) {
+  name <- paste0("fits_", set, "_ref1_t0_n10000_tau1_k1_k2_tau2")
+  cmd <- paste("Rscript", script, set, name, switch, 10000, 100, 0)
+  qsub(cmd, logDir)
 }
 ```
+
+
+# 9/01/2018
+
+Working on brown distribution.

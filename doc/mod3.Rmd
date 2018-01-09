@@ -250,3 +250,58 @@ for(nm in names(P)) {
 }
 kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
 ```
+
+# Brown density
+
+```{r colour_1D_map}
+colourMap <- function(echr, condition, window=c(-300,-20), colour="N") {
+  ch <- echr[[condition]]
+  cells <- ch$cells
+  cells <- cells[, ch$time >= window[1] & ch$time <= window[2]]
+  map <- cells == colour
+  # important assumption: gaps are non-colour
+  map[is.na(map)] <- FALSE
+  cmap <- list()
+  k <- 1
+  for(i in 1:nrow(map)) {
+    row <- map[i, ]
+    # trim NAs at both ends
+    good <- which(!is.na(row))
+    if(length(good) > 0) {
+      row <- row[min(good):max(good)]
+      cmap[[k]] <- row
+      k <- k + 1
+    }
+  }
+  cmap
+}
+
+intervalDistribution <- function(cmap) {
+  dist <- lapply(cmap, function(row) {
+    w <- which(row)
+    if(length(w) > 0) {
+      w[2:length(w)] - w[1:(length(w)-1)]   # intervals between colours
+    }
+  })
+  dist[sapply(dist, is.null)] <- NULL  # remove NULLs
+  do.call(c, dist)
+}
+```
+
+
+```{r colour_dist_example}
+cmap <- colourMap(echr4, "scramble")
+dist <- intervalDistribution(cmap)
+
+smap <- do.call(c, cmap)
+lambda <- sum(smap) / length(smap)
+
+# expected distribution
+xx <- 0:60
+yy <- lambda * exp(-lambda * xx)
+
+df <- data.frame(dist=dist)
+ggplot(df, aes(dist)) +
+  geom_histogram(aes(y=..density..)) +
+  geom_line(data=data.frame(x=xx, y=yy), aes(x, y))
+```
