@@ -292,6 +292,13 @@ for(set in c("TT103", "TT108")) {
   cmd <- paste("Rscript", script, set, name, switch, 10000, 100, 0)
   qsub(cmd, logDir)
 }
+
+switch <- 0
+for(set in names(dataFile)[1:9]) {
+  name <- paste0("fits_", set, "_ref0_t0_n10000_tau1_k1_k2_tau2")
+  cmd <- paste("Rscript", script, set, name, switch, 10000, 100, 0)
+  qsub(cmd, logDir)
+}
 ```
 
 
