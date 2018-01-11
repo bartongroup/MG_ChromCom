@@ -130,14 +130,20 @@ c3pars <- function(
 }
 
 
-#' Generate transition times (OBSOLETE)
+#' Generate transition times (there are some issues with this)
 #'
 #' @param pars Parameters of the simulation (t1, dt2, k1, k2)
 #'
 #' @return A list with two transition times
 transitionTimes <- function(pars) {
-  BP <- ifelse(pars$k1 > 0, pars$t1 + rexp(1, pars$k1), 1000)
-  PR <- ifelse(pars$k2 > 0, BP + pars$dt2 + rexp(1, pars$k2), 1000)
+  # find three onset timepoints (t1, t2 and t3)
+  tp <- setPoints(pars)
+
+  BP <- ifelse(pars$k1 > 0, tp$t1 + rexp(1, pars$k1), 1000)
+
+  t2 <- ifelse(BP > tp$t2, BP, tp$t2)
+  PR <- ifelse(pars$k2 > 0, t2 + rexp(1, pars$k2), 1000)
+
   T <- list(
     BP = BP,
     PR = PR
@@ -160,7 +166,7 @@ timeIndex <- function(t, tp, maxn=10000) {
 
 
 
-#' Create a cell using transition method (OBSOLETE)
+#' Create a cell using transition mode (there are some issues with this)
 #'
 #' @param pars Model parameters
 #' @param timepars Time parameters
@@ -172,6 +178,7 @@ tcTransition <- function(pars, timepars) {
   maxn <- 10000
   iBP <- timeIndex(T$BP, timepars, maxn)
   iPR <- timeIndex(T$PR, timepars, maxn)
+  #if(iPR <= iBP) iPR = iBP + 1
 
   # we want to avoid boundary effects
   cell <- rep("B", maxn)
@@ -196,7 +203,20 @@ stateTransition <- function(state, i, i2, i3, p1, p2, p3) {
 }
 
 
-#' Create a cell using simulations method
+#' Find onset time points t1, t2 and t3
+#'
+#' @param pars Model parameters
+#' @return A list with three time points
+setPoints <- function(pars) {
+  t1 <- pars$t0 - rexp(1, 1 / pars$tau1)  # generate random t1 with exponential distribution
+  t2base <- ifelse(pars$t2ref == 1, t1, pars$t0)  # reference point for t2 (model switch)
+  t2 <- t2base + ifelse(pars$tau2 > 0, rexp(1, 1/pars$tau2), 0)
+  t3 <- t1 + ifelse(pars$tau3 > 0, rexp(1, 1/pars$tau3), 0)
+  list(t1=t1, t2=t2, t3=t3)
+}
+
+
+#' Create a cell using simulations mode
 #'
 #' @param pars Model parameters
 #' @param timepars Time parameters
@@ -205,16 +225,13 @@ stateTransition <- function(state, i, i2, i3, p1, p2, p3) {
 tcSimulation <- function(pars, timepars) {
   cell <- rep("-", timepars$n)
 
-  # Find three onset timepoints
-  t1 <- pars$t0 -rexp(1, 1 / pars$tau1)  # generate random t1 with exponential distribution
-  t2base <- ifelse(pars$t2ref == 1, t1, pars$t0)  # reference point for t2 (model switch)
-  t2 <- t2base + ifelse(pars$tau2 > 0, rexp(1, 1/pars$tau2), 0)
-  t3 <- t1 + ifelse(pars$tau3 > 0, rexp(1, 1/pars$tau3), 0)
+  # find three onset timepoints (t1, t2 and t3)
+  tp <- setPoints(pars)
 
   # integer indexes in the time table
-  i1 <- timeIndex(t1, timepars)
-  i2 <- timeIndex(t2, timepars)
-  i3 <- timeIndex(t3, timepars)
+  i1 <- timeIndex(tp$t1, timepars)
+  i2 <- timeIndex(tp$t2, timepars)
+  i3 <- timeIndex(tp$t3, timepars)
 
   # transition probabilities from rates
   p1 <- 1 - exp(-timepars$step * pars$k1)
@@ -242,12 +259,12 @@ tcSimulation <- function(pars, timepars) {
 #'
 #' @return A character vector of colours
 #' @export
-timelineCell <- function(pars, timepars, method=c("transition", "simulation")) {
-  method <- match.arg(method)
+timelineCell <- function(pars, timepars, mode=c("transition", "simulation")) {
+  mode <- match.arg(mode)
 
-  if(method == "transition") {
+  if(mode == "transition") {
     cell <- tcTransition(pars, timepars)
-  } else if(method == "simulation") {
+  } else if(mode == "simulation") {
     cell <- tcSimulation(pars, timepars)
   }
 
@@ -277,12 +294,12 @@ cellCount <- function(cells, time, colours) {
 #'
 #' @param chr Initial \code{ChrCom3} object with model parameters.
 #' @param nsim Number of simulations.
-#' @param method Either "transition" or "simulation"
+#' @param mode Either "transition" or "simulation"
 #'
 #' @return A \code{ChrCom3} object with simulation results.
 #' @export
-generateCells <- function(chr, nsim=1000, method="simulation") {
-  cells <- t(replicate(nsim, timelineCell(chr$pars, chr$timepars, method)))
+generateCells <- function(chr, nsim=1000, mode="simulation") {
+  cells <- t(replicate(nsim, timelineCell(chr$pars, chr$timepars, mode)))
   cnt <- cellCount(cells, chr$time, chr$colours)
   chr$cells <- cells
   chr$cnt <- cnt
@@ -558,10 +575,10 @@ parVector <- function(pars, parsel) {
 }
 
 # error function to minimize; p is a vector of parameters
-errorFun <- function(p, pars, echr, nsim, limits) {
+errorFun <- function(p, pars, echr, nsim, limits, mode) {
   pars <- vectorPar(p, pars)
   chr <- ChromCom3(pars, timepars=list(start=limits[1], stop=limits[2], step=1))
-  chr <- generateCells(chr, nsim=nsim, method="simulation")
+  chr <- generateCells(chr, nsim=nsim, mode=mode)
   err <- oeError(chr, echr, limits)
   return(err)
 }
@@ -576,11 +593,12 @@ errorFun <- function(p, pars, echr, nsim, limits) {
 #' @param ntry Number of tries in search
 #' @param ncores Number of cores
 #' @param limtis A two-element vector with fit limits (in minutes)
+#' @param mode How to generate timelines. Either "simulation" or "transition"
 #'
 #' @return A \code{ChromCom3} object with the best-fitting model. "rms" field
 #'   is added. \code{\link{optim}} function is used for minimization with method "L-BFGS-B".
 #' @export
-fitChr <- function(echr, pars, freepars, nsim=1000, ntry=10, ncores=4, limits=c(-50, 30)) {
+fitChr <- function(echr, pars, freepars, nsim=1000, ntry=10, ncores=4, limits=c(-50, 30), mode="simulation") {
   stopifnot(is(pars, "c3pars"))
   stopifnot(is(echr, "ChromCom3"))
 
@@ -592,13 +610,13 @@ fitChr <- function(echr, pars, freepars, nsim=1000, ntry=10, ncores=4, limits=c(
   upper <- upper[freepars]
 
   lopt <- mclapply(1:ntry, function(i) {
-    optim(p, errorFun, gr=NULL, pars, echr, nsim, limits, method="L-BFGS-B", lower=lower, upper=upper, control=list(trace=3))
+    optim(p, errorFun, gr=NULL, pars, echr, nsim, limits, mode, method="L-BFGS-B", lower=lower, upper=upper, control=list(trace=3))
   }, mc.cores = ncores)
 
   idx.min <- which.min(sapply(1:ntry, function(i) lopt[[i]]$value))
   pars <- vectorPar(lopt[[idx.min]]$par, pars)
   chr <- ChromCom3(pars, timepars=list(start=limits[1], stop=limits[2], step=1))
-  chr <- generateCells(chr, nsim=nsim, method="simulation")
+  chr <- generateCells(chr, nsim=nsim, mode=mode)
   chr$rms <- lopt[[idx.min]]$value
   return(chr)
 }
