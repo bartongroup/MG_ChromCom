@@ -261,7 +261,9 @@ kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_wi
 colourMap <- function(echr, condition, window=c(-300,-20), colour="N") {
   ch <- echr[[condition]]
   cells <- ch$cells
-  cells <- cells[, ch$time >= window[1] & ch$time <= window[2]]
+  sel.win <- ch$time >= window[1] & ch$time <= window[2]
+  cells <- cells[, sel.win]
+  colnames(cells) <- ch$time[sel.win]
   map <- cells == colour
   # important assumption: gaps are non-colour
   map[is.na(map)] <- FALSE
@@ -283,7 +285,8 @@ colourMap <- function(echr, condition, window=c(-300,-20), colour="N") {
 intervalDistribution <- function(cmap) {
   dist <- lapply(cmap, function(row) {
     w <- which(row)
-    if(length(w) > 0) {
+    w <- as.numeric(names(w))  # time points
+    if(length(w) > 1) {
       w[2:length(w)] - w[1:(length(w)-1)]   # intervals between colours
     }
   })
@@ -297,6 +300,8 @@ randomMap <- function(cmap) {
   
   rmap <- lapply(cmap, function(row){
     r <- runif(length(row)) < P
+    names(r) <- names(row)
+    r
   })
 }
 ```
@@ -322,9 +327,11 @@ plotIntervalDistribution <- function(echr, condition, window, with.theoretical=F
   xx <- 1:60
   yy <- lambda * exp(-lambda * xx)
 
+  timestep <- echr[[condition]]$timepars$step
+  
   df <- data.frame(dist=dist)
   rf <- data.frame(dist=rdist)
-  breaks <- seq(60) - 1.5
+  breaks <- timestep*(seq(60) - 1.5)
   g <- ggplot(df, aes(dist)) +
     geom_histogram(aes(y=..density..), breaks=breaks) +
     geom_histogram(data=rf, aes(x=dist, y=..density..), breaks=breaks, colour=cbPalette[2], fill=NA) +
@@ -357,4 +364,24 @@ for(nm in names(echr4)) {
   P[[nm]] <- plotIntervalDistribution(echr4, nm, c(-300, -20))
 }
 grid.arrange(grobs=P, ncol=3) 
+```
+
+## S and G2 data
+
+```{r read_G2_S}
+patDataFile <- list(
+  S_phase = "../data/TT104_patterning_S_noncoloured.csv",
+  G2_phase = "../data/TT104_patterning_late_G2_noncoloured.csv"
+)
+
+pchr <- lapply(patDataFile, function(file) experimentalData(file, map=model.colours.extended))
+```
+
+
+```{r interval_distributions_G2_S, fig.width=6, fig.height=3}
+P <- list()
+for(nm in names(pchr)) {
+  P[[nm]] <- plotIntervalDistribution(pchr, nm, c(-300, 300))
+}
+grid.arrange(grobs=P, ncol=2) 
 ```
