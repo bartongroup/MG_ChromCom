@@ -13,7 +13,7 @@ library(parallel)
 library(methods)
 
 args <- commandArgs(TRUE)
-stopifnot(length(args) != 6)
+stopifnot(length(args) == 6)
 set <- args[1]
 batch <- args[2]
 t2ref <- as.integer(args[3])
@@ -25,7 +25,7 @@ ntry <- args[5]
 t0 <- as.numeric(args[6])
 
 
-print(paste("Fitting", set))
+print(paste("Fitting", set, "batch", batch))
 
 echr <- experimentalData(dataFile[[set]])
 str(echr)
@@ -41,7 +41,7 @@ pars <- c3pars(
 str(pars)
 
 free <- c("tau1", "k1", "k2", "tau2")
-fit <- fitChr(echr, pars, free, ncells=ncells, ntry=ntry, ncores=8, bootstrap=TRUE, binDir=binDir)
+fit <- fitChr(echr, pars, free, ncells=ncells, ntry=ntry, ncores=8, bootstrap=TRUE)
 
 p <- t(as.matrix(do.call(c, fit$pars)))
 file <- paste0(bootDir, set, "_", batch, ".pars")
