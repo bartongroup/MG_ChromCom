@@ -83,7 +83,7 @@ plotTimelines(chr.scr.15, expdata = echr$scr, withpars=TRUE)
 Need to do this on the cluster. Made a little script `fitting.Rs` to fit one set. Lets try is.
 
 ```{r eval=FALSE}
-script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.Rs"
+script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
 logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
 
 for(set in names(dataFile)) {
@@ -371,6 +371,12 @@ Parallel version reduces time by half.
 
 ## Bootstrap trial
 
-```{r bootstrap_trial}
-
+```{r bootstrap_trial, eval=FALSE}
+script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/bootstrap.R"
+logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
+for(batch in 1:10) {
+  args <- paste("scramble", batch, 1, 1000, 10, 0)
+  cmd <- paste("Rscript", script, args)
+  # qsub(cmd, logDir, name=paste0("B_", batch), ncor=8)
+}
 ```

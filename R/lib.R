@@ -621,6 +621,7 @@ fitChr <- function(echr, pars, freepars, ncells=1000, ntry=10, ncores=7, limits=
   n <- length(x)
   if(bootstrap) {
     sel <- sample(1:n, n, replace=TRUE)
+    cat(paste("Sample:", sel, "\n"))
   } else {
     sel <- 1:n
   }
