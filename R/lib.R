@@ -379,11 +379,11 @@ timelinePanel <- function(m, single=FALSE, xmin=as.numeric(NA), xmax=as.numeric(
 #' @param ... Other parameters passed to \code{\link{timelinePanel}}
 #'
 #' @export
-plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title=NULL, title.size=10, withpars=FALSE, ...) {
+plotTimelines <- function(chr, smooth=FALSE, k=5, expdata=NULL, title=NULL, title.size=10, withpars=FALSE, limits=c(-50, 30), ...) {
   m <- meltTimelines(chr, smooth=smooth, k=k)
   if(!is.null(expdata)) {
     exm <- meltTimelines(expdata, smooth=TRUE, k=15)
-    rms <- oeError(chr, expdata)
+    rms <- oeError(chr, expdata, limits)
   } else {
     rms <- NULL
   }
@@ -527,7 +527,7 @@ experimentalData <- function(file, map=model.colours) {
 #'
 #' @return RMS over all three curves
 #' @export
-oeError <- function(chr, echr, limits, sel) {
+oeError <- function(chr, echr, limits, sel=NULL) {
 
   getProp <- function(ch, col) {
     p <- ts(ch$cnt[[col]] / ch$cnt$total, start=ch$timepars$start, deltat=ch$timepars$step)
@@ -538,6 +538,7 @@ oeError <- function(chr, echr, limits, sel) {
   }
 
   rms <- 0
+  if(is.null(sel)) sel <- 1:length(xo)
   for(col in chr$colours) {
     xo <- getProp(echr, col)
     xe <- getProp(chr, col)

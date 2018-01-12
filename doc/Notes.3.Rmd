@@ -374,9 +374,26 @@ Parallel version reduces time by half.
 ```{r bootstrap_trial, eval=FALSE}
 script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/bootstrap.R"
 logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
-for(batch in 1:10) {
-  args <- paste("scramble", batch, 1, 1000, 10, 0)
+set <- "NCAPD2"
+nbatch <- 300
+for(batch in 1:nbatch) {
+  args <- paste(set, batch, 1, 5000, 10, 0)
   cmd <- paste("Rscript", script, args)
-  # qsub(cmd, logDir, name=paste0("B_", batch), ncor=8)
+  qsub(cmd, logDir, name=paste0(set, "_", batch), ncor=8)
 }
+
+dat <- NULL
+for(batch in 1:nbatch) {
+  file <- paste0("/home/mgierlinski/projects/chromcomR/bootstrap/", set, "_", batch, ".pars")
+  df <- read.table(file, header = TRUE, sep="\t")
+  dat <- rbind(dat, df)
+}
+summary(dat)
+m <- reshape2::melt(dat, measure.vars=c("tau1", "tau2", "k1", "k2"))
+ggplot(m, aes(value)) +
+  geom_histogram(bins=20) +
+  facet_wrap(~variable, scales="free")
 ```
+
+
+Also, have done quite a lot of work on interval distribution.

@@ -265,8 +265,6 @@ colourMap <- function(echr, condition, window=c(-300,-20), colour="N") {
   cells <- cells[, sel.win]
   colnames(cells) <- ch$time[sel.win]
   map <- cells == colour
-  # important assumption: gaps are non-colour
-  map[is.na(map)] <- FALSE
   cmap <- list()
   k <- 1
   for(i in 1:nrow(map)) {
@@ -282,8 +280,18 @@ colourMap <- function(echr, condition, window=c(-300,-20), colour="N") {
   cmap
 }
 
+cmapDensity <- function(cmap) {
+  smap <- na.omit(do.call(c, cmap))
+  lambda <- sum(smap) / length(smap)
+}
+
 intervalDistribution <- function(cmap) {
+  lambda <- cmapDensity(cmap)
   dist <- lapply(cmap, function(row) {
+    # fill NAs
+    gaps <- which(is.na(row))
+    if(length(gaps) > 0) row[gaps] <- runif(length(gaps)) < lambda
+    # mark intervals
     w <- which(row)
     w <- as.numeric(names(w))  # time points
     if(length(w) > 1) {
@@ -294,9 +302,32 @@ intervalDistribution <- function(cmap) {
   do.call(c, dist)
 }
 
+gapDistribution <- function(cmap) {
+  lambda <- cmapDensity(cmap)
+  dist <- lapply(cmap, function(row) {
+    # fill NAs
+    gaps <- which(is.na(row))
+    if(length(gaps) > 0) row[gaps] <- runif(length(gaps)) < lambda
+    # trim FALSE at ends
+    good <- which(row)
+    if(length(good) > 1) {
+      row <- row[min(good):max(good)]
+      #  gap intervals
+      r <- rle(row)
+      w <- r$lengths[!r$values]
+      t <- as.numeric(names(row))
+      time.step <- t[2] - t[1]
+      w <- w * time.step
+    }
+  })
+  dist[sapply(dist, is.null)] <- NULL  # remove NULLs
+  do.call(c, dist)
+}
+
+
+
 randomMap <- function(cmap) {
-  smap <- do.call(c, cmap)
-  P <- sum(smap) / length(smap)
+  P <- cmapDensity(cmap)
   
   rmap <- lapply(cmap, function(row){
     r <- runif(length(row)) < P
@@ -308,20 +339,30 @@ randomMap <- function(cmap) {
 
 
 ```{r plot_interval_distribution_function}
-plotIntervalDistribution <- function(echr, condition, window, with.theoretical=FALSE) {
+plotIntervalDistribution <- function(echr, condition, window, with.theoretical=FALSE, what="interval") {
   cmap <- colourMap(echr, condition, window=window)
-  dist <- intervalDistribution(cmap)
-
+  if(what == "interval") {
+    dist <- intervalDistribution(cmap)
+  } else {
+    dist <- gapDistribution(cmap)
+  }
+  
   # find density
-  smap <- do.call(c, cmap)
-  lambda <- sum(smap) / length(smap)
+  lambda <- cmapDensity(cmap)
 
   # random dist repeated 100 times to smooth
   r <- lapply(1:100, function(i){
     rmap <- randomMap(cmap)
-    rdist <- intervalDistribution(rmap)
+    if(what == "interval") {
+      rdist <- intervalDistribution(rmap)
+    } else {
+      rdist <- gapDistribution(rmap)
+    }
   })
   rdist <- do.call(c, r)
+  
+  ks <- ks.test(dist, rdist)
+  p.value <- ks$p.value
 
   # expected theoretical distribution
   xx <- 1:60
@@ -332,11 +373,12 @@ plotIntervalDistribution <- function(echr, condition, window, with.theoretical=F
   df <- data.frame(dist=dist)
   rf <- data.frame(dist=rdist)
   breaks <- timestep*(seq(60) - 1.5)
+  xlab <- ifelse(what == "interval", "Point-to-point duration (min)", "Gap between duration (min)")
   g <- ggplot(df, aes(dist)) +
     geom_histogram(aes(y=..density..), breaks=breaks) +
     geom_histogram(data=rf, aes(x=dist, y=..density..), breaks=breaks, colour=cbPalette[2], fill=NA) +
     xlim(0, 40) +
-    labs(x="Interval length (min)", y="Density", title=paste(condition, sprintf("%5.3f", lambda)))
+    labs(x=xlab, y="Density", title=paste(condition, sprintf("d=%5.3f p=%.2g", lambda, p.value)))
   if(with.theoretical) g <- g + geom_point(data=data.frame(x=xx, y=yy), aes(x, y), colour=cbPalette[1])
   g
 }
@@ -353,18 +395,57 @@ The example below shows the result for scramble. The black bars represent data, 
 I use a window of [-300, -20] min.
 
 ```{r brown_distribution_example, fig.width=5, fig.height=4}
-plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = TRUE)
+plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = TRUE, what="interval")
+plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = FALSE, what="gap") 
 ```
+
+## Brown-to-brown interval distributions
 
 Below, are results for all conditions. For clarity, I don't shows theoretical points. The number in the title is the brown point density $\lambda$ (proportion of brown boxes).
 
-```{r interval_distributions, fig.width=9, fig.height=9}
+```{r interval_distributions, fig.width=7, fig.height=28}
 P <- list()
+k <- 1
 for(nm in names(echr4)) {
-  P[[nm]] <- plotIntervalDistribution(echr4, nm, c(-300, -20))
+  P[[k]] <- plotIntervalDistribution(echr4, nm, c(-300, -20), what="interval")
+  P[[k+1]] <- plotIntervalDistribution(echr4, nm, c(-300, -20), what="gap")
+  k <- k + 2
 }
-grid.arrange(grobs=P, ncol=3) 
+grid.arrange(grobs=P, ncol=2)
 ```
+
+## K-S tests
+
+Now, I do K-S test between each pair of distirbutions. P-values are in the table below.
+
+```{r brown_distribution_KS}
+getDist <- function(condition, window) {
+  cmap <- colourMap(echr4, condition, window=window)
+  dist <- gapDistribution(cmap)
+}
+ 
+window <- c(-300, -20)
+n <- length(names(echr4))
+mx <- matrix(rep("-", n*n), n)
+colnames(mx) <- names(echr4)
+rownames(mx) <- names(echr4)
+for(i in 1:(n-1)) {
+  for(j in (i+1):n) {
+    cond1 <- names(echr4)[i]
+    cond2 <- names(echr4)[j]
+    dist1 <- getDist(cond1, window)
+    dist2 <- getDist(cond2, window)
+    ks <- ks.test(dist1, dist2)
+    p <- sprintf("%.2g", ks$p.value)
+    mx[cond1, cond2] <- p
+    mx[cond2, cond1] <- p
+  }
+}
+
+
+kable(mx, format="html", row.names=TRUE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
+```
+
 
 ## S and G2 data
 
@@ -373,15 +454,22 @@ patDataFile <- list(
   S_phase = "../data/TT104_patterning_S_noncoloured.csv",
   G2_phase = "../data/TT104_patterning_late_G2_noncoloured.csv"
 )
-
 pchr <- lapply(patDataFile, function(file) experimentalData(file, map=model.colours.extended))
 ```
 
+```{r plot_S_G2, fig.width=6, fig.height=4}
+plotCells(pchr$S_phase, palette=c("blue", "chocolate4", "pink", "red"))
+plotCells(pchr$G2_phase, palette=c("blue", "chocolate4", "pink", "red"))
+```
 
-```{r interval_distributions_G2_S, fig.width=6, fig.height=3}
+
+```{r interval_distributions_G2_S, fig.width=7, fig.height=6}
 P <- list()
+k <- 1
 for(nm in names(pchr)) {
-  P[[nm]] <- plotIntervalDistribution(pchr, nm, c(-300, 300))
+  P[[k]] <- plotIntervalDistribution(pchr, nm, c(-300, 300), what="interval")
+  P[[k+1]] <- plotIntervalDistribution(pchr, nm, c(-300, 300), what="gap")
+  k <- k + 2
 }
-grid.arrange(grobs=P, ncol=2) 
+grid.arrange(grobs=P, ncol=2)
 ```
