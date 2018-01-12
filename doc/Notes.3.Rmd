@@ -317,3 +317,60 @@ How to correct for the lenght of cell available (that is brow-to-brown distance 
 # 9/01/2018
 
 Working on brown distribution.
+
+# 10/01/2018
+
+Now I know how to find confidence intervals on the parameter fits. Thanks to StackOverflow. We need to use a bootstrap.
+
+- Select random samples, with replacement, from original (x, y) data.
+- Fit each of the samples and find bootstrap parameters, tau1*, k1*, k2*
+- Repeat 1000 times
+- For each parameter find 95% confidence intervals
+
+# 11/01/2018
+
+Trying to improve fitting process, to make it a bit faster. Instead of simulation, I try again the transition method again, but cannot get consistent results.
+
+# 12/01/2018
+
+What if I parallelize cell generation?
+
+
+```{r test_generate_cells}
+# the original code
+generateCells1 <- function(chr, nsim=1000, mode="simulation") {
+  cells <- t(replicate(nsim, timelineCell(chr$pars, chr$timepars, mode)))
+  cnt <- cellCount(cells, chr$time, chr$colours)
+  chr$cells <- cells
+  chr$cnt <- cnt
+  chr$nsim <- nsim
+
+  return(chr)
+}
+
+# parallel version
+generateCells2 <- function(chr, nsim=1000, mode="simulation", ncores=8) {
+  tc <- mclapply(1:nsim, function(i) {
+    timelineCell(chr$pars, chr$timepars, mode)
+  }, mc.cores = ncores)
+  cells <- do.call(rbind, tc) # this is faster
+  #cells <- plyr::laply(tc, .fun=identity)
+  cnt <- cellCount(cells, chr$time, chr$colours)
+  chr$cells <- cells
+  chr$cnt <- cnt
+  chr$nsim <- nsim
+
+  return(chr)
+}
+
+system.time(for(i in  1:10) generateCells1(echr$scramble, nsim=10000))
+system.time(for(i in  1:10) generateCells2(echr$scramble, nsim=10000))
+```
+
+Parallel version reduces time by half.
+
+## Bootstrap trial
+
+```{r bootstrap_trial}
+
+```

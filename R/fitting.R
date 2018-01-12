@@ -1,4 +1,4 @@
-# Rscript fitting.Rs set name switch nsim ntry t0
+# Rscript fitting.Rs set name switch ncells ntry t0
 
 setwd("/cluster/gjb_lab/mgierlinski/projects/chromcomR/doc")
 source("../../mylib/R/lib.R")
@@ -19,8 +19,8 @@ t2ref <- as.integer(args[3])
 stopifnot(!is.null(dataFile[[set]]))
 stopifnot(t2ref %in% c(0, 1))
 
-nsim <- 1000
-if(!is.null(args[4])) nsim <- args[4]
+ncells <- 1000
+if(!is.null(args[4])) ncells <- args[4]
 
 ntry <- 100
 if(!is.null(args[5])) ntry <- args[5]
@@ -44,4 +44,4 @@ pars <- c3pars(
 str(pars)
 
 free <- c("tau1", "k1", "k2", "tau2")
-chr <- cacheData(name, fitChr, echr, pars, free, nsim=nsim, ntry=ntry, ncores=4, binDir=binDir)
+chr <- cacheData(name, fitChr, echr, pars, free, ncells=ncells, ntry=ntry, ncores=4, binDir=binDir)

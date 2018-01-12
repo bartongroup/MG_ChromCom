@@ -293,17 +293,21 @@ cellCount <- function(cells, time, colours) {
 #' Perform simulation
 #'
 #' @param chr Initial \code{ChrCom3} object with model parameters.
-#' @param nsim Number of simulations.
+#' @param ncells Number of cells to generate
 #' @param mode Either "transition" or "simulation"
+#' @param ncores Number of cores for parallel computation
 #'
 #' @return A \code{ChrCom3} object with simulation results.
 #' @export
-generateCells <- function(chr, nsim=1000, mode="simulation") {
-  cells <- t(replicate(nsim, timelineCell(chr$pars, chr$timepars, mode)))
+generateCells <- function(chr, ncells=1000, mode="simulation", ncores=7) {
+  tc <- mclapply(1:ncells, function(i) {
+    timelineCell(chr$pars, chr$timepars, mode)
+  }, mc.cores = ncores)
+  cells <- do.call(rbind, tc)
   cnt <- cellCount(cells, chr$time, chr$colours)
   chr$cells <- cells
   chr$cnt <- cnt
-  chr$nsim <- nsim
+  chr$ncells <- ncells
 
   return(chr)
 }
@@ -519,16 +523,17 @@ experimentalData <- function(file, map=model.colours) {
 #' @param chr Model data
 #' @param echr Experimental data
 #' @param limits Limiting window for calculations.
+#' @param sel An integer vector with selection of points for bootstrapping
 #'
 #' @return RMS over all three curves
 #' @export
-oeError <- function(chr, echr, limits=c(-50, 30)) {
+oeError <- function(chr, echr, limits, sel) {
 
   getProp <- function(ch, col) {
     p <- ts(ch$cnt[[col]] / ch$cnt$total, start=ch$timepars$start, deltat=ch$timepars$step)
     p[which(is.nan(p) | is.infinite(p))] <- NA
     p <- window(p, start=limits[1], end=limits[2])
-    p <- squeeze(p, ch$pars$squeeze)
+    #p <- squeeze(p, ch$pars$squeeze)
     p
   }
 
@@ -536,7 +541,7 @@ oeError <- function(chr, echr, limits=c(-50, 30)) {
   for(col in chr$colours) {
     xo <- getProp(echr, col)
     xe <- getProp(chr, col)
-    rms <- rms + sqrt(sum((xo - xe)^2))
+    rms <- rms + sqrt(sum((xo[sel] - xe[sel])^2))
   }
   return(rms)
 }
@@ -575,11 +580,11 @@ parVector <- function(pars, parsel) {
 }
 
 # error function to minimize; p is a vector of parameters
-errorFun <- function(p, pars, echr, nsim, limits, mode) {
+errorFun <- function(p, pars, echr, ncells, limits, mode, sel, ncores=7) {
   pars <- vectorPar(p, pars)
   chr <- ChromCom3(pars, timepars=list(start=limits[1], stop=limits[2], step=1))
-  chr <- generateCells(chr, nsim=nsim, mode=mode)
-  err <- oeError(chr, echr, limits)
+  chr <- generateCells(chr, ncells=ncells, mode=mode, ncores=ncores)
+  err <- oeError(chr, echr, limits, sel)
   return(err)
 }
 
@@ -589,16 +594,17 @@ errorFun <- function(p, pars, echr, nsim, limits, mode) {
 #' @param echr A \code{ChromCom3} object with experimental data
 #' @param pars A \code{c3pars} object with initial parameters
 #' @param freepars A character vector with names of free parameters
-#' @param nsim Number of cells to simulate
+#' @param ncells Number of cells to simulate
 #' @param ntry Number of tries in search
 #' @param ncores Number of cores
 #' @param limtis A two-element vector with fit limits (in minutes)
 #' @param mode How to generate timelines. Either "simulation" or "transition"
+#' @param bootstrap Logical. If TRUE, fit will be done on a random sample with replacement of time points
 #'
 #' @return A \code{ChromCom3} object with the best-fitting model. "rms" field
 #'   is added. \code{\link{optim}} function is used for minimization with method "L-BFGS-B".
 #' @export
-fitChr <- function(echr, pars, freepars, nsim=1000, ntry=10, ncores=4, limits=c(-50, 30), mode="simulation") {
+fitChr <- function(echr, pars, freepars, ncells=1000, ntry=10, ncores=7, limits=c(-50, 30), mode="simulation", bootstrap=FALSE) {
   stopifnot(is(pars, "c3pars"))
   stopifnot(is(echr, "ChromCom3"))
 
@@ -609,14 +615,24 @@ fitChr <- function(echr, pars, freepars, nsim=1000, ntry=10, ncores=4, limits=c(
   lower <- lower[freepars]
   upper <- upper[freepars]
 
-  lopt <- mclapply(1:ntry, function(i) {
-    optim(p, errorFun, gr=NULL, pars, echr, nsim, limits, mode, method="L-BFGS-B", lower=lower, upper=upper, control=list(trace=3))
-  }, mc.cores = ncores)
+  # find bootstrap selection based on the window
+  x <- ts(echr$cnt$total, start=echr$timepars$start, deltat=echr$timepars$step)
+  x <- window(x, start=limits[1], end=limits[2])
+  n <- length(x)
+  if(bootstrap) {
+    sel <- sample(1:n, n, replace=TRUE)
+  } else {
+    sel <- 1:n
+  }
+
+  lopt <- lapply(1:ntry, function(i) {
+    optim(p, errorFun, gr=NULL, pars, echr, ncells, limits, mode, sel, ncores, method="L-BFGS-B", lower=lower, upper=upper, control=list(trace=3))
+  })
 
   idx.min <- which.min(sapply(1:ntry, function(i) lopt[[i]]$value))
   pars <- vectorPar(lopt[[idx.min]]$par, pars)
   chr <- ChromCom3(pars, timepars=list(start=limits[1], stop=limits[2], step=1))
-  chr <- generateCells(chr, nsim=nsim, mode=mode)
+  chr <- generateCells(chr, ncells=ncells, mode=mode)
   chr$rms <- lopt[[idx.min]]$value
   return(chr)
 }

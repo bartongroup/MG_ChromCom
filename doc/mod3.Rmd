@@ -97,7 +97,7 @@ pars <- c3pars(
   t2ref = 1
 )
 chr <- ChromCom3(pars)
-chr <- generateCells(chr, nsim=3000)
+chr <- generateCells(chr, ncells=3000)
 plotTimelines(chr, withpars=TRUE)
 ```
 
@@ -113,7 +113,7 @@ pars <- c3pars(
   t2re = 0
 )
 chr <- ChromCom3(pars)
-chr <- generateCells(chr, nsim=3000)
+chr <- generateCells(chr, ncells=3000)
 plotTimelines(chr, withpars=TRUE)
 ```
 
@@ -153,7 +153,7 @@ free <- c("tau1", "k1", "k2", "tau2")
 neb <- c(0, -5, -10, -15)
 chr.scr <- lapply(neb, function(t0) {
   name <- paste0("fitt_scramble_n10000_t.", -t0, "_tau1_k1_k2_tau2")
-  cacheData(name, fitChr, echr$scramble, pars, free, nsim=10000, ntry=100, ncores=4, binDir=binDir, cacheonly=TRUE)
+  cacheData(name, fitChr, echr$scramble, pars, free, ncells=10000, ntry=100, ncores=4, binDir=binDir, cacheonly=TRUE)
 })
 names(chr.scr) <- as.character(-neb)
 ```
