@@ -18,6 +18,7 @@ library(ggplot2)
 library(gridExtra)
 library(latex2exp)
 library(kableExtra)
+library(parallel)
 
 source("../R/lib.R")
 binDir <- "../RData"
@@ -257,7 +258,10 @@ kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_wi
 
 # Brown density
 
-```{r colour_1D_map}
+```{r colour_density_functions}
+
+# build a colour map
+# a list of logical vectors, different lenght each - trims NAs on both ends
 colourMap <- function(echr, condition, window=c(-300,-20), colour="N") {
   ch <- echr[[condition]]
   cells <- ch$cells
@@ -280,52 +284,85 @@ colourMap <- function(echr, condition, window=c(-300,-20), colour="N") {
   cmap
 }
 
+# density of colour points in a map
+# number per box (not time!)
 cmapDensity <- function(cmap) {
   smap <- na.omit(do.call(c, cmap))
   lambda <- sum(smap) / length(smap)
 }
 
-intervalDistribution <- function(cmap) {
+# Fill gaps (NAs) with random data
+# Use the same density as existing data
+# Pure random (Poisson) distribution
+cmapFillNAs <- function(cmap) {
   lambda <- cmapDensity(cmap)
+  fmap <- lapply(cmap, function(row) {
+    nas <- which(is.na(row))
+    if(length(nas) > 0) row[nas] <- runif(length(nas)) < lambda
+    row
+  })
+  fmap
+}
+
+# Distribution of interarrival times between individual colour points
+# We don't really need this, as this is a bit artificial
+interarrivalDistribution <- function(cmap) {
+  cmap <- cmapFillNAs(cmap)
   dist <- lapply(cmap, function(row) {
-    # fill NAs
-    gaps <- which(is.na(row))
-    if(length(gaps) > 0) row[gaps] <- runif(length(gaps)) < lambda
-    # mark intervals
+    # mark interarrivals
     w <- which(row)
     w <- as.numeric(names(w))  # time points
     if(length(w) > 1) {
-      w[2:length(w)] - w[1:(length(w)-1)]   # intervals between colours
+      w[2:length(w)] - w[1:(length(w)-1)]   # interarrivals between colours
     }
   })
   dist[sapply(dist, is.null)] <- NULL  # remove NULLs
   do.call(c, dist)
 }
 
-gapDistribution <- function(cmap) {
-  lambda <- cmapDensity(cmap)
-  dist <- lapply(cmap, function(row) {
-    # fill NAs
-    gaps <- which(is.na(row))
-    if(length(gaps) > 0) row[gaps] <- runif(length(gaps)) < lambda
-    # trim FALSE at ends
+
+# Distribution of durations of either fills (what="fills")
+# or gaps between the fills (what="gap")
+# in.bins=TRUE : don't use time information, distribution based on data bins only
+durationDistribution <- function(cmap, what="fills", in.bins=FALSE) {
+  min.good <- ifelse(what=="fills", 0, 1)  # for gaps we need at least two events
+  
+  # WARNING: this is a random fill, so will get slightly different
+  # results with every call  to this function
+  fmap <- cmapFillNAs(cmap)
+  
+  # find time step
+  if(in.bins) {
+    time.step <- 1
+  } else {
+    lens <- sapply(fmap, length)
+    first.tp <- min(which(lens > 1))
+    t <- as.numeric(names(fmap[[first.tp]]))
+    time.step <- t[2] - t[1]
+  }
+  
+  dist <- lapply(fmap, function(row) {
     good <- which(row)
-    if(length(good) > 1) {
+    w <- NULL
+    if(length(good) > min.good) {
+      # trim FALSE at ends
       row <- row[min(good):max(good)]
-      #  gap intervals
+      #  intervals
       r <- rle(row)
-      w <- r$lengths[!r$values]
-      t <- as.numeric(names(row))
-      time.step <- t[2] - t[1]
-      w <- w * time.step
+      if(what == "fills") {
+        w <- r$lengths[r$values]
+      } else if (what == "gaps") {
+        w <- r$lengths[!r$values]
+      }
+      w <- as.numeric(w * time.step)
     }
+    w
   })
   dist[sapply(dist, is.null)] <- NULL  # remove NULLs
   do.call(c, dist)
 }
 
-
-
+# simple random map of single-point events
 randomMap <- function(cmap) {
   P <- cmapDensity(cmap)
   
@@ -335,16 +372,73 @@ randomMap <- function(cmap) {
     r
   })
 }
+
+# random map by redistributing actual events
+randomEventMap <- function(cmap, maxiter=1000, verbose=FALSE) {
+  cmap <- cmapFillNAs(cmap)
+  events <- durationDistribution(cmap, what="fills", in.bins=TRUE)
+  track.len <- sapply(cmap, length)
+  P <- track.len / sum(track.len)
+  
+  # start with empty map of the same lengths
+  rmap <- lapply(cmap, function(row) {
+    r <- rep(FALSE, length(row))
+    names(r) <- names(row)
+    r
+  })
+  
+  i <- 1
+  for(event in events) {
+    cnt <- 1
+    done <- FALSE
+    while(!done) {
+      cell <- which(rmultinom(1, 1, P) == 1)
+      if(track.len[cell] >= event) {
+        max <- track.len[cell] - event + 1
+        pos1 <- sample(1:max, size=1)
+        pos2 <- pos1 + event - 1
+        range <- pos1:pos2
+
+        # extend range, so we have gaps between events
+        if(pos1 > 1) pos1 <- pos1 - 1
+        if(pos2 < track.len[cell]) pos2 <- pos2 + 1
+        state <- rmap[[cell]][pos1:pos2]  # current state of the random map
+      } else {
+        # if track is shorter than event
+        state = 1
+      }
+      
+      if(sum(state) == 0) { # empty
+        rmap[[cell]][range] <- TRUE
+        done <- TRUE
+        if(verbose) cat(paste("  Done. ", i, "Event =", event, "Cell =", cell, "Range =", paste0(range, collapse=":"), "Iter = ", cnt, "\n"))
+        i <- i+1
+      } else { # try again
+        cnt <- cnt + 1
+        if(cnt >= maxiter) done <- TRUE
+      }
+    }
+    if(cnt == maxiter) {
+      stop("Did not converge.")
+    }
+  }
+  rmap
+}
+
 ```
 
 
 ```{r plot_interval_distribution_function}
-plotIntervalDistribution <- function(echr, condition, window, with.theoretical=FALSE, what="interval") {
+plotIntervalDistribution <- function(echr, condition, window, with.theoretical=FALSE, what="interarrival") {
   cmap <- colourMap(echr, condition, window=window)
-  if(what == "interval") {
-    dist <- intervalDistribution(cmap)
+  if(what == "interarrival") {
+    dist <- interarrivalDistribution(cmap)
+    xlab <- "Point-to-point distance (min)"
+  } else if(what %in% c("fills", "gaps")) {
+    dist <- durationDistribution(cmap, what=what)
+    xlab <- ifelse(what == "fills", "Duration of events (min)", "Gap between events (min)")
   } else {
-    dist <- gapDistribution(cmap)
+    stop("Unknown what.")
   }
   
   # find density
@@ -352,11 +446,12 @@ plotIntervalDistribution <- function(echr, condition, window, with.theoretical=F
 
   # random dist repeated 100 times to smooth
   r <- lapply(1:100, function(i){
-    rmap <- randomMap(cmap)
-    if(what == "interval") {
-      rdist <- intervalDistribution(rmap)
+    if(what == "interarrival") {
+      rmap <- randomMap(cmap)
+      rdist <- interarrivalDistribution(rmap)
     } else {
-      rdist <- gapDistribution(rmap)
+      rmap <- randomEventMap(cmap)
+      rdist <- durationDistribution(rmap, what=what)
     }
   })
   rdist <- do.call(c, r)
@@ -373,7 +468,6 @@ plotIntervalDistribution <- function(echr, condition, window, with.theoretical=F
   df <- data.frame(dist=dist)
   rf <- data.frame(dist=rdist)
   breaks <- timestep*(seq(60) - 1.5)
-  xlab <- ifelse(what == "interval", "Point-to-point duration (min)", "Gap between duration (min)")
   g <- ggplot(df, aes(dist)) +
     geom_histogram(aes(y=..density..), breaks=breaks) +
     geom_histogram(data=rf, aes(x=dist, y=..density..), breaks=breaks, colour=cbPalette[2], fill=NA) +
@@ -384,31 +478,62 @@ plotIntervalDistribution <- function(echr, condition, window, with.theoretical=F
 }
 ```
 
-Here I calculate the density of brown boxes and the distribution of intervals between them. If brown points are distributed randomly with density $\lambda$, the intervals between them should follow the exponential distribution with PDF
+## Point-to-point interarrival distributions
+
+Here I calculate the density of brown boxes and the distribution of interarrival times between them. If brown points are distributed randomly with density $\lambda$, the intervals between them should follow the exponential distribution with PDF
 
 $f(d) = \lambda e^{-\lambda d}$
 
-where $d$ is duration of the interval between consecutive brown points. Because some of the cells have much shorter data tracks, they will bias the interval distribution towards shorter intervals. The longer distances are missing from these short tracks. To account for this I made a simple model, in which I take cell tracks from the actual data, fill them randomly with brown points and calculate interval distribution. This is done 100 times to smooth the distribution.
+where $d$ is the interarrival time between consecutive brown points. Because some of the cells have much shorter data tracks, they will bias the interarrival distribution towards shorter intervals. The longer distances are missing from these short tracks. To account for this I made a simple model, in which I take cell tracks from the actual data, fill them randomly with brown points and calculate interarrival distribution. This is done 100 times to smooth the distribution.
 
 The example below shows the result for scramble. The black bars represent data, the orange points show the predicted theoretical distribution $f(d) = \lambda e^{-\lambda d}$ and the open blue bars show the simulated random distribution. As we can see, the simulated distribution predicts more short intervals with respect to the theoretical distribution, as expected.
 
 I use a window of [-300, -20] min.
 
-```{r brown_distribution_example, fig.width=5, fig.height=4}
-plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = TRUE, what="interval")
-plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = FALSE, what="gap") 
+```{r brown_interarrival_example, fig.width=5, fig.height=4}
+plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = TRUE, what="interarrival")
 ```
 
-## Brown-to-brown interval distributions
+However, this is not what we really want. Interarrival time between individual one-minute boxes assumes that each box is one event. But in reality, brown event can last less or more than one minute. If we see, e.g., four brown boxes next to each other, it is unlikely that this shows four one-minute events. Much more likely, this is one event that lasts four minutes. Hence, considering the distribution of times between one-minute boxes and comparing it to a Poisson distribution of random one-minute events does not make much sense.
 
-Below, are results for all conditions. For clarity, I don't shows theoretical points. The number in the title is the brown point density $\lambda$ (proportion of brown boxes).
+# Brown event duration and gap distribution
+
+Instead, we should consider the distribution of full brown events, short and long. Below, I show the distribution of durations of brown events.
+
+```{r brown_fills_example, fig.width=5, fig.height=4}
+plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = FALSE, what="fills") 
+```
+
+NOTE: the blue open bars show the simulated data (see details below). There is a slight difference between real and simulated data. This is because for each simulation (which is repeated 100 times) gapes in real data are filled with random data. Hence, the simulated data shows the most likely real data, with imputation.
+
+But we can get more insight from the distribution of intervals between the brown events. Here I use the gaps between the events, not taking brown begin/end into account. For example, if "N" is brown and "B" is blue then this cell track
+
+```
+BBBNBBNNNNBBBNB
+```
+
+shows three brown events of length 1, 4, and 1 and two "gap" events of lenghts 2 and 3. The blue sequences at the beginning and at the end are ignored, because we don't know how long they are, we only see part of them.
+
+This figure shows the distribution of gaps between brows events. The simulated distribution (open bars) is calculated in the following way:
+
+- I count the brown events of each length
+- I generate random data using the same cell track durations and the same brown events, distributed randomly
+- The process is repeated 100 times and the mean distirbution of randomized data is whown
+
+If brown events were random, both data and simulated distributions would be similar. The p-value in the title shows the result from a K-S test comparing data and simulation. The number "d" in each title is the density of brown boxes.
+
+```{r brown_gaps_example, fig.width=5, fig.height=4}
+plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = FALSE, what="gaps")
+```
+
+Below, are results for all conditions. Both event duration (left) and gap distribution (right).
 
 ```{r interval_distributions, fig.width=7, fig.height=28}
 P <- list()
 k <- 1
 for(nm in names(echr4)) {
-  P[[k]] <- plotIntervalDistribution(echr4, nm, c(-300, -20), what="interval")
-  P[[k+1]] <- plotIntervalDistribution(echr4, nm, c(-300, -20), what="gap")
+  P[[k]] <- plotIntervalDistribution(echr4, nm, c(-300, -20), what="fills")
+  P[[k+1]] <- plotIntervalDistribution(echr4, nm, c(-300, -20), what="gaps")
   k <- k + 2
 }
 grid.arrange(grobs=P, ncol=2)
@@ -416,36 +541,49 @@ grid.arrange(grobs=P, ncol=2)
 
 ## K-S tests
 
-Now, I do K-S test between each pair of distirbutions. P-values are in the table below.
+Now, I do K-S test between each pair of distirbutions.
 
-```{r brown_distribution_KS}
-getDist <- function(condition, window) {
+```{r brown_distribution_KS_function}
+getDist <- function(condition, window, what) {
   cmap <- colourMap(echr4, condition, window=window)
-  dist <- gapDistribution(cmap)
+  dist <- durationDistribution(cmap, what=what)
 }
  
-window <- c(-300, -20)
-n <- length(names(echr4))
-mx <- matrix(rep("-", n*n), n)
-colnames(mx) <- names(echr4)
-rownames(mx) <- names(echr4)
-for(i in 1:(n-1)) {
-  for(j in (i+1):n) {
-    cond1 <- names(echr4)[i]
-    cond2 <- names(echr4)[j]
-    dist1 <- getDist(cond1, window)
-    dist2 <- getDist(cond2, window)
-    ks <- ks.test(dist1, dist2)
-    p <- sprintf("%.2g", ks$p.value)
-    mx[cond1, cond2] <- p
-    mx[cond2, cond1] <- p
+ksMap <- function(what) {
+  window <- c(-300, -20)
+  n <- length(names(echr4))
+  mx <- matrix(rep("-", n*n), n)
+  colnames(mx) <- names(echr4)
+  rownames(mx) <- names(echr4)
+  for(i in 1:(n-1)) {
+    for(j in (i+1):n) {
+      cond1 <- names(echr4)[i]
+      cond2 <- names(echr4)[j]
+      dist1 <- getDist(cond1, window, what)
+      dist2 <- getDist(cond2, window, what)
+      ks <- ks.test(dist1, dist2)
+      p <- sprintf("%.2g", ks$p.value)
+      mx[cond1, cond2] <- p
+      mx[cond2, cond1] <- p
+    }
   }
+  kable(mx, format="html", row.names=TRUE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
 }
-
-
-kable(mx, format="html", row.names=TRUE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
 ```
 
+### KS test for event duration distribution
+
+```{r brown_distribution_KS_fills}
+ksMap("fills")
+```
+
+### KS test for gaps between events
+
+```{r brown_distribution_KS_gaps}
+ksMap("gaps")
+```
+
+These tables show that there is very little discernable difference between conditions. Only TT103 differs from some other conditions in gap distribution.
 
 ## S and G2 data
 
@@ -467,8 +605,8 @@ plotCells(pchr$G2_phase, palette=c("blue", "chocolate4", "pink", "red"))
 P <- list()
 k <- 1
 for(nm in names(pchr)) {
-  P[[k]] <- plotIntervalDistribution(pchr, nm, c(-300, 300), what="interval")
-  P[[k+1]] <- plotIntervalDistribution(pchr, nm, c(-300, 300), what="gap")
+  P[[k]] <- plotIntervalDistribution(pchr, nm, c(-300, 300), what="fills")
+  P[[k+1]] <- plotIntervalDistribution(pchr, nm, c(-300, 300), what="gaps")
   k <- k + 2
 }
 grid.arrange(grobs=P, ncol=2)

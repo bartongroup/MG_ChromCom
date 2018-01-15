@@ -537,8 +537,16 @@ oeError <- function(chr, echr, limits, sel=NULL) {
     p
   }
 
+  if(is.null(sel)) {
+    # find the length within window (only for the purpose of sel)
+    # not very elegant, but not used by the fitting sub
+    x <- ts(echr$cnt$total, start=echr$timepars$start, deltat=echr$timepars$step)
+    x <- window(x, start=limits[1], end=limits[2])
+    n <- length(x)
+    sel <- seq(n)
+  }
+
   rms <- 0
-  if(is.null(sel)) sel <- 1:length(xo)
   for(col in chr$colours) {
     xo <- getProp(echr, col)
     xe <- getProp(chr, col)

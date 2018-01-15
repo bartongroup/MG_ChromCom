@@ -377,18 +377,28 @@ logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
 set <- "NCAPD2"
 nbatch <- 300
 for(batch in 1:nbatch) {
-  args <- paste(set, batch, 1, 5000, 10, 0)
+  args <- paste(set, batch, 1, 10000, 30, 0)
   cmd <- paste("Rscript", script, args)
   qsub(cmd, logDir, name=paste0(set, "_", batch), ncor=8)
 }
+```
 
+
+```{r bootstrap_results}
+set <- "NCAPD2"
+nbatch <- 300
 dat <- NULL
 for(batch in 1:nbatch) {
   file <- paste0("/home/mgierlinski/projects/chromcomR/bootstrap/", set, "_", batch, ".pars")
   df <- read.table(file, header = TRUE, sep="\t")
   dat <- rbind(dat, df)
 }
-summary(dat)
+
+quantile(dat$tau1, probs=c(0.025, 0.975))
+quantile(dat$tau2, probs=c(0.025, 0.975))
+quantile(dat$k1, probs=c(0.025, 0.975))
+quantile(dat$k2, probs=c(0.025, 0.975))
+
 m <- reshape2::melt(dat, measure.vars=c("tau1", "tau2", "k1", "k2"))
 ggplot(m, aes(value)) +
   geom_histogram(bins=20) +
@@ -397,3 +407,10 @@ ggplot(m, aes(value)) +
 
 
 Also, have done quite a lot of work on interval distribution.
+
+# 15/01/2018
+
+Spent a lot of time on brown distribution, in particular gap between gap events. Randomizing data was tricky.
+
+
+
