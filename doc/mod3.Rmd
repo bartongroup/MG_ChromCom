@@ -30,10 +30,14 @@ opts_chunk$set(fig.path='../figure/mpd3-',
                echo=FALSE,
                warning=FALSE,
                message=FALSE,
-               fig.pos='H',
+               cache=TRUE,
+               #fig.pos='H',
                fig.width=4,
                fig.height=3
               )
+options(width = 1000)
+options(knitr.table.format = "html") 
+
 smth <- 5
 ```
 
@@ -224,6 +228,108 @@ P2 <- plotAllConditions("ref0_t10_n10000_tau1_k1_k2_tau2")
 P <- c(rbind(P1, P2))  # interleave lists (beautiful trick!)
 grid.arrange(grobs=P, ncol=2)
 ```
+
+## Confidence intervals on fit parameters
+
+It is not easy to find confidence intervals in fit parameters when not only the model is non-analytic, but also stochastic. The only feasible approach it bootstrap, which is computationally expensive. Here I give it a try. 
+
+```{r bootstrap_functions}
+script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/bootstrap.R"
+logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
+remoteBootDir <- "/home/mgierlinski/projects/chromcomR/bootstrap/"
+
+runBootstrap <- function(set, nbatch, root="boot", ncells=10000, ntry=30, switch=1, t0=0) {
+  for(batch in 1:nbatch) {
+    args <- paste(set, batch, switch, ncells, ntry, t0)
+    cmd <- paste("Rscript", script, args)
+    qsub(cmd, logDir, name=paste0(root, "_", set, "_", batch), ncor=8)
+  }
+}
+
+readBootstrap <- function(set, nbatch, root="boot") {
+  dat <- NULL
+  for(batch in 1:nbatch) {
+    file <- paste0(remoteBootDir, root, "_", set, "_", batch, ".pars")
+    if(file.exists(file)) {
+      df <- read.table(file, header = TRUE, sep="\t")
+      dat <- rbind(dat, df)
+    } else {
+      warning(paste("File", file, "does not exist."))
+    }
+  }
+  dat
+}
+
+bootParamStats <- function(dat) {
+  df <- NULL
+  for(par in c("tau1", "tau2", "k1", "k2")) {
+    q <- quantile(dat[[par]], probs=c(0.025, 0.5, 0.975))
+    #q <- signif(q, 3)
+    q <- sprintf("%.2g", q)
+    row <- data.frame(par=par, median=q[2], lo=q[1], up=q[3])
+    df <- rbind(df, row)
+  }
+  kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
+}
+
+bootParamPlot <- function(dat) {
+  vars <- c("tau1", "tau2", "k1", "k2")
+  
+  # dummy data for x-limits
+  dummy <- data.frame(
+    variable = c(vars, vars),
+    value = c(10, 5, 0, 0, 30, 30, 0.2, 0.2)
+  )
+  
+  m <- reshape2::melt(dat, measure.vars=vars)
+  ggplot(m, aes(value)) +
+    geom_histogram(bins=20) +
+    facet_wrap(~variable, scales="free")
+    #geom_blank(data=dummy)
+}
+```
+
+### Scramble
+
+Here are the median, lower and upper bound on 95% confidence intervals and bootstrap distributions of each of the fit parameters. Note that confidence intervals are quite large!
+
+```{r bootstrap_run_scramble, eval=FALSE}
+runBootstrap("scramble", 300)
+```
+
+```{r bootstrap_results_scramble, fig.width=5, fig.height=4}
+boot.scramble <- readBootstrap("scramble", 300)
+
+bootParamStats(boot.scramble)
+bootParamPlot(boot.scramble)
+```
+
+### NCAPD2
+
+```{r bootstrap_run_NCAPD2, eval=FALSE}
+runBootstrap("NCAPD2", 300)
+```
+
+```{r bootstrap_results_NCAPD2, fig.width=5, fig.height=4}
+boot.NCAPD2 <- readBootstrap("NCAPD2", 300)
+
+bootParamStats(boot.NCAPD2)
+bootParamPlot(boot.NCAPD2)
+```
+
+### NCAPD3
+
+```{r bootstrap_run_NCAPD3, eval=FALSE}
+runBootstrap("NCAPD3", 300)
+```
+
+```{r bootstrap_results_NCAPD3, fig.width=5, fig.height=4}
+#boot.NCAPD3 <- readBootstrap("NCAPD3", 300)
+
+#bootParamStats(boot.NCAPD3)
+#bootParamPlot(boot.NCAPD3)
+```
+
 
 # Four-colour plots
 
@@ -427,6 +533,33 @@ randomEventMap <- function(cmap, maxiter=1000, verbose=FALSE) {
 
 ```
 
+```{r chi2_test}
+contingency.row <- function(d, max.count=30) {
+  d <- d[d <= max.count]
+  d <- tapply(d, d, length)
+  x <- rep(0, max.count)
+  x[as.numeric(names(d))] <- d
+  x
+}
+
+chi2.simul <- function(dist, rdist, max.count=30) {
+  x <- contingency.row(dist, max.count)
+  p <- contingency.row(rdist, max.count)
+  p[p == 0] <- 0.5
+  p <- p / sum(p)
+  chi <- chisq.test(x, p=p)
+}
+
+chi2.data <- function(dist1, dist2, max.count=30) {
+  x <- contingency.row(dist1, max.count)
+  y <- contingency.row(dist2, max.count)
+  mx <- t(matrix(c(x, y), ncol=2))
+  sel <- which(colSums(mx) > 0)   # chisq.test doesn't like sums of zeros
+  mx <- mx[, sel]
+  chisq.test(mx)
+}
+```
+
 
 ```{r plot_interval_distribution_function}
 plotIntervalDistribution <- function(echr, condition, window, with.theoretical=FALSE, what="interarrival") {
@@ -456,8 +589,8 @@ plotIntervalDistribution <- function(echr, condition, window, with.theoretical=F
   })
   rdist <- do.call(c, r)
   
-  ks <- ks.test(dist, rdist)
-  p.value <- ks$p.value
+  chi <- chi2.simul(dist, rdist)
+  p.value <- chi$p.value
 
   # expected theoretical distribution
   xx <- 1:60
@@ -480,11 +613,11 @@ plotIntervalDistribution <- function(echr, condition, window, with.theoretical=F
 
 ## Point-to-point interarrival distributions
 
-Here I calculate the density of brown boxes and the distribution of interarrival times between them. If brown points are distributed randomly with density $\lambda$, the intervals between them should follow the exponential distribution with PDF
+Here I calculate the density of brown boxes and the distribution of inter-arrival times between them. If brown points are distributed randomly with density $\lambda$, the intervals between them should follow the exponential distribution with PDF
 
 $f(d) = \lambda e^{-\lambda d}$
 
-where $d$ is the interarrival time between consecutive brown points. Because some of the cells have much shorter data tracks, they will bias the interarrival distribution towards shorter intervals. The longer distances are missing from these short tracks. To account for this I made a simple model, in which I take cell tracks from the actual data, fill them randomly with brown points and calculate interarrival distribution. This is done 100 times to smooth the distribution.
+where $d$ is the inter-arrival time between consecutive brown points. Because some of the cells have much shorter data tracks, they will bias the inter-arrival distribution towards shorter intervals. The longer distances are missing from these short tracks. To account for this I made a simple model, in which I take cell tracks from the actual data, fill them randomly with brown points and calculate inter-arrival distribution. This is done 100 times to smooth the distribution.
 
 The example below shows the result for scramble. The black bars represent data, the orange points show the predicted theoretical distribution $f(d) = \lambda e^{-\lambda d}$ and the open blue bars show the simulated random distribution. As we can see, the simulated distribution predicts more short intervals with respect to the theoretical distribution, as expected.
 
@@ -494,37 +627,41 @@ I use a window of [-300, -20] min.
 plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = TRUE, what="interarrival")
 ```
 
-However, this is not what we really want. Interarrival time between individual one-minute boxes assumes that each box is one event. But in reality, brown event can last less or more than one minute. If we see, e.g., four brown boxes next to each other, it is unlikely that this shows four one-minute events. Much more likely, this is one event that lasts four minutes. Hence, considering the distribution of times between one-minute boxes and comparing it to a Poisson distribution of random one-minute events does not make much sense.
+However, this is not what we really want. Inter-arrival time between individual one-minute boxes assumes that each box is one event. But in reality, brown event can last less or more than one minute. If we see, e.g., four brown boxes next to each other, it is unlikely that this shows four one-minute events. Much more likely, this is one event that lasts four minutes. Hence, considering the distribution of times between one-minute boxes and comparing it to a Poisson distribution of random one-minute events does not make much sense.
 
-# Brown event duration and gap distribution
+## Brown event duration and gap distribution
 
-Instead, we should consider the distribution of full brown events, short and long. Below, I show the distribution of durations of brown events.
+Instead, we should consider the distribution of full brown events, short and long. Below, I show the distribution of duration of brown events.
 
 ```{r brown_fills_example, fig.width=5, fig.height=4}
 plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = FALSE, what="fills") 
 ```
 
-NOTE: the blue open bars show the simulated data (see details below). There is a slight difference between real and simulated data. This is because for each simulation (which is repeated 100 times) gapes in real data are filled with random data. Hence, the simulated data shows the most likely real data, with imputation.
+NOTE: the blue open bars show the simulated data (see details below). There is a slight difference between real and simulated data. This is because for each simulation (which is repeated 100 times) gaps in real data are filled with random data. Hence, the simulated data shows the most likely real data, with imputation.
 
-But we can get more insight from the distribution of intervals between the brown events. Here I use the gaps between the events, not taking brown begin/end into account. For example, if "N" is brown and "B" is blue then this cell track
+We can get more insight from the distribution of intervals between the brown events. Here I use the gaps between the events, not taking brown begin/end into account. For example, if "+" is brown and "-" is blue then this cell track
 
 ```
-BBBNBBNNNNBBBNB
+---+--++++---+-
 ```
 
-shows three brown events of length 1, 4, and 1 and two "gap" events of lenghts 2 and 3. The blue sequences at the beginning and at the end are ignored, because we don't know how long they are, we only see part of them.
+shows three brown events of length 1, 4, and 1 and two "gap" events of lengths 2 and 3. The blue sequences at the beginning and at the end are ignored, because we don't know how long they are, we only see part of them.
 
 This figure shows the distribution of gaps between brows events. The simulated distribution (open bars) is calculated in the following way:
 
+- I fill the gaps in data with random brown points with density $\lambda$. Note that this is rather arbitrary and adds mostly one-minute points. On the other hand these gaps are not large, so the it doesn't make huge difference.
 - I count the brown events of each length
 - I generate random data using the same cell track durations and the same brown events, distributed randomly
-- The process is repeated 100 times and the mean distirbution of randomized data is whown
+- The process is repeated 100 times and the mean distribution of randomized data is shown
+- This can be applied both to even duration distribution and gap between events distribution
 
-If brown events were random, both data and simulated distributions would be similar. The p-value in the title shows the result from a K-S test comparing data and simulation. The number "d" in each title is the density of brown boxes.
+If brown events were random, both data and simulated distributions would be similar. The p-value in the title shows the result from a chi-square test comparing data and simulation. The number "d" in each title is the density of brown boxes ($\lambda$).
 
 ```{r brown_gaps_example, fig.width=5, fig.height=4}
 plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = FALSE, what="gaps")
 ```
+
+As we can see, there is an excess of short gaps in comparison to a random distribution. This means that brown events tend to cluster together. In particular, the 1-min gaps are more prominent, suggesting that one brown event might trigger another, immediatelly after it. On the other hand, this is our timing resolution, so, to some extent, it might be an experimental artifact. For example, if we have a long brown event and one box in the middle is misidentified as blue, than it creates an artificial gap of size 1. If this happens a few times, we get the observed pattern.
 
 Below, are results for all conditions. Both event duration (left) and gap distribution (right).
 
@@ -539,17 +676,17 @@ for(nm in names(echr4)) {
 grid.arrange(grobs=P, ncol=2)
 ```
 
-## K-S tests
+## Distribution comparison
 
-Now, I do K-S test between each pair of distirbutions.
+Here I compare event duration and gap duration distribution for each pair of conditions. I use chi-square test and the null hypothesis is that the distribution does not depend on the sample.
 
-```{r brown_distribution_KS_function}
+```{r brown_distribution_chisq_function}
 getDist <- function(condition, window, what) {
   cmap <- colourMap(echr4, condition, window=window)
   dist <- durationDistribution(cmap, what=what)
 }
  
-ksMap <- function(what) {
+pMap <- function(what) {
   window <- c(-300, -20)
   n <- length(names(echr4))
   mx <- matrix(rep("-", n*n), n)
@@ -561,8 +698,8 @@ ksMap <- function(what) {
       cond2 <- names(echr4)[j]
       dist1 <- getDist(cond1, window, what)
       dist2 <- getDist(cond2, window, what)
-      ks <- ks.test(dist1, dist2)
-      p <- sprintf("%.2g", ks$p.value)
+      chi <- chi2.data(dist1, dist2)
+      p <- sprintf("%.2g", chi$p.value)
       mx[cond1, cond2] <- p
       mx[cond2, cond1] <- p
     }
@@ -571,19 +708,19 @@ ksMap <- function(what) {
 }
 ```
 
-### KS test for event duration distribution
+### Distribution comparison for event duration
 
-```{r brown_distribution_KS_fills}
-ksMap("fills")
+```{r brown_distribution_chisq_fills}
+pMap("fills")
 ```
 
-### KS test for gaps between events
+### Distribution comparison for gaps between events
 
-```{r brown_distribution_KS_gaps}
-ksMap("gaps")
+```{r brown_distribution_chisq_gaps}
+pMap("gaps")
 ```
 
-These tables show that there is very little discernable difference between conditions. Only TT103 differs from some other conditions in gap distribution.
+These tables show that there is very little discernible difference between conditions. Only TT103 differs from some other conditions in gap distribution. Otherwise, we have no evidence to reject the null hypothesis (but we cannot accept it either!).
 
 ## S and G2 data
 
