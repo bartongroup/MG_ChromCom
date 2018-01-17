@@ -240,7 +240,7 @@ remoteBootDir <- "/home/mgierlinski/projects/chromcomR/bootstrap/"
 
 runBootstrap <- function(set, nbatch, root="boot", ncells=10000, ntry=30, switch=1, t0=0) {
   for(batch in 1:nbatch) {
-    args <- paste(set, batch, switch, ncells, ntry, t0)
+    args <- paste(set, root, batch, switch, ncells, ntry, t0)
     cmd <- paste("Rscript", script, args)
     qsub(cmd, logDir, name=paste0(root, "_", set, "_", batch), ncor=8)
   }
@@ -324,10 +324,10 @@ runBootstrap("NCAPD3", 300)
 ```
 
 ```{r bootstrap_results_NCAPD3, fig.width=5, fig.height=4}
-#boot.NCAPD3 <- readBootstrap("NCAPD3", 300)
+boot.NCAPD3 <- readBootstrap("NCAPD3", 300)
 
-#bootParamStats(boot.NCAPD3)
-#bootParamPlot(boot.NCAPD3)
+bootParamStats(boot.NCAPD3)
+bootParamPlot(boot.NCAPD3)
 ```
 
 
@@ -429,7 +429,7 @@ interarrivalDistribution <- function(cmap) {
 
 # Distribution of durations of either fills (what="fills")
 # or gaps between the fills (what="gap")
-# in.bins=TRUE : don't use time information, distribution based on data bins only
+# in.bins=TRUE : don't use time information, distribution based on data bins only (needed for random map)
 durationDistribution <- function(cmap, what="fills", in.bins=FALSE) {
   min.good <- ifelse(what=="fills", 0, 1)  # for gaps we need at least two events
   
@@ -534,25 +534,32 @@ randomEventMap <- function(cmap, maxiter=1000, verbose=FALSE) {
 ```
 
 ```{r chi2_test}
-contingency.row <- function(d, max.count=30) {
+bin.row <- function(x, bins=2) {
+  b <- as.vector(sapply(1:(length(x)/bins), function(i) rep(i, bins)))
+  as.numeric(tapply(x, b, sum))
+}
+
+contingency.row <- function(d, max.count=30, bins=1) {
+  if(max.count %% bins > 0) stop("max.count must be divisible by bins.")
   d <- d[d <= max.count]
   d <- tapply(d, d, length)
   x <- rep(0, max.count)
   x[as.numeric(names(d))] <- d
+  if(bins > 1) x <- bin.row(x, bins)
   x
 }
 
-chi2.simul <- function(dist, rdist, max.count=30) {
-  x <- contingency.row(dist, max.count)
-  p <- contingency.row(rdist, max.count)
+chi2.simul <- function(dist, rdist, max.count=30, bins=1) {
+  x <- contingency.row(dist, max.count, bins)
+  p <- contingency.row(rdist, max.count, bins)
   p[p == 0] <- 0.5
   p <- p / sum(p)
   chi <- chisq.test(x, p=p)
 }
 
-chi2.data <- function(dist1, dist2, max.count=30) {
-  x <- contingency.row(dist1, max.count)
-  y <- contingency.row(dist2, max.count)
+chi2.data <- function(dist1, dist2, max.count=30, bins=1) {
+  x <- contingency.row(dist1, max.count, bins)
+  y <- contingency.row(dist2, max.count, bins)
   mx <- t(matrix(c(x, y), ncol=2))
   sel <- which(colSums(mx) > 0)   # chisq.test doesn't like sums of zeros
   mx <- mx[, sel]
@@ -562,7 +569,7 @@ chi2.data <- function(dist1, dist2, max.count=30) {
 
 
 ```{r plot_interval_distribution_function}
-plotIntervalDistribution <- function(echr, condition, window, with.theoretical=FALSE, what="interarrival") {
+plotIntervalDistribution <- function(echr, condition, window, with.theoretical=FALSE, what="interarrival", bins=1) {
   cmap <- colourMap(echr, condition, window=window)
   if(what == "interarrival") {
     dist <- interarrivalDistribution(cmap)
@@ -589,7 +596,7 @@ plotIntervalDistribution <- function(echr, condition, window, with.theoretical=F
   })
   rdist <- do.call(c, r)
   
-  chi <- chi2.simul(dist, rdist)
+  chi <- chi2.simul(dist, rdist, bins=bins)
   p.value <- chi$p.value
 
   # expected theoretical distribution
@@ -681,8 +688,8 @@ grid.arrange(grobs=P, ncol=2)
 Here I compare event duration and gap duration distribution for each pair of conditions. I use chi-square test and the null hypothesis is that the distribution does not depend on the sample.
 
 ```{r brown_distribution_chisq_function}
-getDist <- function(condition, window, what) {
-  cmap <- colourMap(echr4, condition, window=window)
+getDist <- function(chr, condition, window, what) {
+  cmap <- colourMap(chr, condition, window=window)
   dist <- durationDistribution(cmap, what=what)
 }
  
@@ -696,8 +703,8 @@ pMap <- function(what) {
     for(j in (i+1):n) {
       cond1 <- names(echr4)[i]
       cond2 <- names(echr4)[j]
-      dist1 <- getDist(cond1, window, what)
-      dist2 <- getDist(cond2, window, what)
+      dist1 <- getDist(echr4, cond1, window, what)
+      dist2 <- getDist(echr4, cond2, window, what)
       chi <- chi2.data(dist1, dist2)
       p <- sprintf("%.2g", chi$p.value)
       mx[cond1, cond2] <- p
@@ -722,7 +729,7 @@ pMap("gaps")
 
 These tables show that there is very little discernible difference between conditions. Only TT103 differs from some other conditions in gap distribution. Otherwise, we have no evidence to reject the null hypothesis (but we cannot accept it either!).
 
-## S and G2 data
+## S and late G2 data
 
 ```{r read_G2_S}
 patDataFile <- list(
@@ -742,9 +749,63 @@ plotCells(pchr$G2_phase, palette=c("blue", "chocolate4", "pink", "red"))
 P <- list()
 k <- 1
 for(nm in names(pchr)) {
-  P[[k]] <- plotIntervalDistribution(pchr, nm, c(-300, 300), what="fills")
-  P[[k+1]] <- plotIntervalDistribution(pchr, nm, c(-300, 300), what="gaps")
+  if(nm == "S_phase") {
+    window <- c(-300,300)
+  } else {
+    window <- c(-300, -20)
+  }
+  P[[k]] <- plotIntervalDistribution(pchr, nm, window, what="fills", bins=2)
+  P[[k+1]] <- plotIntervalDistribution(pchr, nm, window, what="gaps", bins=2)
   k <- k + 2
 }
 grid.arrange(grobs=P, ncol=2)
+```
+
+
+```{r brown_distribution_chisq_SG2_function}
+getDistWin <- function(chr, condition, what) {
+  if(condition == "S_phase") {
+    window <- c(-300, 300)
+  } else {
+    window <- c(-300, -20)
+  }
+  cmap <- colourMap(chr, condition, window=window)
+  dist <- durationDistribution(cmap, what=what)
+}
+
+psgMap <- function(what) {
+  allchr <- append(echr4, pchr)
+  m <- length(names(pchr))
+  n <- length(names(allchr))
+  mx <- matrix(rep("-", n*m), m)
+  colnames(mx) <- c(names(allchr))
+  rownames(mx) <- names(pchr)
+  for(i in 1:m) {
+    for(j in 1:n) {
+      cond1 <- names(pchr)[i]
+      cond2 <- names(allchr)[j]
+      if(cond1 != cond2) {
+        dist1 <- getDistWin(pchr, cond1, what)
+        dist2 <- getDistWin(allchr, cond2, what)
+        chi <- chi2.data(dist1, dist2, bins=2)
+        p <- sprintf("%.2g", chi$p.value)
+        mx[cond1, cond2] <- p
+      }
+    }
+  }
+  kable(mx, format="html", row.names=TRUE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
+}
+```
+
+
+### Distribution comparison for event duration
+
+```{r brown_distribution_SG2_chisq_fills}
+psgMap("fills")
+```
+
+### Distribution comparison for gaps between events
+
+```{r brown_distribution_SG2_chisq_gaps}
+psgMap("gaps")
 ```
