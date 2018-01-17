@@ -30,7 +30,7 @@ best_b
 
 
 
-best_a <- best_b <- numeric(1000)
+boot_a <- boot_b <- numeric(1000)
 for(i in 1:1000){
   j <- sample(100,replace=TRUE)
   x.boot <- x[j]; y.boot <- y[j]
@@ -38,18 +38,24 @@ for(i in 1:1000){
   res <- optim(par, errfun, gr=NULL, x.boot, y.boot)
 
   # best-fitting parameters
-  best_a[i] <- res$par[1]
-  best_b[i] <- res$par[2]
+  boot_a[i] <- res$par[1]
+  boot_b[i] <- res$par[2]
 }
 
+quantile(boot_a, c(0.025, 0.975))
+quantile(boot_b, c(0.025, 0.975))
 
-
-# plot the result
+# compare with linear fit
 df <- data.frame(
   x = x,
   y = y,
   fy = f(x, best_a, best_b)
 )
+
+lf <- lm(y ~ x, data=df)
+confint(lf)
+
+# plot the result
 ggplot(df, aes(x, y)) +
   geom_point() +
   geom_line(aes(x, fy))
