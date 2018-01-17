@@ -1,5 +1,5 @@
 # Fit one bootstrap
-# Rscript bootstrap.R set batch switch ncells ntry t0
+# Rscript bootstrap.R set root batch switch ncells ntry t0
 
 setwd("/cluster/gjb_lab/mgierlinski/projects/chromcomR/doc")
 source("../../mylib/R/lib.R")
@@ -13,16 +13,17 @@ library(parallel)
 library(methods)
 
 args <- commandArgs(TRUE)
-stopifnot(length(args) == 6)
+stopifnot(length(args) == 7)
 set <- args[1]
-batch <- args[2]
-t2ref <- as.integer(args[3])
+root <- args[2]
+batch <- args[3]
+t2ref <- as.integer(args[4])
 stopifnot(!is.null(dataFile[[set]]))
 stopifnot(t2ref %in% c(0, 1))
 
-ncells <- args[4]
-ntry <- args[5]
-t0 <- as.numeric(args[6])
+ncells <- args[5]
+ntry <- args[6]
+t0 <- as.numeric(args[7])
 
 
 print(paste("Fitting", set, "batch", batch))
@@ -44,5 +45,5 @@ free <- c("tau1", "k1", "k2", "tau2")
 fit <- fitChr(echr, pars, free, ncells=ncells, ntry=ntry, ncores=8, bootstrap=TRUE)
 
 p <- t(as.matrix(do.call(c, fit$pars)))
-file <- paste0(bootDir, set, "_", batch, ".pars")
+file <- paste0(bootDir, root, "_", set, "_", batch, ".pars")
 write.table(p, file=file, col.names = TRUE, row.names = FALSE, sep="\t", quote=FALSE)
