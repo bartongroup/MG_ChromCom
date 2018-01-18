@@ -278,14 +278,14 @@ bootParamPlot <- function(dat) {
   # dummy data for x-limits
   dummy <- data.frame(
     variable = c(vars, vars),
-    value = c(10, 5, 0, 0, 30, 30, 0.2, 0.2)
+    value = c(7, 5, 0, 0, 30, 30, 0.2, 0.2)
   )
   
   m <- reshape2::melt(dat, measure.vars=vars)
   ggplot(m, aes(value)) +
-    geom_histogram(bins=20) +
-    facet_wrap(~variable, scales="free")
-    #geom_blank(data=dummy)
+    geom_histogram(bins=50) +
+    facet_wrap(~variable, scales="free") +
+    geom_blank(data=dummy)
 }
 ```
 
