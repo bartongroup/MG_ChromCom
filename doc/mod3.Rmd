@@ -326,7 +326,7 @@ grid.arrange(grobs=P, ncol=1)
 
 And here are fit parameters and their 95% confidence intervals:
 
-```{r bootstrap_fit_params_CI, fig.width=3, fig.height=4}
+```{r bootstrap_fit_params_CI, fig.width=6, fig.height=4}
 P <- lapply(sets, function(set) {
   bootParamStats(boot[[set]])
 })
@@ -338,7 +338,7 @@ df$set <- as.factor(df$set)
 ggplot(df, aes(set, median)) +
   geom_errorbar(aes(x=set, ymin=lo, ymax=up), width=0.4) +
   geom_point() +
-  facet_wrap(~par, scales="free_y") +
+  facet_wrap(~par, scales="free_y", nrow=1) +
   theme(axis.text.x = element_text(angle = 90)) +
   labs(x="Set", y="Fit parameter value")
 ```
