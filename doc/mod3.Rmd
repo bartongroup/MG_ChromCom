@@ -302,6 +302,7 @@ nboot <- 300
 runBootstrap("scramble", nboot)
 runBootstrap("NCAPD2", nboot)
 runBootstrap("NCAPD3", nboot)
+runBootstrap("SMC2", nboot)
 ```
 
 ```{r read_bootstraps}
@@ -326,7 +327,7 @@ grid.arrange(grobs=P, ncol=1)
 
 And here are fit parameters and their 95% confidence intervals:
 
-```{r bootstrap_fit_params_CI, fig.width=6, fig.height=4}
+```{r bootstrap_fit_params_CI, fig.width=6, fig.height=3}
 P <- lapply(sets, function(set) {
   bootParamStats(boot[[set]])
 })
