@@ -389,3 +389,7 @@ More work on brown distribution. Improving statistical tests. Running parameter 
 # 17/08/2018
 
 Adding new results, tidying up the document. Also, done chi-square tests on S and G2 data.
+
+# 18/01/2018
+
+Improving fit parameter bootstrap figures.

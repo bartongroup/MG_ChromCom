@@ -265,14 +265,14 @@ bootParamStats <- function(dat) {
   for(par in c("tau1", "tau2", "k1", "k2")) {
     q <- quantile(dat[[par]], probs=c(0.025, 0.5, 0.975))
     #q <- signif(q, 3)
-    q <- sprintf("%.2g", q)
+    #q <- sprintf("%.2g", q)
     row <- data.frame(par=par, median=q[2], lo=q[1], up=q[3])
     df <- rbind(df, row)
   }
-  kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
+  df
 }
 
-bootParamPlot <- function(dat) {
+bootParamPlot <- function(dat, title="") {
   vars <- c("tau1", "tau2", "k1", "k2")
   
   # dummy data for x-limits
@@ -284,52 +284,64 @@ bootParamPlot <- function(dat) {
   m <- reshape2::melt(dat, measure.vars=vars)
   ggplot(m, aes(value)) +
     geom_histogram(bins=50) +
-    facet_wrap(~variable, scales="free") +
-    geom_blank(data=dummy)
+    facet_wrap(~variable, scales="free", nrow=1) +
+    geom_blank(data=dummy) +
+    labs(title=title)
 }
 ```
 
-### Scramble
+### Bootstraps
 
-Here are the median, lower and upper bound on 95% confidence intervals and bootstrap distributions of each of the fit parameters. Note that confidence intervals are quite large!
+Running bootstraps on the cluster. This is quite slow, so I do it bit by bit.
 
-```{r bootstrap_run_scramble, eval=FALSE}
-runBootstrap("scramble", 300)
+```{r bootstrap_setup}
+nboot <- 300
 ```
 
-```{r bootstrap_results_scramble, fig.width=5, fig.height=4}
-boot.scramble <- readBootstrap("scramble", 300)
-
-bootParamStats(boot.scramble)
-bootParamPlot(boot.scramble)
+```{r bootstrap_run, eval=FALSE}
+runBootstrap("scramble", nboot)
+runBootstrap("NCAPD2", nboot)
+runBootstrap("NCAPD3", nboot)
 ```
 
-### NCAPD2
-
-```{r bootstrap_run_NCAPD2, eval=FALSE}
-runBootstrap("NCAPD2", 300)
+```{r read_bootstraps}
+sets <- c("scramble", "NCAPD2", "NCAPD3")
+boot <- lapply(sets, function(set) {
+  readBootstrap(set, nboot)
+})
+names(boot) <- sets
 ```
 
-```{r bootstrap_results_NCAPD2, fig.width=5, fig.height=4}
-boot.NCAPD2 <- readBootstrap("NCAPD2", 300)
 
-bootParamStats(boot.NCAPD2)
-bootParamPlot(boot.NCAPD2)
+### Bootstrap results
+
+Here is the distribution of bootstrap result. Each bootstrap gives a set of fit parameters. Figures below show the distribution of fit parameters across all bootstraps.
+
+```{r bootstrap_fit_params, fig.width=8, fig.height=6}
+P <- lapply(sets, function(set) {
+  bootParamPlot(boot[[set]], set)
+})
+grid.arrange(grobs=P, ncol=1)
 ```
 
-### NCAPD3
+And here are fit parameters and their 95% confidence intervals:
 
-```{r bootstrap_run_NCAPD3, eval=FALSE}
-runBootstrap("NCAPD3", 300)
+```{r bootstrap_fit_params_CI, fig.width=3, fig.height=4}
+P <- lapply(sets, function(set) {
+  bootParamStats(boot[[set]])
+})
+names(P) <- sets
+df <- plyr::ldply(P, .id="set")
+df$set <- as.factor(df$set)
+
+
+ggplot(df, aes(set, median)) +
+  geom_errorbar(aes(x=set, ymin=lo, ymax=up), width=0.4) +
+  geom_point() +
+  facet_wrap(~par, scales="free_y") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(x="Set", y="Fit parameter value")
 ```
-
-```{r bootstrap_results_NCAPD3, fig.width=5, fig.height=4}
-boot.NCAPD3 <- readBootstrap("NCAPD3", 300)
-
-bootParamStats(boot.NCAPD3)
-bootParamPlot(boot.NCAPD3)
-```
-
 
 # Four-colour plots
 
