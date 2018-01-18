@@ -393,3 +393,5 @@ Adding new results, tidying up the document. Also, done chi-square tests on S an
 # 18/01/2018
 
 Improving fit parameter bootstrap figures.
+
+Meeting with Tomo and John: do point-to-point diagrams for all conditions (also S and G2). Do a chi-square test between these.
