@@ -395,3 +395,7 @@ Adding new results, tidying up the document. Also, done chi-square tests on S an
 Improving fit parameter bootstrap figures.
 
 Meeting with Tomo and John: do point-to-point diagrams for all conditions (also S and G2). Do a chi-square test between these.
+
+# 19/01/2018
+
+Added SMC2. Added point-to-point distributions everwhere.

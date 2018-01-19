@@ -306,7 +306,7 @@ runBootstrap("SMC2", nboot)
 ```
 
 ```{r read_bootstraps}
-sets <- c("scramble", "NCAPD2", "NCAPD3")
+sets <- c("scramble", "NCAPD2", "NCAPD3", "SMC2")
 boot <- lapply(sets, function(set) {
   readBootstrap(set, nboot)
 })
@@ -318,7 +318,7 @@ names(boot) <- sets
 
 Here is the distribution of bootstrap result. Each bootstrap gives a set of fit parameters. Figures below show the distribution of fit parameters across all bootstraps.
 
-```{r bootstrap_fit_params, fig.width=8, fig.height=6}
+```{r bootstrap_fit_params, fig.width=8, fig.height=8}
 P <- lapply(sets, function(set) {
   bootParamPlot(boot[[set]], set)
 })
@@ -586,7 +586,7 @@ plotIntervalDistribution <- function(echr, condition, window, with.theoretical=F
   cmap <- colourMap(echr, condition, window=window)
   if(what == "interarrival") {
     dist <- interarrivalDistribution(cmap)
-    xlab <- "Point-to-point distance (min)"
+    xlab <- "Point-to-point interval (min)"
   } else if(what %in% c("fills", "gaps")) {
     dist <- durationDistribution(cmap, what=what)
     xlab <- ifelse(what == "fills", "Duration of events (min)", "Gap between events (min)")
@@ -681,19 +681,21 @@ If brown events were random, both data and simulated distributions would be simi
 plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = FALSE, what="gaps")
 ```
 
-As we can see, there is an excess of short gaps in comparison to a random distribution. This means that brown events tend to cluster together. In particular, the 1-min gaps are more prominent, suggesting that one brown event might trigger another, immediatelly after it. On the other hand, this is our timing resolution, so, to some extent, it might be an experimental artifact. For example, if we have a long brown event and one box in the middle is misidentified as blue, than it creates an artificial gap of size 1. If this happens a few times, we get the observed pattern.
+As we can see, there is an excess of short gaps in comparison to a random distribution. This means that brown events tend to cluster together. In particular, the 1-min gaps are more prominent, suggesting that one brown event might trigger another, immediately after it. On the other hand, this is our timing resolution, so, to some extent, it might be an experimental artifact. For example, if we have a long brown event and one box in the middle is misidentified as blue, than it creates an artificial gap of size 1. If this happens a few times, we get the observed pattern.
 
 Below, are results for all conditions. Both event duration (left) and gap distribution (right).
 
-```{r interval_distributions, fig.width=7, fig.height=28}
+```{r interval_distributions, fig.width=10, fig.height=28}
 P <- list()
 k <- 1
+window <- c(-300, -20)
 for(nm in names(echr4)) {
-  P[[k]] <- plotIntervalDistribution(echr4, nm, c(-300, -20), what="fills")
-  P[[k+1]] <- plotIntervalDistribution(echr4, nm, c(-300, -20), what="gaps")
-  k <- k + 2
+  P[[k]] <- plotIntervalDistribution(echr4, nm, window, what="interarrival")
+  P[[k+1]] <- plotIntervalDistribution(echr4, nm, window, what="fills")
+  P[[k+2]] <- plotIntervalDistribution(echr4, nm, window, what="gaps")
+  k <- k + 3
 }
-grid.arrange(grobs=P, ncol=2)
+grid.arrange(grobs=P, ncol=3)
 ```
 
 ## Distribution comparison
@@ -703,7 +705,11 @@ Here I compare event duration and gap duration distribution for each pair of con
 ```{r brown_distribution_chisq_function}
 getDist <- function(chr, condition, window, what) {
   cmap <- colourMap(chr, condition, window=window)
-  dist <- durationDistribution(cmap, what=what)
+  if(what == "interarrival") {
+    dist <- interarrivalDistribution(cmap)
+  } else {
+    dist <- durationDistribution(cmap, what=what)
+  }
 }
  
 pMap <- function(what) {
@@ -728,13 +734,20 @@ pMap <- function(what) {
 }
 ```
 
-### Distribution comparison for event duration
+
+### Point-to-point interval
+
+```{r brown_distribution_chisq_interarrivals}
+pMap("interarrival")
+```
+
+### Event duration
 
 ```{r brown_distribution_chisq_fills}
 pMap("fills")
 ```
 
-### Distribution comparison for gaps between events
+### Gaps between events
 
 ```{r brown_distribution_chisq_gaps}
 pMap("gaps")
@@ -758,7 +771,7 @@ plotCells(pchr$G2_phase, palette=c("blue", "chocolate4", "pink", "red"))
 ```
 
 
-```{r interval_distributions_G2_S, fig.width=7, fig.height=6}
+```{r interval_distributions_G2_S, fig.width=10, fig.height=6}
 P <- list()
 k <- 1
 for(nm in names(pchr)) {
@@ -767,11 +780,12 @@ for(nm in names(pchr)) {
   } else {
     window <- c(-300, -20)
   }
-  P[[k]] <- plotIntervalDistribution(pchr, nm, window, what="fills", bins=2)
-  P[[k+1]] <- plotIntervalDistribution(pchr, nm, window, what="gaps", bins=2)
-  k <- k + 2
+  P[[k]] <- plotIntervalDistribution(pchr, nm, window, what="interarrival", bins=2)
+  P[[k+1]] <- plotIntervalDistribution(pchr, nm, window, what="fills", bins=2)
+  P[[k+2]] <- plotIntervalDistribution(pchr, nm, window, what="gaps", bins=2)
+  k <- k + 3
 }
-grid.arrange(grobs=P, ncol=2)
+grid.arrange(grobs=P, ncol=3)
 ```
 
 
@@ -783,7 +797,11 @@ getDistWin <- function(chr, condition, what) {
     window <- c(-300, -20)
   }
   cmap <- colourMap(chr, condition, window=window)
-  dist <- durationDistribution(cmap, what=what)
+  if(what == "interarrival") {
+    dist <- interarrivalDistribution(cmap)
+  } else {
+    dist <- durationDistribution(cmap, what=what)
+  }
 }
 
 psgMap <- function(what) {
@@ -811,7 +829,21 @@ psgMap <- function(what) {
 ```
 
 
+### Distribution comparison for point-to-point interval
+
+WARNING: S and G2 data are calculated on a 2-min grid, while other sets are based on 1-min grid. To compare them, I bin their *distributions* from a smaller grid. I don't bin raw data, as there is a problem of the reference frame. Binning 1-2, 3-4, 5-6, ... will give different results than 2-3, 4-5, 6-7, ... 
+
+The distributions are easier to compare. Consider a 1-min grid distribution where we have 50 1-min events and 20 2-min events. I bin them together into 50+20=70 events and compare to the number of 2-min events of S or G2 (which contains all events shorter than 2 minutes).
+
+Depending on how the actual brown events are distributed (their true duration and timing) comparing data based on different time grids might introduce unpredictable biases.
+
+```{r brown_distribution_SG2_chisq_interarrival}
+psgMap("interarrival")
+```
+
+
 ### Distribution comparison for event duration
+
 
 ```{r brown_distribution_SG2_chisq_fills}
 psgMap("fills")
