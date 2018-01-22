@@ -242,7 +242,7 @@ runBootstrap <- function(set, nbatch, root="boot", ncells=10000, ntry=30, switch
   for(batch in 1:nbatch) {
     args <- paste(set, root, batch, switch, ncells, ntry, t0)
     cmd <- paste("Rscript", script, args)
-    qsub(cmd, logDir, name=paste0(root, "_", set, "_", batch), ncor=8)
+    qsub(cmd, logDir, name=paste0(root, "_", set, "_", batch), ncor=8, host="login-gjb-1.compbio.dundee.ac.uk", queue="c6100.q,64bit-pri.q")
   }
 }
 
@@ -303,6 +303,10 @@ runBootstrap("scramble", nboot)
 runBootstrap("NCAPD2", nboot)
 runBootstrap("NCAPD3", nboot)
 runBootstrap("SMC2", nboot)
+
+runBootstrap("RAD21", nboot)
+runBootstrap("WAPL48", nboot)
+runBootstrap("TT108", nboot)
 ```
 
 ```{r read_bootstraps}
@@ -342,6 +346,21 @@ ggplot(df, aes(set, median)) +
   facet_wrap(~par, scales="free_y", nrow=1) +
   theme(axis.text.x = element_text(angle = 90)) +
   labs(x="Set", y="Fit parameter value")
+```
+
+These are default box plots with whiskers encompassing 90% of data:
+
+```{r bootstrap_fit_params_box, fig.width=6, fig.height=3}
+md <- plyr::ldply(boot, .id="set")
+md <- md[,c(1, 3, 4, 6, 7)]
+m <- reshape2::melt(md, id.var="set")
+
+ggplot(m, aes(set, value)) +
+  geom_boxplot(outlier.size = 0.1, outlier.colour="grey", position=position_dodge(width=0.8)) +
+  facet_wrap(~variable, scales="free_y", nrow=1) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(x="Set", y="Fit parameter value")
+
 ```
 
 # Four-colour plots
