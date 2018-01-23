@@ -399,3 +399,12 @@ Meeting with Tomo and John: do point-to-point diagrams for all conditions (also 
 # 19/01/2018
 
 Added SMC2. Added point-to-point distributions everwhere.
+
+# 23/01/2018
+
+Running more bootstraps. Yesterday, there were cluster problems.
+
+Meeting with Tomo and John.
+
+Why do model lines in fits always start at -50? That is blue = 1, pink = red = 0, but the model should start earlier.
+
