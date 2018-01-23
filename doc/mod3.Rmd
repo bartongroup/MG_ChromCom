@@ -307,10 +307,13 @@ runBootstrap("SMC2", nboot)
 runBootstrap("RAD21", nboot)
 runBootstrap("WAPL48", nboot)
 runBootstrap("TT108", nboot)
+
+runBootstrap("MK1775", nboot)
+runBootstrap("MK1775_ICRF193", nboot)
 ```
 
 ```{r read_bootstraps}
-sets <- c("scramble", "NCAPD2", "NCAPD3", "SMC2")
+sets <- c("scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48")
 boot <- lapply(sets, function(set) {
   readBootstrap(set, nboot)
 })
@@ -322,11 +325,11 @@ names(boot) <- sets
 
 Here is the distribution of bootstrap result. Each bootstrap gives a set of fit parameters. Figures below show the distribution of fit parameters across all bootstraps.
 
-```{r bootstrap_fit_params, fig.width=8, fig.height=8}
+```{r bootstrap_fit_params, fig.width=8, fig.height=11}
 P <- lapply(sets, function(set) {
   bootParamPlot(boot[[set]], set)
 })
-grid.arrange(grobs=P, ncol=1)
+grid.arrange(grobs=P, ncol=1) 
 ```
 
 And here are fit parameters and their 95% confidence intervals:
