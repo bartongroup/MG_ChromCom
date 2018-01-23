@@ -408,3 +408,5 @@ Meeting with Tomo and John.
 
 Why do model lines in fits always start at -50? That is blue = 1, pink = red = 0, but the model should start earlier.
 
+Brown distribution: if brown points are randomly scattered, what is the prob. of seeing 2, 3, 4... events next to each other. Compare with duration distirbution.
+
