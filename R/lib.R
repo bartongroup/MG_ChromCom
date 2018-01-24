@@ -631,6 +631,7 @@ fitChr <- function(echr, pars, freepars, ncells=1000, ntry=10, ncores=7, limits=
   }
 
   lopt <- lapply(1:ntry, function(i) {
+    print(paste("Try", i))
     optim(p, errorFun, gr=NULL, pars, echr, ncells, limits, mode, sel, ncores, method="L-BFGS-B", lower=lower, upper=upper, control=list(trace=3))
   })
 

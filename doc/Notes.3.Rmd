@@ -410,3 +410,28 @@ Why do model lines in fits always start at -50? That is blue = 1, pink = red = 0
 
 Brown distribution: if brown points are randomly scattered, what is the prob. of seeing 2, 3, 4... events next to each other. Compare with duration distirbution.
 
+# 24/01/2018
+
+Chasing errors in the fitting code. It turns out I used the RMS window (-50, 30) not only for RMS, but also for the model. This is not right. The model always starts in blue, so needs some time to stabilize. If it starts in blue at -50 mins, then there is a very strong boundary condition. Now I changed it. This is how it works now:
+
+- the model is calculated at the same grid as the data
+- time points between -50 and 30 are selected for RMS only
+- the selection is done either for bootstrap (sampling) and non bootstrap (-50, -49, ..., 30)
+- rms is calculated on this selection
+
+Hence, as intended, bootstrap is done only in the active RMS window, but the model is calculated over the full extent of data.
+
+First, re-running the non-bootstrap fits. I deleted all RData fits, so there is no confusion with older, incorrect models.
+
+```{r eval=FALSE}
+script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
+logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
+switch <- 1
+
+for(set in names(dataFile)) {
+  name <- paste0("fits_", set, "_ref1_t0_n10000_tau1_k1_k2_tau2")
+  cmd <- paste("Rscript", script, set, name, switch, 10000, 30, 0)
+  qsub(cmd, logDir, name=name, ncor = 8)
+}
+```
+
