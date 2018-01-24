@@ -197,14 +197,14 @@ plotTimelines(chrs.scr, expdata = echr$scr, withpars=TRUE)
 Submitting jobs to the cluster and naively expecting for them not to crash over the weekend. Since the t2ref=0 model look dodgy, I only run t2ref=1.
 
 ```{r eval=FALSE}
-script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.Rs"
+script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
 logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
 switch <- 1
 
 for(set in names(dataFile)) {
   name <- paste0("fits_", set, "_ref1_t0_n10000_tau1_k1_k2_tau2")
   cmd <- paste("Rscript", script, set, name, switch, 10000, 100, 0)
-  qsub(cmd, logDir, name=name)
+  qsub(cmd, logDir, name=name, ncor = 8)
 }
 ```
 

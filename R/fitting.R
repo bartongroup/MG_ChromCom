@@ -44,4 +44,4 @@ pars <- c3pars(
 str(pars)
 
 free <- c("tau1", "k1", "k2", "tau2")
-chr <- cacheData(name, fitChr, echr, pars, free, ncells=ncells, ntry=ntry, ncores=4, binDir=binDir)
+chr <- cacheData(name, fitChr, echr, pars, free, ncells=ncells, ntry=ntry, ncores=8, binDir=binDir)
