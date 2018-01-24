@@ -532,7 +532,7 @@ oeError <- function(chr, echr, limits, sel=NULL) {
   getProp <- function(ch, col) {
     p <- ts(ch$cnt[[col]] / ch$cnt$total, start=ch$timepars$start, deltat=ch$timepars$step)
     p[which(is.nan(p) | is.infinite(p))] <- NA
-    p <- window(p, start=limits[1], end=limits[2])
+    #p <- window(p, start=limits[1], end=limits[2])
     #p <- squeeze(p, ch$pars$squeeze)
     p
   }
@@ -540,17 +540,14 @@ oeError <- function(chr, echr, limits, sel=NULL) {
   if(is.null(sel)) {
     # find the length within window (only for the purpose of sel)
     # not very elegant, but not used by the fitting sub
-    x <- ts(echr$cnt$total, start=echr$timepars$start, deltat=echr$timepars$step)
-    x <- window(x, start=limits[1], end=limits[2])
-    n <- length(x)
-    sel <- seq(n)
+    sel <- which(echr$time >= limits[1] & echr$time <= limits[2])
   }
 
   rms <- 0
   for(col in chr$colours) {
     xo <- getProp(echr, col)
     xe <- getProp(chr, col)
-    rms <- rms + sqrt(sum((xo[sel] - xe[sel])^2))
+    rms <- rms + sqrt(sum((xo[sel] - xe[sel])^2, na.rm=TRUE))
   }
   return(rms)
 }
@@ -590,8 +587,8 @@ parVector <- function(pars, parsel) {
 
 # error function to minimize; p is a vector of parameters
 errorFun <- function(p, pars, echr, ncells, limits, mode, sel, ncores=7) {
-  pars <- vectorPar(p, pars)
-  chr <- ChromCom3(pars, timepars=list(start=limits[1], stop=limits[2], step=1))
+  vpars <- vectorPar(p, pars)
+  chr <- ChromCom3(vpars, timepars=echr$timepars)
   chr <- generateCells(chr, ncells=ncells, mode=mode, ncores=ncores)
   err <- oeError(chr, echr, limits, sel)
   return(err)
@@ -625,14 +622,12 @@ fitChr <- function(echr, pars, freepars, ncells=1000, ntry=10, ncores=7, limits=
   upper <- upper[freepars]
 
   # find bootstrap selection based on the window
-  x <- ts(echr$cnt$total, start=echr$timepars$start, deltat=echr$timepars$step)
-  x <- window(x, start=limits[1], end=limits[2])
-  n <- length(x)
   if(bootstrap) {
-    sel <- sample(1:n, n, replace=TRUE)
+    x <- which(echr$time >= limits[1] & echr$time <= limits[2])
+    sel <- sample(x, length(x), replace=TRUE)
     print(sel)
   } else {
-    sel <- 1:n
+    sel <- NULL
   }
 
   lopt <- lapply(1:ntry, function(i) {
@@ -641,7 +636,7 @@ fitChr <- function(echr, pars, freepars, ncells=1000, ntry=10, ncores=7, limits=
 
   idx.min <- which.min(sapply(1:ntry, function(i) lopt[[i]]$value))
   pars <- vectorPar(lopt[[idx.min]]$par, pars)
-  chr <- ChromCom3(pars, timepars=list(start=limits[1], stop=limits[2], step=1))
+  chr <- ChromCom3(pars, timepars=echr$timepars)
   chr <- generateCells(chr, ncells=ncells, mode=mode)
   chr$rms <- lopt[[idx.min]]$value
   return(chr)

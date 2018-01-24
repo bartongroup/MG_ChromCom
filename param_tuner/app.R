@@ -90,7 +90,7 @@ server <- shinyServer(function(input, output) {
   tPlot <- function(pars) {
     chr <- ChromCom3(pars, timepars=list(start=-150, stop=50, step=1))
     echr <- getData()
-    chr <- generateCells(chr, method="simulation", nsim=getNsim())
+    chr <- generateCells(chr, mode="simulation", ncells=getNsim())
     rms <- round(oeError(chr, echr, limits=c(-50, 30)), 1)
     plotTimelines(chr, expdata=echr, xmin=-100, xmax=100, withpars = TRUE)
   }
