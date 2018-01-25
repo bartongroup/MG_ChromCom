@@ -174,25 +174,20 @@ I think the issue here is not $t_0$ but the fact that the red curve growths is t
 ### All conditions
 
 ```{r, eval=FALSE}
-# Somehow, the wrong version was used to do fitting and pars$t2ref is a string.
-# Need to convert (only once).
-for(set in names(dataFile)) {
-  name <- paste0("fits_", set, "_ref1_t0_n100000_tau1_k1_k2_tau2")
-  chr <- cacheData(name, binDir=binDir, cacheonly=TRUE)
-  chr$pars$t2ref <- 1L
-  file <- paste0(binDir, "/", name, ".RData")
-  obj <- chr
-  save(obj, file=file)
+# The code for fitting is in the notes
 }
 ```
 
 ```{r plot_all_conditions_function}
+fitDir <- "/home/mgierlinski/projects/chromcomR/RData/"
+
 plotAllConditions <- function(suffix) {
   nms <- names(dataFile)
   chr <- lapply(nms, function(set) {
     name <- paste0("fits_", set, "_", suffix)
-    if(file.exists(paste0("../RData/", name, ".RData"))) {
-      cacheData(name, binDir=binDir, cacheonly=TRUE)
+    fname <- paste0(fitDir, name, ".RData")
+    if(file.exists(fname)) {
+      cacheData(name, binDir=fitDir, cacheonly=TRUE)
     }
   })
   names(chr) <- nms
@@ -207,8 +202,7 @@ plotAllConditions <- function(suffix) {
 ```
 
 
-Here are fit results for all conditions with $t_0$ fixed at zero and four parameters free: $\tau_1$, $\tau_2$, $k_1$ and $k_2$.
-
+Here are fit results for all conditions with $t_0$ fixed at zero and four parameters free: $\tau_1$, $\tau_2$, $k_1$ and $k_2$. The RMS is computed over (-50, 30) min range (though the model is shown on the entire range).
 
 ```{r fig_all_conditions, fig.width=12, fig.height=20}
 P <- plotAllConditions("ref1_t0_n10000_tau1_k1_k2_tau2")
@@ -222,11 +216,13 @@ Here are results from a modified model, where P$\rightarrow$R transition can hap
 
 We can also see that the pink curve is more peaked, as opposed to the smooth rise and decay in the default model.
 
+
+NOT READY.
 ```{r fig_all_conditions_switch, fig.width=12, fig.height=28}
-P1 <- plotAllConditions("ref0_t0_n10000_tau1_k1_k2_tau2")
-P2 <- plotAllConditions("ref0_t10_n10000_tau1_k1_k2_tau2")
-P <- c(rbind(P1, P2))  # interleave lists (beautiful trick!)
-grid.arrange(grobs=P, ncol=2)
+#P1 <- plotAllConditions("ref0_t0_n10000_tau1_k1_k2_tau2")
+#P2 <- plotAllConditions("ref0_t10_n10000_tau1_k1_k2_tau2")
+#P <- c(rbind(P1, P2))  # interleave lists (beautiful trick!)
+#grid.arrange(grobs=P, ncol=2)
 ```
 
 ## Confidence intervals on fit parameters
@@ -238,9 +234,9 @@ script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/bootstrap.R"
 logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
 remoteBootDir <- "/home/mgierlinski/projects/chromcomR/bootstrap/"
 
-runBootstrap <- function(set, nbatch, root="boot", ncells=10000, ntry=30, switch=1, t0=0) {
+runBootstrap <- function(set, nbatch, root="boot", ncells=10000, ntry=30, switch=1, t0=0, npars=4) {
   for(batch in 1:nbatch) {
-    args <- paste(set, root, batch, switch, ncells, ntry, t0)
+    args <- paste(set, root, batch, switch, ncells, ntry, t0, npars)
     cmd <- paste("Rscript", script, args)
     qsub(cmd, logDir, name=paste0(root, "_", set, "_", batch), ncor=8, host="login-gjb-1.compbio.dundee.ac.uk", queue="c6100.q,64bit-pri.q")
   }
@@ -313,7 +309,8 @@ runBootstrap("MK1775_ICRF193", nboot)
 ```
 
 ```{r read_bootstraps}
-sets <- c("scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48")
+#sets <- c("scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48")
+sets <- c("scramble")
 boot <- lapply(sets, function(set) {
   readBootstrap(set, nboot)
 })
@@ -325,7 +322,7 @@ names(boot) <- sets
 
 Here is the distribution of bootstrap result. Each bootstrap gives a set of fit parameters. Figures below show the distribution of fit parameters across all bootstraps.
 
-```{r bootstrap_fit_params, fig.width=8, fig.height=11}
+```{r bootstrap_fit_params, fig.width=8, fig.height=3}
 P <- lapply(sets, function(set) {
   bootParamPlot(boot[[set]], set)
 })
@@ -348,7 +345,7 @@ ggplot(df, aes(set, median)) +
   geom_point() +
   facet_wrap(~par, scales="free_y", nrow=1) +
   theme(axis.text.x = element_text(angle = 90)) +
-  labs(x="Set", y="Fit parameter value")
+  labs(x="Set", y="Fit parameter value") 
 ```
 
 These are default box plots with whiskers encompassing 90% of data:
@@ -363,7 +360,6 @@ ggplot(m, aes(set, value)) +
   facet_wrap(~variable, scales="free_y", nrow=1) +
   theme(axis.text.x = element_text(angle = 90)) +
   labs(x="Set", y="Fit parameter value")
-
 ```
 
 # Four-colour plots
@@ -403,13 +399,13 @@ kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_wi
 
 # build a colour map
 # a list of logical vectors, different lenght each - trims NAs on both ends
-colourMap <- function(echr, condition, window=c(-300,-20), colour="N") {
+colourMap <- function(echr, condition, window=c(-300,-20)) {
   ch <- echr[[condition]]
   cells <- ch$cells
   sel.win <- ch$time >= window[1] & ch$time <= window[2]
   cells <- cells[, sel.win]
   colnames(cells) <- ch$time[sel.win]
-  map <- cells == colour
+  map <- cells == "N" | cells == "P"
   cmap <- list()
   k <- 1
   for(i in 1:nrow(map)) {
@@ -529,7 +525,8 @@ randomEventMap <- function(cmap, maxiter=1000, verbose=FALSE) {
   })
   
   i <- 1
-  for(event in events) {
+  # start with the longest
+  for(event in events[order(-events)]) {
     cnt <- 1
     done <- FALSE
     while(!done) {
@@ -624,6 +621,9 @@ plotIntervalDistribution <- function(echr, condition, window, with.theoretical=F
     if(what == "interarrival") {
       rmap <- randomMap(cmap)
       rdist <- interarrivalDistribution(rmap)
+    } else if(what == "fills") {
+      rmap <- randomMap(cmap)
+      rdist <- durationDistribution(rmap, what=what)
     } else {
       rmap <- randomEventMap(cmap)
       rdist <- durationDistribution(rmap, what=what)
@@ -633,6 +633,7 @@ plotIntervalDistribution <- function(echr, condition, window, with.theoretical=F
   
   chi <- chi2.simul(dist, rdist, bins=bins)
   p.value <- chi$p.value
+  if(p.value < 1e-16) p.value <- 0
 
   # expected theoretical distribution
   xx <- 1:60
@@ -653,6 +654,10 @@ plotIntervalDistribution <- function(echr, condition, window, with.theoretical=F
 }
 ```
 
+In this Section we consider the distribution of brown or pink boxes. Hereafter, I call them "brown", for simplicity, but we do take both brown and pink boxes into account.
+
+Note on terminology: I refer to individual boxes in cell tracks as "boxes" or "points". I refer to chains of consequtive boxes of the same type as "events".
+
 ## Point-to-point interarrival distributions
 
 Here I calculate the density of brown boxes and the distribution of inter-arrival times between them. If brown points are distributed randomly with density $\lambda$, the intervals between them should follow the exponential distribution with PDF
@@ -666,22 +671,24 @@ The example below shows the result for scramble. The black bars represent data, 
 I use a window of [-300, -20] min.
 
 ```{r brown_interarrival_example, fig.width=5, fig.height=4}
-plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = TRUE, what="interarrival")
+plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = TRUE, what="interarrival") 
 ```
 
-However, this is not what we really want. Inter-arrival time between individual one-minute boxes assumes that each box is one event. But in reality, brown event can last less or more than one minute. If we see, e.g., four brown boxes next to each other, it is unlikely that this shows four one-minute events. Much more likely, this is one event that lasts four minutes. Hence, considering the distribution of times between one-minute boxes and comparing it to a Poisson distribution of random one-minute events does not make much sense.
+This plot has limited interpretation. Inter-arrival time between individual one-minute boxes assumes that each box is one event. But in reality, brown event can last less or more than one minute. If we see, e.g., four brown boxes next to each other, it is unlikely that this shows four one-minute events. Much more likely, this is one event that lasts four minutes.
 
-## Brown event duration and gap distribution
+## Brown event duration distribution
 
-Instead, we should consider the distribution of full brown events, short and long. Below, I show the distribution of duration of brown events.
+Instead, we should consider the distribution of full brown events, short and long. Below, I show the distribution of duration of brown events. Before the durations are calculated, I fill the occasional missing data with random brown or blue points, where brown probability is the same as the overall brown density in the data. This means that this figure is slighly random and the size of bars will change from one instance to another. The differences are rather small, though (no more than a few percent of the bar size).
 
 ```{r brown_fills_example, fig.width=5, fig.height=4}
 plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = FALSE, what="fills") 
 ```
 
-NOTE: the blue open bars show the simulated data (see details below). There is a slight difference between real and simulated data. This is because for each simulation (which is repeated 100 times) gaps in real data are filled with random data. Hence, the simulated data shows the most likely real data, with imputation.
+The blue open bars show the expected distribution of duration of events derived from a random distribution of single brown points (noise). It shows that longer events (3 minutes or longer) are overrepresented, by comparison with random noise. Brown occurences cannot be explained by pure noise, they do form longer non-random "events".
 
-We can get more insight from the distribution of intervals between the brown events. Here I use the gaps between the events, not taking brown begin/end into account. For example, if "+" is brown and "-" is blue then this cell track
+## Brown event gap distribution
+
+We can get more insight from the distribution of gaps between the brown events. Here I use the gaps between the events, not taking brown begin/end into account. For example, if "+" is brown/pink and "-" is blue (or red) then this cell track
 
 ```
 ---+--++++---+-
@@ -689,23 +696,23 @@ We can get more insight from the distribution of intervals between the brown eve
 
 shows three brown events of length 1, 4, and 1 and two "gap" events of lengths 2 and 3. The blue sequences at the beginning and at the end are ignored, because we don't know how long they are, we only see part of them.
 
-This figure shows the distribution of gaps between brows events. The simulated distribution (open bars) is calculated in the following way:
+The figure below shows the distribution of gaps between brows events. The simulated distribution (open bars) is calculated in the following way:
 
-- I fill the gaps in data with random brown points with density $\lambda$. Note that this is rather arbitrary and adds mostly one-minute points. On the other hand these gaps are not large, so the it doesn't make huge difference.
+- First, I fill missing data with random brown points with density $\lambda$. Note that this is rather arbitrary and adds mostly one-minute points. On the other hand these missing points are not frequent, so the it doesn't make huge difference.
 - I count the brown events of each length
 - I generate random data using the same cell track durations and the same brown events, distributed randomly
 - The process is repeated 100 times and the mean distribution of randomized data is shown
-- This can be applied both to even duration distribution and gap between events distribution
+- From this I find the distribution of gap length between events
 
 If brown events were random, both data and simulated distributions would be similar. The p-value in the title shows the result from a chi-square test comparing data and simulation. The number "d" in each title is the density of brown boxes ($\lambda$).
 
 ```{r brown_gaps_example, fig.width=5, fig.height=4}
-plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = FALSE, what="gaps")
+plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = FALSE, what="gaps") 
 ```
 
 As we can see, there is an excess of short gaps in comparison to a random distribution. This means that brown events tend to cluster together. In particular, the 1-min gaps are more prominent, suggesting that one brown event might trigger another, immediately after it. On the other hand, this is our timing resolution, so, to some extent, it might be an experimental artifact. For example, if we have a long brown event and one box in the middle is misidentified as blue, than it creates an artificial gap of size 1. If this happens a few times, we get the observed pattern.
 
-Below, are results for all conditions. Both event duration (left) and gap distribution (right).
+Below, are results for all conditions. Note: each plot shows a p-value from a chi-square test between the data and the model shown. These p-values are typically very small. For clarity, I replaced each $p < 10^{-16}$ with zero.
 
 ```{r interval_distributions, fig.width=10, fig.height=28}
 P <- list()
@@ -807,7 +814,7 @@ for(nm in names(pchr)) {
   P[[k+2]] <- plotIntervalDistribution(pchr, nm, window, what="gaps", bins=2)
   k <- k + 3
 }
-grid.arrange(grobs=P, ncol=3)
+grid.arrange(grobs=P, ncol=3) 
 ```
 
 

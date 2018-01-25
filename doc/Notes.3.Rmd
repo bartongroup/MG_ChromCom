@@ -430,7 +430,27 @@ switch <- 1
 
 for(set in names(dataFile)) {
   name <- paste0("fits_", set, "_ref1_t0_n10000_tau1_k1_k2_tau2")
-  cmd <- paste("Rscript", script, set, name, switch, 10000, 30, 0)
+  cmd <- paste("Rscript", script, set, name, switch, 10000, 30, 0, 4)
+  qsub(cmd, logDir, name=name, ncor = 8)
+}
+```
+
+While this is churning on the cluster, I play with brown/pink distribution.
+
+# 25/01/2018
+
+This is very slow. Now I compute the model on the full time grid and it takes much longer!
+
+In the meantime, I can find best fits for three free parameters. I fix $\tau_2 = 8$ min.
+
+```{r eval=FALSE}
+script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
+logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
+switch <- 1
+
+for(set in names(dataFile)) {
+  name <- paste0("fits_", set, "_ref1_t0_n10000_tau1_k1_k2")
+  cmd <- paste("Rscript", script, set, name, switch, 10000, 30, 0, 3)
   qsub(cmd, logDir, name=name, ncor = 8)
 }
 ```
