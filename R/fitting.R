@@ -12,7 +12,7 @@ library(parallel)
 library(methods)
 
 args <- commandArgs(TRUE)
-stopifnot(length(args) == 6)
+stopifnot(length(args) == 7)
 set <- args[1]
 name <- args[2]
 t2ref <- as.integer(args[3])
