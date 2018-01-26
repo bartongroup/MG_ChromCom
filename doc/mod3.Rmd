@@ -1,5 +1,5 @@
 ---
-title: "Chromosome compation - simple 3-state model"
+title: "Chromosome compaction - simple 3-state model"
 author: "Marek Gierlinski"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -209,6 +209,13 @@ P <- plotAllConditions("ref1_t0_n10000_tau1_k1_k2_tau2")
 grid.arrange(grobs=P, ncol=2)
 ```
 
+## Three parameters, $\tau_2$ fixed at 8 min
+
+```{r fig_all_conditions_3par, fig.width=12, fig.height=20}
+P <- plotAllConditions("ref1_t0_n10000_tau1_k1_k2")
+grid.arrange(grobs=P, ncol=2)
+```
+
 
 ## Switch: P$\rightarrow$R only after $t_0$
 
@@ -310,7 +317,7 @@ runBootstrap("MK1775_ICRF193", nboot)
 
 ```{r read_bootstraps}
 #sets <- c("scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48")
-sets <- c("scramble")
+sets <- c("scramble", "NCAPD2", "NCAPD3")
 boot <- lapply(sets, function(set) {
   readBootstrap(set, nboot)
 })
@@ -322,7 +329,7 @@ names(boot) <- sets
 
 Here is the distribution of bootstrap result. Each bootstrap gives a set of fit parameters. Figures below show the distribution of fit parameters across all bootstraps.
 
-```{r bootstrap_fit_params, fig.width=8, fig.height=3}
+```{r bootstrap_fit_params, fig.width=8, fig.height=6}
 P <- lapply(sets, function(set) {
   bootParamPlot(boot[[set]], set)
 })
@@ -345,7 +352,7 @@ ggplot(df, aes(set, median)) +
   geom_point() +
   facet_wrap(~par, scales="free_y", nrow=1) +
   theme(axis.text.x = element_text(angle = 90)) +
-  labs(x="Set", y="Fit parameter value") 
+  labs(x="Set", y="Fit parameter value")
 ```
 
 These are default box plots with whiskers encompassing 90% of data:
@@ -359,7 +366,7 @@ ggplot(m, aes(set, value)) +
   geom_boxplot(outlier.size = 0.1, outlier.colour="grey", position=position_dodge(width=0.8)) +
   facet_wrap(~variable, scales="free_y", nrow=1) +
   theme(axis.text.x = element_text(angle = 90)) +
-  labs(x="Set", y="Fit parameter value")
+  labs(x="Set", y="Fit parameter value") 
 ```
 
 # Four-colour plots
