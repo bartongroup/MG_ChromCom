@@ -302,17 +302,19 @@ nboot <- 300
 ```
 
 ```{r bootstrap_run, eval=FALSE}
-runBootstrap("scramble", nboot)
-runBootstrap("NCAPD2", nboot)
-runBootstrap("NCAPD3", nboot)
-runBootstrap("SMC2", nboot)
+#runBootstrap("scramble", nboot)
+#runBootstrap("NCAPD2", nboot)
+#runBootstrap("NCAPD3", nboot)
+#runBootstrap("SMC2", nboot)
 
 runBootstrap("RAD21", nboot)
+Sys.sleep(15*3600)
 runBootstrap("WAPL48", nboot)
+Sys.sleep(15*3600)
 runBootstrap("TT108", nboot)
 
-runBootstrap("MK1775", nboot)
-runBootstrap("MK1775_ICRF193", nboot)
+#runBootstrap("MK1775", nboot)
+#runBootstrap("MK1775_ICRF193", nboot)
 ```
 
 ```{r read_bootstraps}
@@ -663,7 +665,7 @@ plotIntervalDistribution <- function(echr, condition, window, with.theoretical=F
 
 In this Section we consider the distribution of brown or pink boxes. Hereafter, I call them "brown", for simplicity, but we do take both brown and pink boxes into account.
 
-Note on terminology: I refer to individual boxes in cell tracks as "boxes" or "points". I refer to chains of consequtive boxes of the same type as "events".
+Note on terminology: I refer to individual boxes in cell tracks as "boxes" or "points". I refer to chains of consecutive boxes of the same type as "events".
 
 ## Point-to-point interarrival distributions
 
@@ -685,13 +687,13 @@ This plot has limited interpretation. Inter-arrival time between individual one-
 
 ## Brown event duration distribution
 
-Instead, we should consider the distribution of full brown events, short and long. Below, I show the distribution of duration of brown events. Before the durations are calculated, I fill the occasional missing data with random brown or blue points, where brown probability is the same as the overall brown density in the data. This means that this figure is slighly random and the size of bars will change from one instance to another. The differences are rather small, though (no more than a few percent of the bar size).
+Instead, we should consider the distribution of full brown events, short and long. Below, I show the distribution of duration of brown events. Before the durations are calculated, I fill the occasional missing data with random brown or blue points, where brown probability is the same as the overall brown density in the data. This means that this figure is slightly random and the size of bars will change from one instance to another. The differences are rather small, though (no more than a few percent of the bar size).
 
 ```{r brown_fills_example, fig.width=5, fig.height=4}
 plotIntervalDistribution(echr4, "scramble", c(-300, -20), with.theoretical = FALSE, what="fills") 
 ```
 
-The blue open bars show the expected distribution of duration of events derived from a random distribution of single brown points (noise). It shows that longer events (3 minutes or longer) are overrepresented, by comparison with random noise. Brown occurences cannot be explained by pure noise, they do form longer non-random "events".
+The blue open bars show the expected distribution of duration of events derived from a random distribution of single brown points (noise). It shows that longer events (3 minutes or longer) are over-represented, by comparison with random noise. Brown occurrences cannot be explained by pure noise, they do form longer non-random "events".
 
 ## Brown event gap distribution
 
