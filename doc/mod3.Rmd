@@ -291,9 +291,56 @@ bootParamPlot <- function(dat, title="") {
     geom_blank(data=dummy) +
     labs(title=title)
 }
+
+
+readBootstraps <- function(sets, nboot=300, root="boot") {
+  boot <- lapply(sets, function(set) {
+    readBootstrap(set, nboot, root=root)
+  })
+  names(boot) <- sets
+  boot
+}
+
+plotBootstrapDistributions <- function(boot, sets=NULL) {
+  if(is.null(sets)) sets <- names(boot)
+  P <- lapply(sets, function(set) {
+    bootParamPlot(boot[[set]], set)
+  })
+  grid.arrange(grobs=P, ncol=1) 
+}
+
+plotBootstrapCI <- function(boot, sets=NULL) {
+  if(is.null(sets)) sets <- names(boot)
+  P <- lapply(sets, function(set) {
+    bootParamStats(boot[[set]])
+  })
+  names(P) <- sets
+  df <- plyr::ldply(P, .id="set")
+  df$set <- as.factor(df$set)
+
+  ggplot(df, aes(set, median)) +
+    geom_errorbar(aes(x=set, ymin=lo, ymax=up), width=0.4) +
+    geom_point() +
+    facet_wrap(~par, scales="free_y", nrow=1) +
+    theme(axis.text.x = element_text(angle = 90)) +
+    labs(x="Set", y="Fit parameter value") 
+}
+
+plotBootstrapBox <- function(boot) {
+  md <- plyr::ldply(boot, .id="set")
+  md <- md[,c(1, 3, 4, 6, 7)]
+  m <- reshape2::melt(md, id.var="set")
+
+  ggplot(m, aes(set, value)) +
+    geom_boxplot(outlier.size = 0.1, outlier.colour="grey", position=position_dodge(width=0.8)) +
+    facet_wrap(~variable, scales="free_y", nrow=1) +
+    theme(axis.text.x = element_text(angle = 90)) +
+    labs(x="Set", y="Fit parameter value")
+}
+
 ```
 
-### Bootstraps
+### Bootstraps (4 parameters)
 
 Running bootstraps on the cluster. This is quite slow, so I do it bit by bit.
 
@@ -302,74 +349,59 @@ nboot <- 300
 ```
 
 ```{r bootstrap_run, eval=FALSE}
-#runBootstrap("scramble", nboot)
-#runBootstrap("NCAPD2", nboot)
-#runBootstrap("NCAPD3", nboot)
-#runBootstrap("SMC2", nboot)
+runBootstrap("scramble", nboot)
+runBootstrap("NCAPD2", nboot)
+runBootstrap("NCAPD3", nboot)
+runBootstrap("SMC2", nboot)
 
 runBootstrap("RAD21", nboot)
-Sys.sleep(15*3600)
 runBootstrap("WAPL48", nboot)
-Sys.sleep(15*3600)
 runBootstrap("TT108", nboot)
 
-#runBootstrap("MK1775", nboot)
-#runBootstrap("MK1775_ICRF193", nboot)
+runBootstrap("MK1775", nboot)
+runBootstrap("MK1775_ICRF193", nboot)
 ```
 
 ```{r read_bootstraps}
-#sets <- c("scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48")
-sets <- c("scramble", "NCAPD2", "NCAPD3")
-boot <- lapply(sets, function(set) {
-  readBootstrap(set, nboot)
-})
-names(boot) <- sets
+sets <- c("scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48", "TT108")
+boot <- readBootstraps(sets, nboot=nboot, root="boot")
 ```
-
-
-### Bootstrap results
 
 Here is the distribution of bootstrap result. Each bootstrap gives a set of fit parameters. Figures below show the distribution of fit parameters across all bootstraps.
 
-```{r bootstrap_fit_params, fig.width=8, fig.height=6}
-P <- lapply(sets, function(set) {
-  bootParamPlot(boot[[set]], set)
-})
-grid.arrange(grobs=P, ncol=1) 
+```{r bootstrap_fit_params, fig.width=8, fig.height=14}
+plotBootstrapDistributions(boot)
 ```
 
 And here are fit parameters and their 95% confidence intervals:
 
 ```{r bootstrap_fit_params_CI, fig.width=6, fig.height=3}
-P <- lapply(sets, function(set) {
-  bootParamStats(boot[[set]])
-})
-names(P) <- sets
-df <- plyr::ldply(P, .id="set")
-df$set <- as.factor(df$set)
-
-
-ggplot(df, aes(set, median)) +
-  geom_errorbar(aes(x=set, ymin=lo, ymax=up), width=0.4) +
-  geom_point() +
-  facet_wrap(~par, scales="free_y", nrow=1) +
-  theme(axis.text.x = element_text(angle = 90)) +
-  labs(x="Set", y="Fit parameter value")
+plotBootstrapCI(boot)
 ```
 
 These are default box plots with whiskers encompassing 90% of data:
 
 ```{r bootstrap_fit_params_box, fig.width=6, fig.height=3}
-md <- plyr::ldply(boot, .id="set")
-md <- md[,c(1, 3, 4, 6, 7)]
-m <- reshape2::melt(md, id.var="set")
-
-ggplot(m, aes(set, value)) +
-  geom_boxplot(outlier.size = 0.1, outlier.colour="grey", position=position_dodge(width=0.8)) +
-  facet_wrap(~variable, scales="free_y", nrow=1) +
-  theme(axis.text.x = element_text(angle = 90)) +
-  labs(x="Set", y="Fit parameter value") 
+plotBootstrapBox(boot)
 ```
+
+### Bootstraps (3 parameters)
+
+Here I perform bootstrap analysis with fixed $\tau_2=8$.
+
+```{r bootstrap_run_3par, eval=FALSE}
+runBootstrap("scramble", nboot, root="boot_par3", npars=3)
+runBootstrap("NCAPD2", nboot, root="boot_par3", npars=3)
+runBootstrap("NCAPD3", nboot, root="boot_par3", npars=3)
+runBootstrap("SMC2", nboot, root="boot_par3", npars=3)
+
+runBootstrap("RAD21", nboot, root="boot_par3", npars=3)
+runBootstrap("WAPL48", nboot, root="boot_par3", npars=3)
+runBootstrap("TT108", nboot, root="boot_par3", npars=3)
+```
+
+
+
 
 # Four-colour plots
 

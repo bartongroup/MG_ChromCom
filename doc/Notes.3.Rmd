@@ -455,3 +455,15 @@ for(set in names(dataFile)) {
 }
 ```
 
+# 26/01/2018
+
+Running more bootstraps. Hopefully, these will be finished over the weekend.
+
+Single fits for three parameters are ready. They look similar to four-parameter fits.
+
+# 29/01/2018
+
+Continuing work on bootstraps. Preparing for three-parameter model and testing bootstrap runs. Fixing bugs.
+
+Now running three-parameter bootstraps.
+
