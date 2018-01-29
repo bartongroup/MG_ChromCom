@@ -34,7 +34,7 @@ str(echr)
 pars <- c3pars(
   t0 = t0,
   tau1 = 15,
-  tau2 = 10,
+  tau2 = 8,
   k1 = 0.05,
   k2 = 0.06,
   t2ref = t2ref
