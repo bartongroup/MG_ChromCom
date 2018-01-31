@@ -401,6 +401,28 @@ runBootstrap("TT108", nboot, root="boot_par3", npars=3)
 ```
 
 
+```{r read_bootstraps_3par}
+sets <- c("scramble", "NCAPD2", "NCAPD3", "SMC2")#, "RAD21", "WAPL48", "TT108")
+boot.3 <- readBootstraps(sets, nboot=nboot, root="boot_par3")
+```
+
+Here is the distribution of bootstrap result. Each bootstrap gives a set of fit parameters. Figures below show the distribution of fit parameters across all bootstraps.
+
+```{r bootstrap_fit_params_3par, fig.width=8, fig.height=8}
+plotBootstrapDistributions(boot.3) 
+```
+
+And here are fit parameters and their 95% confidence intervals:
+
+```{r bootstrap_fit_params_CI_3par, fig.width=6, fig.height=3}
+plotBootstrapCI(boot.3) 
+```
+
+These are default box plots with whiskers encompassing 90% of data:
+
+```{r bootstrap_fit_params_box_3par, fig.width=6, fig.height=3}
+plotBootstrapBox(boot.3) 
+```
 
 
 # Four-colour plots
