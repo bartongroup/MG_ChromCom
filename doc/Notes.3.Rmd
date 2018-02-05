@@ -467,3 +467,7 @@ Continuing work on bootstraps. Preparing for three-parameter model and testing b
 
 Now running three-parameter bootstraps.
 
+# 5/02/2018
+
+There was an almighty cluster crash on Friday and all the jobs were stopped. Recovered in the afternoon and jobs continuued, but lots of TT108  results missing. Produced a document with limited TT108, but need to run it again.
+

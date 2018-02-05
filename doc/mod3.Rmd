@@ -254,8 +254,13 @@ readBootstrap <- function(set, nbatch, root="boot") {
   for(batch in 1:nbatch) {
     file <- paste0(remoteBootDir, root, "_", set, "_", batch, ".pars")
     if(file.exists(file)) {
-      df <- read.table(file, header = TRUE, sep="\t")
-      dat <- rbind(dat, df)
+      info <- file.info(file)
+      if(info$size > 0) {
+        df <- read.table(file, header = TRUE, sep="\t")
+        dat <- rbind(dat, df)
+      } else {
+        warning(paste("file", file, "is empty."))
+      }
     } else {
       warning(paste("File", file, "does not exist."))
     }
@@ -402,26 +407,26 @@ runBootstrap("TT108", nboot, root="boot_par3", npars=3)
 
 
 ```{r read_bootstraps_3par}
-sets <- c("scramble", "NCAPD2", "NCAPD3", "SMC2")#, "RAD21", "WAPL48", "TT108")
+sets <- c("scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48", "TT108")
 boot.3 <- readBootstraps(sets, nboot=nboot, root="boot_par3")
 ```
 
 Here is the distribution of bootstrap result. Each bootstrap gives a set of fit parameters. Figures below show the distribution of fit parameters across all bootstraps.
 
-```{r bootstrap_fit_params_3par, fig.width=8, fig.height=8}
-plotBootstrapDistributions(boot.3) 
+```{r bootstrap_fit_params_3par, fig.width=8, fig.height=14}
+plotBootstrapDistributions(boot.3)
 ```
 
 And here are fit parameters and their 95% confidence intervals:
 
 ```{r bootstrap_fit_params_CI_3par, fig.width=6, fig.height=3}
-plotBootstrapCI(boot.3) 
+plotBootstrapCI(boot.3)
 ```
 
 These are default box plots with whiskers encompassing 90% of data:
 
 ```{r bootstrap_fit_params_box_3par, fig.width=6, fig.height=3}
-plotBootstrapBox(boot.3) 
+plotBootstrapBox(boot.3)
 ```
 
 
