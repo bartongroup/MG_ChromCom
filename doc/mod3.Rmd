@@ -268,9 +268,9 @@ readBootstrap <- function(set, nbatch, root="boot") {
   dat
 }
 
-bootParamStats <- function(dat) {
+bootParamStats <- function(dat, pars=c("tau1", "tau2", "k1", "k2")) {
   df <- NULL
-  for(par in c("tau1", "tau2", "k1", "k2")) {
+  for(par in pars) {
     q <- quantile(dat[[par]], probs=c(0.025, 0.5, 0.975))
     #q <- signif(q, 3)
     #q <- sprintf("%.2g", q)
@@ -280,16 +280,17 @@ bootParamStats <- function(dat) {
   df
 }
 
-bootParamPlot <- function(dat, title="") {
-  vars <- c("tau1", "tau2", "k1", "k2")
+bootParamPlot <- function(dat, title="", pars=c("tau1", "tau2", "k1", "k2")) {
   
   # dummy data for x-limits
+  vars <- c("tau1", "tau2", "k1", "k2")
   dummy <- data.frame(
     variable = c(vars, vars),
     value = c(7, 5, 0, 0, 30, 30, 0.2, 0.2)
   )
+  dummy <- dummy[dummy$variable %in% pars,]
   
-  m <- reshape2::melt(dat, measure.vars=vars)
+  m <- reshape2::melt(dat, measure.vars=pars)
   ggplot(m, aes(value)) +
     geom_histogram(bins=50) +
     facet_wrap(~variable, scales="free", nrow=1) +
@@ -306,18 +307,18 @@ readBootstraps <- function(sets, nboot=300, root="boot") {
   boot
 }
 
-plotBootstrapDistributions <- function(boot, sets=NULL) {
+plotBootstrapDistributions <- function(boot, sets=NULL, pars=c("tau1", "tau2", "k1", "k2")) {
   if(is.null(sets)) sets <- names(boot)
   P <- lapply(sets, function(set) {
-    bootParamPlot(boot[[set]], set)
+    bootParamPlot(boot[[set]], set, pars)
   })
   grid.arrange(grobs=P, ncol=1) 
 }
 
-plotBootstrapCI <- function(boot, sets=NULL) {
+plotBootstrapCI <- function(boot, sets=NULL, pars=c("tau1", "tau2", "k1", "k2")) {
   if(is.null(sets)) sets <- names(boot)
   P <- lapply(sets, function(set) {
-    bootParamStats(boot[[set]])
+    bootParamStats(boot[[set]], pars)
   })
   names(P) <- sets
   df <- plyr::ldply(P, .id="set")
@@ -331,9 +332,9 @@ plotBootstrapCI <- function(boot, sets=NULL) {
     labs(x="Set", y="Fit parameter value") 
 }
 
-plotBootstrapBox <- function(boot) {
+plotBootstrapBox <- function(boot, pars=c("tau1", "tau2", "k1", "k2")) {
   md <- plyr::ldply(boot, .id="set")
-  md <- md[,c(1, 3, 4, 6, 7)]
+  md <- md[,c("set", pars)]
   m <- reshape2::melt(md, id.var="set")
 
   ggplot(m, aes(set, value)) +
@@ -392,7 +393,7 @@ plotBootstrapBox(boot)
 
 ### Bootstraps (3 parameters)
 
-Here I perform bootstrap analysis with fixed $\tau_2=8$.
+Here I perform bootstrap analysis with fixed $\tau_2=8$ min.
 
 ```{r bootstrap_run_3par, eval=FALSE}
 runBootstrap("scramble", nboot, root="boot_par3", npars=3)
@@ -408,25 +409,25 @@ runBootstrap("TT108", nboot, root="boot_par3", npars=3)
 
 ```{r read_bootstraps_3par}
 sets <- c("scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48", "TT108")
-boot.3 <- readBootstraps(sets, nboot=nboot, root="boot_par3")
+boot.3 <- readBootstraps(sets, nboot=nboot, root="boot_par3") 
 ```
 
 Here is the distribution of bootstrap result. Each bootstrap gives a set of fit parameters. Figures below show the distribution of fit parameters across all bootstraps.
 
-```{r bootstrap_fit_params_3par, fig.width=8, fig.height=14}
-plotBootstrapDistributions(boot.3)
+```{r bootstrap_fit_params_3par, fig.width=6, fig.height=14}
+plotBootstrapDistributions(boot.3, pars=c("tau1", "k1", "k2")) 
 ```
 
 And here are fit parameters and their 95% confidence intervals:
 
-```{r bootstrap_fit_params_CI_3par, fig.width=6, fig.height=3}
-plotBootstrapCI(boot.3)
+```{r bootstrap_fit_params_CI_3par, fig.width=5, fig.height=3}
+plotBootstrapCI(boot.3, pars=c("tau1", "k1", "k2")) 
 ```
 
 These are default box plots with whiskers encompassing 90% of data:
 
-```{r bootstrap_fit_params_box_3par, fig.width=6, fig.height=3}
-plotBootstrapBox(boot.3)
+```{r bootstrap_fit_params_box_3par, fig.width=5, fig.height=3}
+plotBootstrapBox(boot.3, pars=c("tau1", "k1", "k2")) 
 ```
 
 
