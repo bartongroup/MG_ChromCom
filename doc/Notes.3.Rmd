@@ -471,3 +471,20 @@ Now running three-parameter bootstraps.
 
 There was an almighty cluster crash on Friday and all the jobs were stopped. Recovered in the afternoon and jobs continuued, but lots of TT108  results missing. Produced a document with limited TT108, but need to run it again.
 
+# 7/02/2018
+
+Meeting with Tomo and John.
+
+John corrected scramble. Scramble is a control, there is also untreated. Do bootstraps on new scramble and untreated.
+
+RAD21 - fit with tau2 = 15 just to see difference. See the separation between pink and red curves (should increase).
+
+Create a table with medians of all bootstraps.
+
+New data for NK1775_ICRF with original (random) order of cells. It is the same data.
+
+Show correlation between tau2 and k2 in RAD21 (from bootstrap).
+
+
+
+
