@@ -1,4 +1,4 @@
-# Rscript fitting.Rs set name switch ncells ntry t0 npars
+# Rscript fitting.Rs set name switch ncells ntry t0 npars [tau2]
 
 setwd("/cluster/gjb_lab/mgierlinski/projects/chromcomR/doc")
 source("../../mylib/R/lib.R")
@@ -12,7 +12,7 @@ library(parallel)
 library(methods)
 
 args <- commandArgs(TRUE)
-stopifnot(length(args) == 7)
+stopifnot(length(args) %in% c(7, 8))
 set <- args[1]
 name <- args[2]
 t2ref <- as.integer(args[3])
@@ -24,6 +24,12 @@ ntry <- args[5]
 t0 <- as.numeric(args[6])
 npars <- as.integer(args[7])
 
+if(length(args) == 7) {
+  tau2 <- 8
+} else {
+  tau2 <- as.numeric(args[8])
+}
+
 print(paste("Fitting", set))
 
 echr <- experimentalData(dataFile[[set]])
@@ -32,7 +38,7 @@ str(echr)
 pars <- c3pars(
   t0 = t0,
   tau1 = 15,
-  tau2 = 8,
+  tau2 = tau2,
   k1 = 0.05,
   k2 = 0.06,
   t2ref = t2ref
