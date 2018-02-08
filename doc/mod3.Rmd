@@ -173,7 +173,7 @@ free <- c("tau1", "k1", "k2", "tau2")
 
 neb <- c(0, -5, -10, -15)
 chr.scr <- lapply(neb, function(t0) {
-  name <- paste0("fitt_scramble_n10000_t.", -t0, "_tau1_k1_k2_tau2")
+  name <- paste0("fitt_scramble_t.", -t0, "_tau1_k1_k2_tau2")
   cacheData(name, fitChr, binDir=fitDir, cacheonly=TRUE)
 })
 names(chr.scr) <- as.character(-neb)
@@ -193,7 +193,7 @@ I think the issue here is not $t_0$ but the fact that the red curve growths is t
 script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
 logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
 switch <- 1
-
+ 
 sets <- names(dataFile)
 for(set in sets) {
   name <- paste0("fits_", set, "_ref1_t0_n10000_tau1_k1_k2_tau2")
@@ -229,7 +229,7 @@ Here are fit results for all conditions with $t_0$ fixed at zero and four parame
 
 ```{r fig_all_conditions, fig.width=12, fig.height=20}
 P <- plotAllConditions("ref1_t0_n10000_tau1_k1_k2_tau2")
-grid.arrange(grobs=P, ncol=2)
+grid.arrange(grobs=P, ncol=2) 
 ```
 
 ## Three parameters, $\tau_2$ fixed at 8 min
@@ -250,13 +250,13 @@ for(set in sets) {
 
 ```{r fig_all_conditions_3par, fig.width=12, fig.height=20}
 P <- plotAllConditions("ref1_t0_n10000_tau1_k1_k2")
-grid.arrange(grobs=P, ncol=2)
+grid.arrange(grobs=P, ncol=2) 
 ```
 
 
 ## RAD21
 
-We want to see RAD21 with higher $tau_2 = 15$ min.
+We want to see RAD21 with higher $\tau_2 = 15$ min.
 
 ```{r fit_RAD21, eval=FALSE}
 script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
@@ -266,6 +266,13 @@ switch <- 1
 name <- paste0("fits_RAD21_tau2_15_ref1_t0_n10000_tau1_k1_k2")
 cmd <- paste("Rscript", script, "RAD21", name, switch, 10000, 30, 0, 3, 15)
 qsub(cmd, logDir, name=name, ncor = 8)
+```
+
+```{r RAD21_tau8_tau15, fig.width=6, fig.height=4}
+rad21.tau8 <- cacheData("fits_RAD21_ref1_t0_n10000_tau1_k1_k2", binDir=fitDir, cacheonly=TRUE)
+rad21.tau15 <- cacheData("fits_RAD21_tau2_15_ref1_t0_n10000_tau1_k1_k2", binDir=fitDir, cacheonly=TRUE)
+plotTimelines(rad21.tau8, expdata = echr$RAD21, withpars=TRUE, title="RAD21 tau2=8", title.size=9)
+plotTimelines(rad21.tau15, expdata = echr$RAD21, withpars=TRUE, title="RAD21 tau2=15", title.size=9)
 ```
 
 
