@@ -9,6 +9,8 @@ output:
 
 Collaborators: Tomo Tanaka, John Eykelenboom.
 
+[Cartoon project explanation](http://www.compbio.dundee.ac.uk/user/mgierlinski/chromcom/doc/Cartoon.pdf)
+
 [shiny app](https://shiny.compbio.dundee.ac.uk/marek_chromcom/param_tuner/)
 
 ```{r setup, include=FALSE}
@@ -315,6 +317,18 @@ plotBootstrapDistributions <- function(boot, sets=NULL, pars=c("tau1", "tau2", "
   grid.arrange(grobs=P, ncol=1) 
 }
 
+bootstrapParamsTab <- function(boot, sets=NULL, pars=c("tau1", "tau2", "k1", "k2")) {
+  if(is.null(sets)) sets <- names(boot)
+  P <- lapply(sets, function(set) {
+    bp <- bootParamStats(boot[[set]], pars)
+    sprintf("%.3g", bp$median)
+  })
+  names(P) <- sets
+  df <- plyr::ldply(P, .id="set")
+  colnames(df) <- c("set", pars)
+  df
+}
+
 plotBootstrapCI <- function(boot, sets=NULL, pars=c("tau1", "tau2", "k1", "k2")) {
   if(is.null(sets)) sets <- names(boot)
   P <- lapply(sets, function(set) {
@@ -391,6 +405,13 @@ These are default box plots with whiskers encompassing 90% of data:
 plotBootstrapBox(boot)
 ```
 
+In this table we show the median value of each parameter:
+
+```{r bootstrap_fit_params_median}
+df <- bootstrapParamsTab(boot)
+kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
+```
+
 ### Bootstraps (3 parameters)
 
 Here I perform bootstrap analysis with fixed $\tau_2=8$ min.
@@ -430,6 +451,12 @@ These are default box plots with whiskers encompassing 90% of data:
 plotBootstrapBox(boot.3, pars=c("tau1", "k1", "k2")) 
 ```
 
+In this table we show the median value of each parameter:
+
+```{r bootstrap_fit_params_median_3par}
+df <- bootstrapParamsTab(boot.3, pars=c("tau1", "k1", "k2"))
+kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
+```
 
 # Four-colour plots
 
