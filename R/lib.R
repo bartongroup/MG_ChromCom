@@ -17,14 +17,15 @@ translateVector <- function(x, map=model.colours) {
 #' Data files
 #' @export
 dataFile <- list(
-  scramble = "../data/scramble_noncoloured.csv",
+  untreated = "../data/TT75_untreated_uncoloured.csv",
+  scramble = "../data/TT75_scramble_checked_uncoloured.csv",
   NCAPD2 = "../data/NCAPD2_uncoloured.csv",
   NCAPD3 = "../data/NCAPD3_uncoloured.csv",
   SMC2  = "../data/SMC2_noncoloured.csv",
   WAPL24  = "../data/WAPL_24hr_noncoloured.csv",
   WAPL48  = "../data/WAPL_48hr_noncoloured.csv",
   MK1775  = "../data/MK1775only_noncoloured.csv",
-  MK1775_ICRF193  = "../data/MK1775andICRF193_noncoloured.csv",
+  MK1775_ICRF193  = "../data/TT75_MK_ICRF_unordered_uncoloured.csv",
   RAD21 = "../data/RAD21_48hr_noncoloured.csv",
   TT103 = "../data/TT103_uncoloured.csv",
   TT108 = "../data/TT108_untreated_noncoloured.csv"
