@@ -485,6 +485,12 @@ New data for NK1775_ICRF with original (random) order of cells. It is the same d
 
 Show correlation between tau2 and k2 in RAD21 (from bootstrap).
 
+# 8/02/2018
+
+Made median tables and tau2/k2 plot. Uploading new data.
+
+Fitting scramble for four values of t0. Fitting untreated. And scramble and untreated for 3 pars.
+
 
 
 

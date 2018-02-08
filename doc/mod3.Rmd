@@ -24,8 +24,9 @@ library(parallel)
 
 source("../R/lib.R")
 binDir <- "../RData"
+fitDir <- "/home/mgierlinski/projects/chromcomR/RData/"
 
-opts_chunk$set(fig.path='../figure/mpd3-', 
+opts_chunk$set(fig.path='../figure/mod3-', 
                cache.path='../cache/mod3-', 
                fig.align='center',
                external=TRUE,
@@ -147,7 +148,20 @@ First, we fit the model with $\tau_1$, $\tau_2$, $k_1$ and $k_2$ free. To improv
 
 We suspect that $t_0$ might not be exactly zero. Hence I fit the model with $t_0 = 0, -5, -10, -15$ minutes.
 
-```{r scramble_t0, include=FALSE}
+```{r fit_scramble, eval=FALSE}
+script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
+logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
+switch <- 1
+
+for(t0 in c(0, -5, -10, -15)) {
+  name <- paste0("fitt_scramble_t.", -t0, "_tau1_k1_k2_tau2")
+  cmd <- paste("Rscript", script, "scramble", name, switch, 10000, 30, t0, 4)
+  qsub(cmd, logDir, name=name, ncor = 8)
+}
+```
+
+
+```{r scramble_t0}
 pars <- c3pars(
   t0 = -10,
   tau1 = 15.3,
@@ -160,7 +174,7 @@ free <- c("tau1", "k1", "k2", "tau2")
 neb <- c(0, -5, -10, -15)
 chr.scr <- lapply(neb, function(t0) {
   name <- paste0("fitt_scramble_n10000_t.", -t0, "_tau1_k1_k2_tau2")
-  cacheData(name, fitChr, echr$scramble, pars, free, ncells=10000, ntry=100, ncores=4, binDir=binDir, cacheonly=TRUE)
+  cacheData(name, fitChr, binDir=fitDir, cacheonly=TRUE)
 })
 names(chr.scr) <- as.character(-neb)
 ```
@@ -175,14 +189,21 @@ I think the issue here is not $t_0$ but the fact that the red curve growths is t
 
 ### All conditions
 
-```{r, eval=FALSE}
-# The code for fitting is in the notes
+```{r fit_all_conditions_4par, eval=FALSE}
+script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
+logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
+switch <- 1
+
+sets <- names(dataFile)
+for(set in sets) {
+  name <- paste0("fits_", set, "_ref1_t0_n10000_tau1_k1_k2_tau2")
+  cmd <- paste("Rscript", script, set, name, switch, 10000, 30, 0, 4)
+  qsub(cmd, logDir, name=name, ncor = 8)
 }
 ```
 
-```{r plot_all_conditions_function}
-fitDir <- "/home/mgierlinski/projects/chromcomR/RData/"
 
+```{r plot_all_conditions_function}
 plotAllConditions <- function(suffix) {
   nms <- names(dataFile)
   chr <- lapply(nms, function(set) {
@@ -213,9 +234,38 @@ grid.arrange(grobs=P, ncol=2)
 
 ## Three parameters, $\tau_2$ fixed at 8 min
 
+```{r fit_all_conditions_3par, eval=FALSE}
+script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
+logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
+switch <- 1
+
+sets <- names(dataFile)
+for(set in sets) {
+  name <- paste0("fits_", set, "_ref1_t0_n10000_tau1_k1_k2")
+  cmd <- paste("Rscript", script, set, name, switch, 10000, 30, 0, 3)
+  qsub(cmd, logDir, name=name, ncor = 8)
+}
+```
+
+
 ```{r fig_all_conditions_3par, fig.width=12, fig.height=20}
 P <- plotAllConditions("ref1_t0_n10000_tau1_k1_k2")
 grid.arrange(grobs=P, ncol=2)
+```
+
+
+## RAD21
+
+We want to see RAD21 with higher $tau_2 = 15$ min.
+
+```{r fit_RAD21, eval=FALSE}
+script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
+logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
+switch <- 1
+
+name <- paste0("fits_RAD21_tau2_15_ref1_t0_n10000_tau1_k1_k2")
+cmd <- paste("Rscript", script, "RAD21", name, switch, 10000, 30, 0, 3, 15)
+qsub(cmd, logDir, name=name, ncor = 8)
 ```
 
 
@@ -300,21 +350,12 @@ bootParamPlot <- function(dat, title="", pars=c("tau1", "tau2", "k1", "k2")) {
     labs(title=title)
 }
 
-
 readBootstraps <- function(sets, nboot=300, root="boot") {
   boot <- lapply(sets, function(set) {
     readBootstrap(set, nboot, root=root)
   })
   names(boot) <- sets
   boot
-}
-
-plotBootstrapDistributions <- function(boot, sets=NULL, pars=c("tau1", "tau2", "k1", "k2")) {
-  if(is.null(sets)) sets <- names(boot)
-  P <- lapply(sets, function(set) {
-    bootParamPlot(boot[[set]], set, pars)
-  })
-  grid.arrange(grobs=P, ncol=1) 
 }
 
 bootstrapParamsTab <- function(boot, sets=NULL, pars=c("tau1", "tau2", "k1", "k2")) {
@@ -327,6 +368,25 @@ bootstrapParamsTab <- function(boot, sets=NULL, pars=c("tau1", "tau2", "k1", "k2
   df <- plyr::ldply(P, .id="set")
   colnames(df) <- c("set", pars)
   df
+}
+
+plotBootstrapDistributions <- function(boot, sets=NULL, pars=c("tau1", "tau2", "k1", "k2")) {
+  if(is.null(sets)) sets <- names(boot)
+  P <- lapply(sets, function(set) {
+    bootParamPlot(boot[[set]], set, pars)
+  })
+  grid.arrange(grobs=P, ncol=1) 
+}
+
+plotBootstrapParamCor <- function(boot, sets=NULL, pars=c("tau2", "k2")) {
+  if(is.null(sets)) sets <- names(boot)
+  md <- plyr::ldply(boot, .id="set")
+  md <- md[,c("set", pars)]
+  
+  ggplot(md, aes_string(x=pars[1], y=pars[2])) +
+    geom_point(shape=1) +
+    geom_smooth(method="loess", se=FALSE, colour="red") +
+    facet_wrap(~set)
 }
 
 plotBootstrapCI <- function(boot, sets=NULL, pars=c("tau1", "tau2", "k1", "k2")) {
@@ -410,6 +470,12 @@ In this table we show the median value of each parameter:
 ```{r bootstrap_fit_params_median}
 df <- bootstrapParamsTab(boot)
 kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
+```
+
+The next plot shows the correlation between $\tau_2$ and $k_2$ across bootstraps. The red line is a local regression line (LOESS).
+
+```{r bootstrap_tau2_k2, fig.width=8, fig.height=7}
+plotBootstrapParamCor(boot)
 ```
 
 ### Bootstraps (3 parameters)
