@@ -436,6 +436,8 @@ nboot <- 300
 ```
 
 ```{r bootstrap_run, eval=FALSE}
+runBootstrap("untreated", nboot)
+
 runBootstrap("scramble", nboot)
 runBootstrap("NCAPD2", nboot)
 runBootstrap("NCAPD3", nboot)
@@ -450,39 +452,39 @@ runBootstrap("MK1775_ICRF193", nboot)
 ```
 
 ```{r read_bootstraps}
-sets <- c("scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48", "TT108")
+sets <- c("untreated", "scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48", "TT108")
 boot <- readBootstraps(sets, nboot=nboot, root="boot")
 ```
 
 Here is the distribution of bootstrap result. Each bootstrap gives a set of fit parameters. Figures below show the distribution of fit parameters across all bootstraps.
 
 ```{r bootstrap_fit_params, fig.width=8, fig.height=14}
-plotBootstrapDistributions(boot)
+plotBootstrapDistributions(boot) 
 ```
 
 And here are fit parameters and their 95% confidence intervals:
 
 ```{r bootstrap_fit_params_CI, fig.width=6, fig.height=3}
-plotBootstrapCI(boot)
+plotBootstrapCI(boot) 
 ```
 
 These are default box plots with whiskers encompassing 90% of data:
 
 ```{r bootstrap_fit_params_box, fig.width=6, fig.height=3}
-plotBootstrapBox(boot)
+plotBootstrapBox(boot) 
 ```
 
 In this table we show the median value of each parameter:
 
 ```{r bootstrap_fit_params_median}
-df <- bootstrapParamsTab(boot)
+df <- bootstrapParamsTab(boot) 
 kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
 ```
 
 The next plot shows the correlation between $\tau_2$ and $k_2$ across bootstraps. The red line is a local regression line (LOESS).
 
 ```{r bootstrap_tau2_k2, fig.width=8, fig.height=7}
-plotBootstrapParamCor(boot)
+plotBootstrapParamCor(boot) 
 ```
 
 ### Bootstraps (3 parameters)
@@ -490,6 +492,8 @@ plotBootstrapParamCor(boot)
 Here I perform bootstrap analysis with fixed $\tau_2=8$ min.
 
 ```{r bootstrap_run_3par, eval=FALSE}
+runBootstrap("untreated", nboot, root="boot_par3", npars=3)
+
 runBootstrap("scramble", nboot, root="boot_par3", npars=3)
 runBootstrap("NCAPD2", nboot, root="boot_par3", npars=3)
 runBootstrap("NCAPD3", nboot, root="boot_par3", npars=3)

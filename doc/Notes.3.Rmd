@@ -489,7 +489,11 @@ Show correlation between tau2 and k2 in RAD21 (from bootstrap).
 
 Made median tables and tau2/k2 plot. Uploading new data.
 
-Fitting scramble for four values of t0. Fitting untreated. And scramble and untreated for 3 pars.
+Fitting scramble for four values of t0. Fitting untreated. And scramble and untreated for 3 pars. Now running bootstraps for 4-par scramble and untreated.
+
+# 9/02/2018
+
+3-par bootstraps started.
 
 
 
