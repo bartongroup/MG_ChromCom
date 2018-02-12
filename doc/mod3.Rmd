@@ -256,7 +256,7 @@ grid.arrange(grobs=P, ncol=2)
 
 ## RAD21
 
-We want to see RAD21 with higher $\tau_2 = 15$ min.
+We want to see RAD21 with higher $\tau_2$. Below, there is a comparison between the default 3-parameter fit ($\tau_2$ fixed at 8 min) and a fit where $\tau_2$ was fixed at 15 min.
 
 ```{r fit_RAD21, eval=FALSE}
 script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
@@ -506,8 +506,8 @@ runBootstrap("TT108", nboot, root="boot_par3", npars=3)
 
 
 ```{r read_bootstraps_3par}
-sets <- c("scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48", "TT108")
-boot.3 <- readBootstraps(sets, nboot=nboot, root="boot_par3") 
+sets <- c("untreated", "scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48", "TT108")
+boot.3 <- readBootstraps(sets, nboot=nboot, root="boot_par3")
 ```
 
 Here is the distribution of bootstrap result. Each bootstrap gives a set of fit parameters. Figures below show the distribution of fit parameters across all bootstraps.
@@ -532,7 +532,7 @@ In this table we show the median value of each parameter:
 
 ```{r bootstrap_fit_params_median_3par}
 df <- bootstrapParamsTab(boot.3, pars=c("tau1", "k1", "k2"))
-kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
+kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)  
 ```
 
 # Four-colour plots

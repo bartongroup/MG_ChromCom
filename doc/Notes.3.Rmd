@@ -495,6 +495,10 @@ Fitting scramble for four values of t0. Fitting untreated. And scramble and untr
 
 3-par bootstraps started.
 
+# 12/02/2018
+
+3-par bootstraps finished. Updated the document.
+
 
 
 
