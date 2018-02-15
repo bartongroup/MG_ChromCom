@@ -54,4 +54,4 @@ if(npars == 4) {
   stop("Wrong number of parameters")
 }
 
-chr <- cacheData(name, fitChr, echr, pars, free, ncells=ncells, ntry=ntry, ncores=8, binDir=binDir)
+chr <- cacheData(name, fitChr, echr, pars, free, ncells=ncells, ntry=ntry, ncores=8, binDir=binDir, refresh=TRUE)
