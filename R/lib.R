@@ -18,7 +18,7 @@ translateVector <- function(x, map=model.colours) {
 #' @export
 dataFile <- list(
   untreated = "../data/TT75_untreated_uncoloured.csv",
-  scramble = "../data/TT75_scramble_checked_uncoloured.csv",
+  scramble = "../data/scramble_corrected_20180215.csv",
   NCAPD2 = "../data/NCAPD2_uncoloured.csv",
   NCAPD3 = "../data/NCAPD3_uncoloured.csv",
   SMC2  = "../data/SMC2_noncoloured.csv",
