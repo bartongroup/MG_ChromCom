@@ -10,6 +10,7 @@ library(ggplot2)
 library(reshape2)
 library(caTools)
 library(latex2exp)
+library(parallel)
 
 
 source("../R/lib.R")
