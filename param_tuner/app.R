@@ -14,6 +14,9 @@ library(parallel)
 
 source("../R/lib.R")
 
+# main data
+D <- lapply(dataFile, experimentalData)
+
 ########################################################################
 
 
@@ -45,8 +48,6 @@ ui <- shinyUI(fluidPage(
 
 
 server <- shinyServer(function(input, output) {
-
-  D <- lapply(dataFile, experimentalData)
 
   sliderValues <- reactive({
     c3pars(
