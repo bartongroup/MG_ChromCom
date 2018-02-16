@@ -508,3 +508,8 @@ Scramble had sligthly different definitions of pink and red. There will be new s
 Need to update Shiny.
 
 
+# 15/02/2018
+
+Bootstraps finished. Struggled with the cached version of data, showing the old scramble. Got confused by the difference between shiny app and local document. All sorted out now.
+
+Updating document and Shiny app.

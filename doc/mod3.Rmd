@@ -53,13 +53,13 @@ echr <- lapply(dataFile, experimentalData)
 In our data we distinguish four states, marked by colour: blue, brown, pink, red. For the purpose of the model we merge blue and brown together into one state. Here is the result of the experiment from `r nrow(echr$scramble$cells)` cells.
 
 ```{r fig_cells, fig.width=5}
-plotCells(echr$scramble)
+plotCells(echr$scramble) 
 ```
 
 The next figure shows the proportions of each colour as a function of time. The curves are smoothed with a running mean over the window of `r smth` time points.
 
 ```{r fig_timeline, fig.width=5}
-plotTimelines(echr$scramble, smooth=TRUE, k=smth)
+plotTimelines(echr$scramble, smooth=TRUE, k=smth) 
 ```
 
 
@@ -176,12 +176,12 @@ chr.scr <- lapply(neb, function(t0) {
   name <- paste0("fitt_scramble_t.", -t0, "_tau1_k1_k2_tau2")
   cacheData(name, fitChr, binDir=fitDir, cacheonly=TRUE)
 })
-names(chr.scr) <- as.character(-neb)
+names(chr.scr) <- as.character(-neb) 
 ```
 
 ```{r fig_scramble_t0, fig.width=5}
 for(t0 in names(chr.scr)) {
-  print(plotTimelines(chr.scr[[t0]], expdata = echr$scramble, withpars=TRUE))
+  print(plotTimelines(chr.scr[[t0]], expdata = echr$scramble, withpars=TRUE)) 
 }
 ```
 
@@ -228,7 +228,7 @@ plotAllConditions <- function(suffix) {
 Here are fit results for all conditions with $t_0$ fixed at zero and four parameters free: $\tau_1$, $\tau_2$, $k_1$ and $k_2$. The RMS is computed over (-50, 30) min range (though the model is shown on the entire range).
 
 ```{r fig_all_conditions, fig.width=12, fig.height=20}
-P <- plotAllConditions("ref1_t0_n10000_tau1_k1_k2_tau2")
+P <- plotAllConditions("ref1_t0_n10000_tau1_k1_k2_tau2") 
 grid.arrange(grobs=P, ncol=2) 
 ```
 
@@ -250,7 +250,7 @@ for(set in sets) {
 
 ```{r fig_all_conditions_3par, fig.width=12, fig.height=20}
 P <- plotAllConditions("ref1_t0_n10000_tau1_k1_k2")
-grid.arrange(grobs=P, ncol=2) 
+grid.arrange(grobs=P, ncol=2)
 ```
 
 
@@ -409,7 +409,7 @@ plotBootstrapCI <- function(boot, sets=NULL, pars=c("tau1", "tau2", "k1", "k2"))
     geom_errorbar(aes(x=set, ymin=lo, ymax=up), width=0.4) +
     geom_point() +
     facet_wrap(~par, scales="free_y", nrow=1) +
-    theme(axis.text.x = element_text(angle = 90)) +
+    theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1)) +
     labs(x="Set", y="Fit parameter value") 
 }
 
@@ -421,7 +421,7 @@ plotBootstrapBox <- function(boot, pars=c("tau1", "tau2", "k1", "k2")) {
   ggplot(m, aes(set, value)) +
     geom_boxplot(outlier.size = 0.1, outlier.colour="grey", position=position_dodge(width=0.8)) +
     facet_wrap(~variable, scales="free_y", nrow=1) +
-    theme(axis.text.x = element_text(angle = 90)) +
+    theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1)) +
     labs(x="Set", y="Fit parameter value")
 }
 
@@ -453,13 +453,13 @@ runBootstrap("MK1775_ICRF193", nboot)
 
 ```{r read_bootstraps}
 sets <- c("untreated", "scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48", "TT108")
-boot <- readBootstraps(sets, nboot=nboot, root="boot")
+boot <- readBootstraps(sets, nboot=nboot, root="boot") 
 ```
 
 Here is the distribution of bootstrap result. Each bootstrap gives a set of fit parameters. Figures below show the distribution of fit parameters across all bootstraps.
 
 ```{r bootstrap_fit_params, fig.width=8, fig.height=14}
-plotBootstrapDistributions(boot) 
+plotBootstrapDistributions(boot)
 ```
 
 And here are fit parameters and their 95% confidence intervals:
@@ -477,14 +477,14 @@ plotBootstrapBox(boot)
 In this table we show the median value of each parameter:
 
 ```{r bootstrap_fit_params_median}
-df <- bootstrapParamsTab(boot) 
+df <- bootstrapParamsTab(boot)
 kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
 ```
 
 The next plot shows the correlation between $\tau_2$ and $k_2$ across bootstraps. The red line is a local regression line (LOESS).
 
 ```{r bootstrap_tau2_k2, fig.width=8, fig.height=7}
-plotBootstrapParamCor(boot) 
+plotBootstrapParamCor(boot)
 ```
 
 ### Bootstraps (3 parameters)
@@ -507,32 +507,32 @@ runBootstrap("TT108", nboot, root="boot_par3", npars=3)
 
 ```{r read_bootstraps_3par}
 sets <- c("untreated", "scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48", "TT108")
-boot.3 <- readBootstraps(sets, nboot=nboot, root="boot_par3")
+boot.3 <- readBootstraps(sets, nboot=nboot, root="boot_par3") 
 ```
 
 Here is the distribution of bootstrap result. Each bootstrap gives a set of fit parameters. Figures below show the distribution of fit parameters across all bootstraps.
 
 ```{r bootstrap_fit_params_3par, fig.width=6, fig.height=14}
-plotBootstrapDistributions(boot.3, pars=c("tau1", "k1", "k2")) 
+plotBootstrapDistributions(boot.3, pars=c("tau1", "k1", "k2"))
 ```
 
 And here are fit parameters and their 95% confidence intervals:
 
 ```{r bootstrap_fit_params_CI_3par, fig.width=5, fig.height=3}
-plotBootstrapCI(boot.3, pars=c("tau1", "k1", "k2")) 
+plotBootstrapCI(boot.3, pars=c("tau1", "k1", "k2"))
 ```
 
 These are default box plots with whiskers encompassing 90% of data:
 
 ```{r bootstrap_fit_params_box_3par, fig.width=5, fig.height=3}
-plotBootstrapBox(boot.3, pars=c("tau1", "k1", "k2")) 
+plotBootstrapBox(boot.3, pars=c("tau1", "k1", "k2"))
 ```
 
 In this table we show the median value of each parameter:
 
 ```{r bootstrap_fit_params_median_3par}
 df <- bootstrapParamsTab(boot.3, pars=c("tau1", "k1", "k2"))
-kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)  
+kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
 ```
 
 # Four-colour plots
@@ -543,11 +543,11 @@ Here I create cell-line plots for all data sets using four colours.
 ```{r four_colour}
 echr4 <- lapply(dataFile, function(file) experimentalData(file, map=model.colours.extended))
 P <- lapply(names(echr4), function(nm) plotCells(echr4[[nm]], palette=c("blue", "chocolate4", "pink", "red")) + labs(title=nm))
-names(P) <- names(echr4)
+names(P) <- names(echr4) 
 ```
 
 ```{r fig_four_colours, fig.width=12, fig.height=28}
-grid.arrange(grobs=P, ncol=2) 
+grid.arrange(grobs=P, ncol=2)
 ```
 
 PDF files:
@@ -563,7 +563,7 @@ for(nm in names(P)) {
   df <- rbind(df, data.frame(link=link))
   ggsave(remote.file, P[[nm]], device="pdf")
 }
-kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
+kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) 
 ```
 
 # Brown density
