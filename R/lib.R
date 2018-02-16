@@ -13,7 +13,6 @@ translateVector <- function(x, map=model.colours) {
   map[match(x, data.colours)]
 }
 
-
 #' Data files
 #' @export
 dataFile <- list(
