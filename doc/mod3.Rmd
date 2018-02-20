@@ -209,9 +209,9 @@ plotAllConditions <- function(suffix) {
   nms <- names(dataFile)
   chr <- lapply(nms, function(set) {
     name <- paste0("fits_", set, "_", suffix)
-    fname <- paste0(fitDir, name, ".RData")
+    fname <- paste0(binDir, name, ".rds")
     if(file.exists(fname)) {
-      cacheData(name, binDir=fitDir, cacheonly=TRUE)
+      readRDS(fname)
     }
   })
   names(chr) <- nms
@@ -274,8 +274,8 @@ qsub(cmd, logDir, name=name, ncor=8)
 ```
 
 ```{r RAD21_tau8_tau15, fig.width=6, fig.height=4}
-rad21.tau8 <- cacheData("fits_RAD21_ref1_t0_n10000_tau1_k1_k2", binDir=fitDir, cacheonly=TRUE)
-rad21.tau15 <- cacheData("fits_RAD21_tau2_15_ref1_t0_n10000_tau1_k1_k2", binDir=fitDir, cacheonly=TRUE)
+rad21.tau8 <- readRDS(paste0(binDir, "fits_RAD21_ref1_t0_n10000_tau1_k1_k2.rds"))
+rad21.tau15 <- readRDS(paste0(binDir, "fits_RAD21_tau2_15_ref1_t0_n10000_tau1_k1_k2.rds"))
 plotTimelines(rad21.tau8, expdata = echr$RAD21, withpars=TRUE, title="RAD21 tau2=8", title.size=9)
 plotTimelines(rad21.tau15, expdata = echr$RAD21, withpars=TRUE, title="RAD21 tau2=15", title.size=9)
 ```
@@ -542,7 +542,7 @@ Here I create cell-line plots for all data sets using four colours.
 
 
 ```{r four_colour}
-echr4 <- lapply(dataFile, function(file) experimentalData(file, map=model.colours.extended))
+echr4 <- lapply(dataFile, function(file) experimentalData(paste0(dataDir, file), map=model.colours.extended))
 P <- lapply(names(echr4), function(nm) plotCells(echr4[[nm]], palette=c("blue", "chocolate4", "pink", "red")) + labs(title=nm))
 names(P) <- names(echr4) 
 ```
@@ -554,15 +554,14 @@ grid.arrange(grobs=P, ncol=2)
 PDF files:
 
 ```{r four_colours_pdf}
-public_html <- "http://www.compbio.dundee.ac.uk/user/mgierlinski/chromcom/"
 df <- NULL
 for(nm in names(P)) {
   file <- paste0(nm, "_4colour.pdf")
-  remote.file <- paste0("/home/mgierlinski/projects/chromcom/pdf/", file)
+  pathfile <- paste0(pdfDir, file)
   url <- paste0(public_html, "pdf/", file)
   link <- paste0("[", nm, "](", url, ")")
   df <- rbind(df, data.frame(link=link))
-  ggsave(remote.file, P[[nm]], device="pdf")
+  ggsave(pathfile, P[[nm]], device="pdf")
 }
 kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) 
 ```

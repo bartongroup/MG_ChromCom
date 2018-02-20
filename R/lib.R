@@ -5,17 +5,25 @@
 
 
 topDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/"
+public_html <- "http://www.compbio.dundee.ac.uk/user/mgierlinski/chromcom/"
 
 binDir <- paste0(topDir, "RData/")
 logDir <- paste0(topDir, "log/")
 bootDir <- paste0(topDir, "bootstrap/")
 dataDir <- paste0(topDir, "data/")
+pdfDir <- paste0(topDir, "pdf/")
+
+for(dir in c(binDir, logDir, bootDir, dataDir, pdfDir)) {
+  if(!dir.exists(dir)) dir.create(dir)
+}
 
 data.colours <- c("", "_blue_", "_blueDark_g", "_blueDark_r",
                   "_brown_g", "_brown_r", "_brownDark_g", "_brownDark_r",
                   "_pink_", "_pinkDark_", "anaphase")
 model.colours <- c(NA, "B", "B", "B", "B", "B", "B", "B", "P", "R", NA)
 model.colours.extended <- c(NA, "B", "B", "B", "N", "N", "N", "N", "P", "R", NA)
+
+cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 translateVector <- function(x, map=model.colours) {
   map[match(x, data.colours)]
