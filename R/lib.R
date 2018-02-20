@@ -4,11 +4,19 @@
 #' @import gridExtra
 
 
+topDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/"
+
+binDir <- paste0(topDir, "RData/")
+logDir <- paste0(topDir, "log/")
+bootDir <- paste0(topDir, "bootstrap/")
+dataDir <- paste0(topDir, "data/")
+
 data.colours <- c("", "_blue_", "_blueDark_g", "_blueDark_r",
                   "_brown_g", "_brown_r", "_brownDark_g", "_brownDark_r",
                   "_pink_", "_pinkDark_", "anaphase")
 model.colours <- c(NA, "B", "B", "B", "B", "B", "B", "B", "P", "R", NA)
 model.colours.extended <- c(NA, "B", "B", "B", "N", "N", "N", "N", "P", "R", NA)
+
 translateVector <- function(x, map=model.colours) {
   map[match(x, data.colours)]
 }
@@ -16,18 +24,18 @@ translateVector <- function(x, map=model.colours) {
 #' Data files
 #' @export
 dataFile <- list(
-  untreated = "../data/TT75_untreated_uncoloured.csv",
-  scramble = "../data/scramble_corrected_20180215.csv",
-  NCAPD2 = "../data/NCAPD2_uncoloured.csv",
-  NCAPD3 = "../data/NCAPD3_uncoloured.csv",
-  SMC2  = "../data/SMC2_noncoloured.csv",
-  WAPL24  = "../data/WAPL_24hr_noncoloured.csv",
-  WAPL48  = "../data/WAPL_48hr_noncoloured.csv",
-  MK1775  = "../data/MK1775only_noncoloured.csv",
-  MK1775_ICRF193  = "../data/TT75_MK_ICRF_unordered_uncoloured.csv",
-  RAD21 = "../data/RAD21_48hr_noncoloured.csv",
-  TT103 = "../data/TT103_uncoloured.csv",
-  TT108 = "../data/TT108_untreated_noncoloured.csv"
+  untreated = "TT75_untreated_uncoloured.csv",
+  scramble = "scramble_corrected_20180215.csv",
+  NCAPD2 = "NCAPD2_uncoloured.csv",
+  NCAPD3 = "NCAPD3_uncoloured.csv",
+  SMC2  = "SMC2_noncoloured.csv",
+  WAPL24  = "WAPL_24hr_noncoloured.csv",
+  WAPL48  = "WAPL_48hr_noncoloured.csv",
+  MK1775  = "MK1775only_noncoloured.csv",
+  MK1775_ICRF193  = "TT75_MK_ICRF_unordered_uncoloured.csv",
+  RAD21 = "RAD21_48hr_noncoloured.csv",
+  TT103 = "TT103_uncoloured.csv",
+  TT108 = "TT108_untreated_noncoloured.csv"
 )
 
 #' Simple theme for plotting
@@ -643,3 +651,58 @@ fitChr <- function(echr, pars, freepars, ncells=1000, ntry=10, ncores=7, limits=
   return(chr)
 }
 
+
+#' Submit a job to the cluster
+#'
+#' @param cmd Command line to be submitted, that is a script plus all arguments
+#' @param logdir Directory to output STDOUT and SDTERR
+#' @param name Name of the job
+#' @param binary Logical to indicate that the script is a binary
+#' @param queue Queue name(s), comma delimited, no spaces
+#' @param ncor Number of cores required
+#' @param ram Memory required (a string, e.g. "16G")
+#' @param dryrun Logical to indicate a dry run, where commands are printed, but
+#'   not submitted
+#' @param script Logial to indicate that \code{cmd} has to be enveloped in a
+#'   \code{sh} script; use this when \code{cmd} contains a pipe or a redirection
+#' @param host Login host
+#' @param username Login username (can be left NULL if the same local and remote name)
+#' @param qopt Additional options for qsub
+#'
+#' @export
+qsub <- function(cmd, logdir, name="MG", binary=TRUE, queue="c6100.q,64bit-pri.q,c6145.q", ncor=1,
+                 ram="4G", dryrun=FALSE, script=FALSE, host="login.compbio.dundee.ac.uk", username=NULL, qopt=NULL) {
+  ram <- paste0("ram=", ram)
+  s <- paste("qsub -q", queue, "-o", logdir, "-e", logdir, "-N", name, "-R yes", "-pe smp", ncor, "-l", ram)
+  if(!is.null(qopt)) s <- paste(s, qopt)
+  if(binary && !script) s <- paste(s, "-b yes")
+
+  if(!is.null(username)) {
+    host <- paste0(username, "@", host)
+  }
+
+  if(script) {
+    sc <- qscript(cmd)
+    system(paste("scp", sc, paste0(host, ":", logdir)))
+    cmd <- paste0(logdir, basename(sc))
+  }
+
+  s <- paste(s, cmd)
+  if(dryrun) {
+    print(s)
+  } else {
+    system(paste("ssh", host, s))
+  }
+}
+
+qscript <- function(cmd) {
+  dir <- tempdir()
+  script <- tempfile(pattern="qsub", tmpdir=dir, fileext=".sh")
+  F <- file(script)
+  writeLines(c(
+    "#!/bin/bash",
+    cmd
+  ), F)
+  close(F)
+  return(script)
+}

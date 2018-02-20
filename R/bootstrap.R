@@ -1,10 +1,7 @@
 # Fit one bootstrap
 # Rscript bootstrap.R set root batch switch ncells ntry t0 npars
 
-setwd("/cluster/gjb_lab/mgierlinski/projects/chromcomR/doc")
-source("../../mylib/R/lib.R")
 source("../R/lib.R")
-bootDir <- "../bootstrap/"
 
 library(ggplot2)
 library(gridExtra)
@@ -28,7 +25,7 @@ npars <- as.integer(args[8])
 
 print(paste("Fitting", set, "batch", batch))
 
-echr <- experimentalData(dataFile[[set]])
+echr <- experimentalData(paste0(dataDir, dataFile[[set]]))
 str(echr)
 
 pars <- c3pars(
@@ -48,8 +45,6 @@ if(npars == 4) {
 } else {
   stop("Wrong number of parameters")
 }
-
-
 
 fit <- fitChr(echr, pars, free, ncells=ncells, ntry=ntry, ncores=8, bootstrap=TRUE)
 

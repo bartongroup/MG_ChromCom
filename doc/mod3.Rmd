@@ -13,22 +13,20 @@ Collaborators: Tomo Tanaka, John Eykelenboom.
 
 [shiny app](https://shiny.compbio.dundee.ac.uk/marek_chromcom/param_tuner/)
 
-```{r setup, include=FALSE}
+```{r setup, echo=FALSE}
 library(knitr)
-library(mylib)
 library(ggplot2)
 library(gridExtra)
-library(latex2exp)
+#library(latex2exp)
 library(kableExtra)
 library(parallel)
 
 source("../R/lib.R")
-binDir <- "../RData"
-fitDir <- "/home/mgierlinski/projects/chromcomR/RData/"
 
-opts_chunk$set(fig.path='../figure/mod3-', 
-               cache.path='../cache/mod3-', 
-               fig.align='center',
+fitting.script <- paste0(topDir, "R/fitting.R")
+bootstrap.script <- paste0(topDir, "R/bootstrap.R")
+
+opts_chunk$set(fig.align='center',
                external=TRUE,
                echo=FALSE,
                warning=FALSE,
@@ -47,7 +45,7 @@ smth <- 5
 # Data
 
 ```{r read_experimental_data}
-echr <- lapply(dataFile, experimentalData)
+echr <- lapply(dataFile, function(file) experimentalData(paste0(dataDir, file)))
 ```
 
 In our data we distinguish four states, marked by colour: blue, brown, pink, red. For the purpose of the model we merge blue and brown together into one state. Here is the result of the experiment from `r nrow(echr$scramble$cells)` cells.
@@ -149,14 +147,15 @@ First, we fit the model with $\tau_1$, $\tau_2$, $k_1$ and $k_2$ free. To improv
 We suspect that $t_0$ might not be exactly zero. Hence I fit the model with $t_0 = 0, -5, -10, -15$ minutes.
 
 ```{r fit_scramble, eval=FALSE}
-script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
-logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
 switch <- 1
+ncells <- 10000
+ntry <- 30
+npar <- 4
 
 for(t0 in c(0, -5, -10, -15)) {
   name <- paste0("fitt_scramble_t.", -t0, "_tau1_k1_k2_tau2")
-  cmd <- paste("Rscript", script, "scramble", name, switch, 10000, 30, t0, 4)
-  qsub(cmd, logDir, name=name, ncor = 8)
+  cmd <- paste("Rscript", fitting.script, "scramble", name, switch, ncells, ntry, t0, npar)
+  qsub(cmd, logDir, name=name, ncor=8)
 }
 ```
 
@@ -173,8 +172,8 @@ free <- c("tau1", "k1", "k2", "tau2")
 
 neb <- c(0, -5, -10, -15)
 chr.scr <- lapply(neb, function(t0) {
-  name <- paste0("fitt_scramble_t.", -t0, "_tau1_k1_k2_tau2")
-  cacheData(name, fitChr, binDir=fitDir, cacheonly=TRUE)
+  file <- paste0(binDir, "fitt_scramble_t.", -t0, "_tau1_k1_k2_tau2.rds")
+  readRDS(file)
 })
 names(chr.scr) <- as.character(-neb) 
 ```
@@ -190,15 +189,17 @@ I think the issue here is not $t_0$ but the fact that the red curve growths is t
 ### All conditions
 
 ```{r fit_all_conditions_4par, eval=FALSE}
-script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
-logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
 switch <- 1
- 
+t0 <- 0
+ncells <- 10000
+ntry <- 30
+npar <- 4
+
 sets <- names(dataFile)
 for(set in sets) {
   name <- paste0("fits_", set, "_ref1_t0_n10000_tau1_k1_k2_tau2")
-  cmd <- paste("Rscript", script, set, name, switch, 10000, 30, 0, 4)
-  qsub(cmd, logDir, name=name, ncor = 8)
+  cmd <- paste("Rscript", fitting.script, set, name, switch, ncells, ntry, t0, npar)
+  qsub(cmd, logDir, name=name, ncor=8)
 }
 ```
 
@@ -235,15 +236,17 @@ grid.arrange(grobs=P, ncol=2)
 ## Three parameters, $\tau_2$ fixed at 8 min
 
 ```{r fit_all_conditions_3par, eval=FALSE}
-script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
-logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
 switch <- 1
+t0 <- 0
+ncells <- 10000
+ntry <- 30
+npar <- 3
 
 sets <- names(dataFile)
 for(set in sets) {
   name <- paste0("fits_", set, "_ref1_t0_n10000_tau1_k1_k2")
-  cmd <- paste("Rscript", script, set, name, switch, 10000, 30, 0, 3)
-  qsub(cmd, logDir, name=name, ncor = 8)
+  cmd <- paste("Rscript", fitting.script, set, name, switch, ncells, ntry, t0, npar)
+  qsub(cmd, logDir, name=name, ncor=8)
 }
 ```
 
@@ -259,13 +262,15 @@ grid.arrange(grobs=P, ncol=2)
 We want to see RAD21 with higher $\tau_2$. Below, there is a comparison between the default 3-parameter fit ($\tau_2$ fixed at 8 min) and a fit where $\tau_2$ was fixed at 15 min.
 
 ```{r fit_RAD21, eval=FALSE}
-script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
-logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
 switch <- 1
+t0 <- 0
+ncells <- 10000
+ntry <- 30
+npar <- 3
 
 name <- paste0("fits_RAD21_tau2_15_ref1_t0_n10000_tau1_k1_k2")
-cmd <- paste("Rscript", script, "RAD21", name, switch, 10000, 30, 0, 3, 15)
-qsub(cmd, logDir, name=name, ncor = 8)
+cmd <- paste("Rscript", fitting.script, "RAD21", name, switch, ncells, ntry, t0, npar, 15)
+qsub(cmd, logDir, name=name, ncor=8)
 ```
 
 ```{r RAD21_tau8_tau15, fig.width=6, fig.height=4}
@@ -296,22 +301,18 @@ NOT READY.
 It is not easy to find confidence intervals in fit parameters when not only the model is non-analytic, but also stochastic. The only feasible approach it bootstrap, which is computationally expensive. Here I give it a try. 
 
 ```{r bootstrap_functions}
-script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/bootstrap.R"
-logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
-remoteBootDir <- "/home/mgierlinski/projects/chromcomR/bootstrap/"
-
 runBootstrap <- function(set, nbatch, root="boot", ncells=10000, ntry=30, switch=1, t0=0, npars=4) {
   for(batch in 1:nbatch) {
     args <- paste(set, root, batch, switch, ncells, ntry, t0, npars)
-    cmd <- paste("Rscript", script, args)
-    qsub(cmd, logDir, name=paste0(root, "_", set, "_", batch), ncor=8, host="login-gjb-1.compbio.dundee.ac.uk", queue="c6100.q,64bit-pri.q")
+    cmd <- paste("Rscript", bootstrap.script, args)
+    qsub(cmd, logDir, name=paste0(root, "_", set, "_", batch), ncor=8)
   }
 }
 
 readBootstrap <- function(set, nbatch, root="boot") {
   dat <- NULL
   for(batch in 1:nbatch) {
-    file <- paste0(remoteBootDir, root, "_", set, "_", batch, ".pars")
+    file <- paste0(bootDir, root, "_", set, "_", batch, ".pars")
     if(file.exists(file)) {
       info <- file.info(file)
       if(info$size > 0) {
