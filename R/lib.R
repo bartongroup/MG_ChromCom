@@ -1,7 +1,3 @@
-#' @import ggplot2
-#' @import caTools
-#' @import reshape2
-#' @import gridExtra
 
 
 topDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/"

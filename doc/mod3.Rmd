@@ -17,7 +17,6 @@ Collaborators: Tomo Tanaka, John Eykelenboom.
 library(knitr)
 library(ggplot2)
 library(gridExtra)
-#library(latex2exp)
 library(kableExtra)
 library(parallel)
 
