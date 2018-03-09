@@ -25,6 +25,7 @@ library(parallel)
 source("../R/lib.R")
 binDir <- "../RData"
 fitDir <- "/home/mgierlinski/projects/chromcomR/RData/"
+figDir <- "/home/mgierlinski/projects/chromcomR/figures/"
 
 opts_chunk$set(fig.path='../figure/mod3-', 
                cache.path='../cache/mod3-', 
@@ -365,11 +366,11 @@ readBootstraps <- function(sets, nboot=300, root="boot") {
   boot
 }
 
-bootstrapParamsTab <- function(boot, sets=NULL, pars=c("tau1", "tau2", "k1", "k2")) {
+bootstrapParamsTab <- function(boot, sets=NULL, pars=c("tau1", "tau2", "k1", "k2"), format="%.3g") {
   if(is.null(sets)) sets <- names(boot)
   P <- lapply(sets, function(set) {
     bp <- bootParamStats(boot[[set]], pars)
-    sprintf("%.3g", bp$median)
+    sprintf(format, bp$median)
   })
   names(P) <- sets
   df <- plyr::ldply(P, .id="set")
@@ -1055,4 +1056,68 @@ psgMap("fills")
 
 ```{r brown_distribution_SG2_chisq_gaps}
 psgMap("gaps")
+```
+
+
+# Figures
+
+All figures are in the [this folder](http://www.compbio.dundee.ac.uk/user/mgierlinski/chromcom/figures).
+
+
+```{r fig_read_bootstraps}
+#sets <- c("untreated", "scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48", "TT108")
+sets <- c("untreated", "scramble", "NCAPD2", "NCAPD3", "SMC2")
+nboot <- 300
+boot <- readBootstraps(sets, nboot=nboot, root="boot") 
+```
+
+```{r fig_bootstraps}
+pdf(paste0(figDir, "bootstraps.pdf"), width=8, height=10)
+plotBootstrapDistributions(boot)
+dev.off()
+```
+
+```{r fig_boxplots}
+pdf(paste0(figDir, "boxplots.pdf"), width=5, height=3.5)
+plotBootstrapBox(boot) 
+dev.off()
+```
+
+```{r fig_boot_parameters}
+boot.pars <- bootstrapParamsTab(boot, format="%g")
+```
+
+
+```{r fig_data_model_function}
+plotDataModel <- function(set, boot.pars) {
+  p <- boot.pars[boot.pars$set == set, -1, drop=TRUE]
+  p <- lapply(p, as.numeric)
+  pars <- c3pars(
+    tau1 = p$tau1,
+    tau2 = p$tau2,
+    k1 = p$k1,
+    k2 = p$k2
+  )
+ chr <- ChromCom3(pars)
+ chr <- generateCells(chr, ncells=10000)
+ plotTimelines(chr, expdata = echr$untreated, withpars=FALSE, title=set)
+}
+```
+
+```{r fig_data_model}
+P <- lapply(sets, function(set) {
+  plotDataModel(set, boot.pars)
+})
+pdf(paste0(figDir, "data_model.pdf"), width=4, height=14)
+grid.arrange(grobs=P, ncol=1)
+dev.off()
+```
+
+
+```{r fig_four_colour}
+echr4 <- lapply(dataFile, function(file) experimentalData(file, map=model.colours.extended))
+P <- lapply(sets, function(nm) plotCells(echr4[[nm]], palette=c("blue", "chocolate4", "pink", "red")) + labs(title=nm))
+pdf(paste0(figDir, "cell_tracks.pdf"), width=4, height=14)
+grid.arrange(grobs=P, ncol=1)
+dev.off() 
 ```
