@@ -1100,7 +1100,7 @@ plotDataModel <- function(set, boot.pars) {
   )
  chr <- ChromCom3(pars)
  chr <- generateCells(chr, ncells=10000)
- plotTimelines(chr, expdata = echr$untreated, withpars=FALSE, title=set)
+ plotTimelines(chr, expdata = echr[[set]], withpars=FALSE, title=set)
 }
 ```
 
@@ -1110,7 +1110,7 @@ P <- lapply(sets, function(set) {
 })
 pdf(paste0(figDir, "data_model.pdf"), width=4, height=14)
 grid.arrange(grobs=P, ncol=1)
-dev.off()
+dev.off() 
 ```
 
 
