@@ -50,34 +50,6 @@ plotTimelines(chr)
 
 I did try to fit with five parameters (including $t_0$), but `optim` crashed sooner or later with uncomprehensible error messages. We need to fix $t_0$.
 
-```{r}
-pars <- c3pars(
-  t0 = -10,
-  tau1 = 15.3,
-  tau2 = 9,
-  k1 = 0.047,
-  k2 = 0.064
-)
-free <- c("tau1", "k1", "k2", "tau2")
-chr.scr.10 <- cacheData("fitt_scramble_n10000_t.10_tau1_k1_k2_tau2", fitChr, echr$scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
-
-pars$t0 <- -5
-chr.scr.5 <- cacheData("fitt_scramble_n10000_t.5_tau1_k1_k2_tau2", fitChr, echr$scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
-
-pars$t0 <- -15
-chr.scr.15 <- cacheData("fitt_scramble_n10000_t.15_tau1_k1_k2_tau2", fitChr, echr$scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
-
-pars$t0 <- 0
-chr.scr.0 <- cacheData("fitt_scramble_n10000_t.0_tau1_k1_k2_tau2", fitChr, echr$scr, pars, free, nsim=10000, ntry=100, ncores=6, binDir=binDir)
-```
-
-
-```{r, fig.width=5}
-plotTimelines(chr.scr.0, expdata = echr$scr, withpars=TRUE)
-plotTimelines(chr.scr.5, expdata = echr$scr, withpars=TRUE)
-plotTimelines(chr.scr.10, expdata = echr$scr, withpars=TRUE)
-plotTimelines(chr.scr.15, expdata = echr$scr, withpars=TRUE)
-```
 # 04/09/2017
 
 Need to do this on the cluster. Made a little script `fitting.Rs` to fit one set. Lets try is.
@@ -336,7 +308,7 @@ Trying to improve fitting process, to make it a bit faster. Instead of simulatio
 What if I parallelize cell generation?
 
 
-```{r test_generate_cells}
+```{r test_generate_cells, eval=FALSE}
 # the original code
 generateCells1 <- function(chr, nsim=1000, mode="simulation") {
   cells <- t(replicate(nsim, timelineCell(chr$pars, chr$timepars, mode)))
@@ -513,3 +485,7 @@ Need to update Shiny.
 Bootstraps finished. Struggled with the cached version of data, showing the old scramble. Got confused by the difference between shiny app and local document. All sorted out now.
 
 Updating document and Shiny app.
+
+# 26/03/2018
+
+Changing parameters $\tau$ into half-life: all the figures and tables. Also, adding 95% CI to tables.
