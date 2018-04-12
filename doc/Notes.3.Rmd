@@ -489,3 +489,7 @@ Updating document and Shiny app.
 # 26/03/2018
 
 Changing parameters $\tau$ into half-life: all the figures and tables. Also, adding 95% CI to tables.
+
+# 12/04/2018
+
+Added interquartile range to the parameter table. Also, added a link to download the table.

@@ -42,6 +42,8 @@ opts_chunk$set(fig.path='../figure/mod3-',
 options(width = 1000)
 options(knitr.table.format = "html") 
 
+public_html <- "http://www.compbio.dundee.ac.uk/user/mgierlinski/aphids/"
+
 smth <- 5
 ```
 
@@ -342,10 +344,10 @@ readBootstrap <- function(set, nbatch, root, halflife) {
 bootParamStats <- function(dat, pars=c("HL1", "HL2", "k1", "k2")) {
   df <- NULL
   for(par in pars) {
-    q <- quantile(dat[[par]], probs=c(0.025, 0.5, 0.975))
+    q <- quantile(dat[[par]], probs=c(0.025, 0.25, 0.5, 0.75, 0.975))
     #q <- signif(q, 3)
     #q <- sprintf("%.2g", q)
-    row <- data.frame(par=par, median=q[2], lo=q[1], up=q[3])
+    row <- data.frame(par=par, median=q[3], lo=q[1], up=q[5], iqr=q[4] - q[2])
     df <- rbind(df, row)
   }
   df
@@ -396,12 +398,13 @@ bootstrapParamsTabCI <- function(boot, sets=NULL, pars=c("HL1", "HL2", "k1", "k2
     c(
       sprintf(format, bp$median),
       sprintf(format, bp$lo),
-      sprintf(format, bp$up)
+      sprintf(format, bp$up),
+      sprintf(format, bp$iqr)
     )
   })
   names(P) <- sets
   df <- plyr::ldply(P, .id="set")
-  colnames(df) <- c("set", paste0(pars, "_med"), paste0(pars, "_lo"),paste0(pars, "_up"))
+  colnames(df) <- c("set", paste0(pars, "_med"), paste0(pars, "_lo"), paste0(pars, "_up"), paste0(pars, "_iqr"))
   df
 }
 
@@ -503,12 +506,22 @@ These are default box plots with whiskers encompassing 90% of data:
 plotBootstrapBox(boot)
 ```
 
-In this table we show the median, lower and upper 95% CI of each parameter:
+In this table we show the median, lower and upper 95% CI and the interquartile range (iqr) of each parameter:
 
 ```{r bootstrap_fit_params_median}
 df <- bootstrapParamsTabCI(boot)
-kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) 
+kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) %>% scroll_box(width="800 px")
 ```
+
+```{r bootstrap_pars_link}
+file <- "bootstrap_fit_parameters.txt"
+remoteDir <- "/home/mgierlinski/projects/chromcom/tables/"
+public_html <- "http://www.compbio.dundee.ac.uk/user/mgierlinski/chromcom/tables/"
+write.table(df, file=paste0(remoteDir, file), sep="\t", quote=FALSE, row.names=FALSE, col.names=TRUE)
+link <- paste0(public_html, file) 
+```
+
+Here is [link](`r link`) to the above table if you need to download it.
 
 The next plot shows the correlation between $\tau_2$ and $k_2$ across bootstraps. The red line is a local regression line (LOESS).
 
