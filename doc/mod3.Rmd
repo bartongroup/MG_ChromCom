@@ -347,7 +347,7 @@ bootParamStats <- function(dat, pars=c("HL1", "HL2", "k1", "k2")) {
     q <- quantile(dat[[par]], probs=c(0.025, 0.25, 0.5, 0.75, 0.975))
     #q <- signif(q, 3)
     #q <- sprintf("%.2g", q)
-    row <- data.frame(par=par, median=q[3], lo=q[1], up=q[5], iqr=q[4] - q[2])
+    row <- data.frame(par=par, median=q[3], lo95=q[1], up95=q[5], p25=q[2], p75=q[4])
     df <- rbind(df, row)
   }
   df
@@ -397,14 +397,15 @@ bootstrapParamsTabCI <- function(boot, sets=NULL, pars=c("HL1", "HL2", "k1", "k2
     bp <- bootParamStats(boot[[set]], pars)
     c(
       sprintf(format, bp$median),
-      sprintf(format, bp$lo),
-      sprintf(format, bp$up),
-      sprintf(format, bp$iqr)
+      sprintf(format, bp$lo95),
+      sprintf(format, bp$up95),
+      sprintf(format, bp$p25),
+      sprintf(format, bp$p75)
     )
   })
   names(P) <- sets
   df <- plyr::ldply(P, .id="set")
-  colnames(df) <- c("set", paste0(pars, "_med"), paste0(pars, "_lo"), paste0(pars, "_up"), paste0(pars, "_iqr"))
+  colnames(df) <- c("set", paste0(pars, "_med"), paste0(pars, "_lo95"), paste0(pars, "_up95"), paste0(pars, "_p25"), paste0(pars, "_p75"))
   df
 }
 
@@ -506,7 +507,7 @@ These are default box plots with whiskers encompassing 90% of data:
 plotBootstrapBox(boot)
 ```
 
-In this table we show the median, lower and upper 95% CI and the interquartile range (iqr) of each parameter:
+In this table we show the median, lower and upper 95% CI and the 25th and 75th percentiles of each parameter:
 
 ```{r bootstrap_fit_params_median}
 df <- bootstrapParamsTabCI(boot)

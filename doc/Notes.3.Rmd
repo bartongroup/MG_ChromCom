@@ -493,3 +493,7 @@ Changing parameters $\tau$ into half-life: all the figures and tables. Also, add
 # 12/04/2018
 
 Added interquartile range to the parameter table. Also, added a link to download the table.
+
+# 13/04/2018
+
+Correction for John.
