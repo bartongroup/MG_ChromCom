@@ -6,7 +6,6 @@ source(paste0(topDir, "/R/setup.R"))
 source(paste0(topDir, "/R/lib.R"))
 
 args <- commandArgs(TRUE)
-#stopifnot(length(args) == 8)
 infile <- args[1]
 outfile <- args[2]
 t2ref <- as.integer(args[3])
@@ -46,4 +45,4 @@ if(npars == 4) {
 fit <- fitChr(echr, pars, free, ncells=ncells, ntry=ntry, ncores=8, bootstrap=TRUE)
 
 p <- t(as.matrix(do.call(c, fit$pars)))
-write.table(p, file=file, col.names = TRUE, row.names = FALSE, sep="\t", quote=FALSE)
+write.table(p, file=outfile, col.names = TRUE, row.names = FALSE, sep="\t", quote=FALSE)
