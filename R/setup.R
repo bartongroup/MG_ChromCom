@@ -4,6 +4,7 @@ library(gridExtra)
 #library(latex2exp)
 library(kableExtra)
 library(parallel)
+library(methods)
 
 #qq.options(code.pattern = "\\$\\{CODE\\}")
 N <- function(n) prettyNum(n, big.mark = ",")
