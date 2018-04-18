@@ -20,20 +20,8 @@ cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00",
 
 #' Data files
 #' @export
-dataFile <- list(
-  untreated = "TT75_untreated_uncoloured.csv",
-  scramble = "scramble_corrected_20180215.csv",
-  NCAPD2 = "NCAPD2_uncoloured.csv",
-  NCAPD3 = "NCAPD3_uncoloured.csv",
-  SMC2  = "SMC2_noncoloured.csv",
-  WAPL24  = "WAPL_24hr_noncoloured.csv",
-  WAPL48  = "WAPL_48hr_noncoloured.csv",
-  MK1775  = "MK1775only_noncoloured.csv",
-  MK1775_ICRF193  = "TT75_MK_ICRF_unordered_uncoloured.csv",
-  RAD21 = "RAD21_48hr_noncoloured.csv",
-  TT103 = "TT103_uncoloured.csv",
-  TT108 = "TT108_untreated_noncoloured.csv"
-)
+dataFile <- c("untreated", "scramble", "NCAPD2", "NCAPD3", "SMC2", "WAPL24", "WAPL48", "MK1775", "MK1775_ICRF193", "RAD21", "TT103", "TT108")
+
 
 #' Simple theme for plotting
 #' @export
