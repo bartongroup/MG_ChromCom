@@ -1,7 +1,7 @@
 library(knitr)
 library(ggplot2)
 library(gridExtra)
-library(latex2exp)
+#library(latex2exp)
 library(kableExtra)
 library(parallel)
 
