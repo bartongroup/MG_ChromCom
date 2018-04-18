@@ -1,15 +1,12 @@
 # Rscript fitting.Rs set name switch ncells ntry t0 npars [tau2]
 
-setwd("/cluster/gjb_lab/mgierlinski/projects/chromcomR/doc")
-source("../../mylib/R/lib.R")
-source("../R/lib.R")
-binDir <- "../RData"
+topDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/"
 
-library(ggplot2)
-library(gridExtra)
-library(reshape2)
-library(parallel)
-library(methods)
+source(paste0(topDir, "/R/setup.R"))
+source(paste0(topDir, "/R/lib.R"))
+
+fitDir <- paste0(topDir, "fits/")
+
 
 args <- commandArgs(TRUE)
 stopifnot(length(args) %in% c(7, 8))
@@ -54,4 +51,5 @@ if(npars == 4) {
   stop("Wrong number of parameters")
 }
 
-chr <- cacheData(name, fitChr, echr, pars, free, ncells=ncells, ntry=ntry, ncores=8, binDir=binDir, refresh=TRUE)
+chr <- fitChr(echr, pars, free, ncells=ncells, ntry=ntry, ncores=8)
+saveRDS(chr, file=paste0(fitDir, name, ".rds"))
