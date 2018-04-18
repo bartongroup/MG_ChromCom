@@ -10,7 +10,7 @@ ntry = config['ntry']
 nbatch = config['nbatch']
 
 SAMPLES = config['samples']
-BATCHES = range(1, config['nbatch'])
+BATCHES = range(1, nbatch+1)
 T0 = [0, 5, 10, 15]
 
 
