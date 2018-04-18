@@ -1,0 +1,20 @@
+rscript: "/cluster/gjb_lab/mgierlinski/software/miniconda2/envs/work/bin/Rscript"
+
+ncells: 100
+ntry: 3
+
+samples:
+  - untreated
+  - scramble
+  - NCAPD2
+  - NCAPD3
+  - SMC2
+  - WAPL24
+  - WAPL48
+  - MK1775
+  - MK1775_ICRF193
+  - RAD21
+  - TT103
+  - TT108
+
+

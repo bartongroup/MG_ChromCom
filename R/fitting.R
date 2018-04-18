@@ -1,12 +1,11 @@
 # Rscript fitting.Rs infile outfile switch ncells ntry t0 npars [tau2]
 
 topDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/"
-
 source(paste0(topDir, "/R/setup.R"))
 source(paste0(topDir, "/R/lib.R"))
 
 args <- commandArgs(TRUE)
-stopifnot(length(args) %in% c(7, 8))
+#stopifnot(length(args) %in% c(7, 8))
 infile <- args[1]
 outfile <- args[2]
 t2ref <- as.integer(args[3])
@@ -17,12 +16,7 @@ ncells <- args[4]
 ntry <- args[5]
 t0 <- as.numeric(args[6])
 npars <- as.integer(args[7])
-
-if(length(args) == 7) {
-  tau2 <- 8
-} else {
-  tau2 <- as.numeric(args[8])
-}
+tau2 <- as.numeric(args[8])
 
 print(paste("Fitting", infile))
 
