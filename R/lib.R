@@ -21,18 +21,18 @@ cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00",
 #' Data files
 #' @export
 dataFile <- list(
-  untreated = "../data/TT75_untreated_uncoloured.csv",
-  scramble = "../data/scramble_corrected_20180215.csv",
-  NCAPD2 = "../data/NCAPD2_uncoloured.csv",
-  NCAPD3 = "../data/NCAPD3_uncoloured.csv",
-  SMC2  = "../data/SMC2_noncoloured.csv",
-  WAPL24  = "../data/WAPL_24hr_noncoloured.csv",
-  WAPL48  = "../data/WAPL_48hr_noncoloured.csv",
-  MK1775  = "../data/MK1775only_noncoloured.csv",
-  MK1775_ICRF193  = "../data/TT75_MK_ICRF_unordered_uncoloured.csv",
-  RAD21 = "../data/RAD21_48hr_noncoloured.csv",
-  TT103 = "../data/TT103_uncoloured.csv",
-  TT108 = "../data/TT108_untreated_noncoloured.csv"
+  untreated = "TT75_untreated_uncoloured.csv",
+  scramble = "scramble_corrected_20180215.csv",
+  NCAPD2 = "NCAPD2_uncoloured.csv",
+  NCAPD3 = "NCAPD3_uncoloured.csv",
+  SMC2  = "SMC2_noncoloured.csv",
+  WAPL24  = "WAPL_24hr_noncoloured.csv",
+  WAPL48  = "WAPL_48hr_noncoloured.csv",
+  MK1775  = "MK1775only_noncoloured.csv",
+  MK1775_ICRF193  = "TT75_MK_ICRF_unordered_uncoloured.csv",
+  RAD21 = "RAD21_48hr_noncoloured.csv",
+  TT103 = "TT103_uncoloured.csv",
+  TT108 = "TT108_untreated_noncoloured.csv"
 )
 
 #' Simple theme for plotting

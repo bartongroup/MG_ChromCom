@@ -5,6 +5,7 @@ topDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/"
 source(paste0(topDir, "/R/setup.R"))
 source(paste0(topDir, "/R/lib.R"))
 
+dataDir <- paste0(topDir, "data/")
 fitDir <- paste0(topDir, "fits/")
 
 
@@ -29,7 +30,7 @@ if(length(args) == 7) {
 
 print(paste("Fitting", set))
 
-echr <- experimentalData(dataFile[[set]])
+echr <- experimentalData(paste0(dataDir, dataFile[[set]]))
 str(echr)
 
 pars <- c3pars(
