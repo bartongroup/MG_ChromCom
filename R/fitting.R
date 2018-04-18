@@ -10,7 +10,7 @@ stopifnot(length(args) %in% c(7, 8))
 infile <- args[1]
 outfile <- args[2]
 t2ref <- as.integer(args[3])
-stopifnot(!is.null(dataFile[[set]]))
+stopifnot(file.exists(infile))
 stopifnot(t2ref %in% c(0, 1))
 
 ncells <- args[4]
