@@ -30,7 +30,7 @@ if(length(args) == 7) {
 
 print(paste("Fitting", set))
 
-echr <- experimentalData(paste0(dataDir, dataFile[[set]]))
+echr <- experimentalData(paste0(dataDir, set, ".csv"))
 str(echr)
 
 pars <- c3pars(
