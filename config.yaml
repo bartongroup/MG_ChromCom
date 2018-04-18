@@ -2,6 +2,7 @@ rscript: "/cluster/gjb_lab/mgierlinski/software/miniconda2/envs/work/bin/Rscript
 
 ncells: 100
 ntry: 3
+nbatch: 3
 
 samples:
   - untreated
