@@ -20,7 +20,7 @@ cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00",
 
 #' Data files
 #' @export
-dataFile <- c("untreated", "scramble", "NCAPD2", "NCAPD3", "SMC2", "WAPL24", "WAPL48", "MK1775", "MK1775_ICRF193", "RAD21", "TT103", "TT108")
+dataSet <- c("untreated", "scramble", "NCAPD2", "NCAPD3", "SMC2", "WAPL24", "WAPL48", "MK1775", "MK1775_ICRF193", "RAD21", "TT103", "TT108")
 
 
 #' Simple theme for plotting
@@ -32,63 +32,6 @@ simple_theme_grid <- ggplot2::theme_bw() +
     panel.grid.minor = ggplot2::element_line(colour = "grey95"),
     axis.line = ggplot2::element_line(colour = "black")
   )
-
-
-#' Submit a job to the cluster
-#'
-#' @param cmd Command line to be submitted, that is a script plus all arguments
-#' @param logdir Directory to output STDOUT and SDTERR
-#' @param name Name of the job
-#' @param binary Logical to indicate that the script is a binary
-#' @param queue Queue name(s), comma delimited, no spaces
-#' @param ncor Number of cores required
-#' @param ram Memory required (a string, e.g. "16G")
-#' @param dryrun Logical to indicate a dry run, where commands are printed, but
-#'   not submitted
-#' @param script Logial to indicate that \code{cmd} has to be enveloped in a
-#'   \code{sh} script; use this when \code{cmd} contains a pipe or a redirection
-#' @param host Login host
-#' @param username Login username (can be left NULL if the same local and remote name)
-#' @param qopt Additional options for qsub
-#'
-#' @export
-qsub <- function(cmd, logdir, name="MG", binary=TRUE, queue=NULL, ncor=1, ram="4G", dryrun=FALSE, script=FALSE, host="login.compbio.dundee.ac.uk", username=NULL, qopt=NULL, stderr=NULL) {
-  ram <- paste0("m_mem_free=", ram)
-  q <- ifelse(is.null(queue), "", paste("-q", queue))
-  e <- ifelse(is.null(stderr), logdir, stderr)
-  s <- paste("qsub", q, "-o", logdir, "-e", e, "-N", name, "-R yes", "-pe smp", ncor, "-l", ram)
-  if(!is.null(qopt)) s <- paste(s, qopt)
-  if(binary && !script) s <- paste(s, "-b yes")
-
-  if(!is.null(username)) {
-    host <- paste0(username, "@", host)
-  }
-
-  if(script) {
-    sc <- qscript(cmd)
-    system(paste("scp", sc, paste0(host, ":", logdir)))
-    cmd <- paste0(logdir, basename(sc))
-  }
-
-  s <- paste(s, cmd)
-  if(dryrun) {
-    print(s)
-  } else {
-    system(paste("ssh", host, s))
-  }
-}
-
-qscript <- function(cmd) {
-  dir <- tempdir()
-  script <- tempfile(pattern="qsub", tmpdir=dir, fileext=".sh")
-  F <- file(script)
-  writeLines(c(
-    "#!/bin/bash",
-    cmd
-  ), F)
-  close(F)
-  return(script)
-}
 
 
 
