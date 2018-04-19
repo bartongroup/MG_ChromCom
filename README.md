@@ -1,6 +1,6 @@
 # Chromatin compaction: a simple 3-state model
 
-This repository contain software used in Eykelenboom et al. (2018).
+This repository contains software used in Eykelenboom et al. (2018).
 
 To run the software and create the markdown document you need to do the following:
 
