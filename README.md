@@ -6,12 +6,13 @@ To run the software and create the markdown document you need to do the followin
 
 ```
 conda create --name chromcom --file conda-spec.txt
+source activate chromcom
 ```
 
-Then, edit the file `config.yaml` and update the location of `Rscript`, which will be in your local conda environment. Then, run:
+Then, run `snakemake`:
 
 ```
 snakemake -c "qsub -V -cwd -o snakelog -e snakelog -pe smp {threads}" --jobs=50
 ```
 
-When all the calculations are finished (which make take several days on a cluster) you can "knit" the r-markdown document `doc/mod3.Rmd`. First, you need to modify the `projectDir` in `R/setup.R` and then open `doc/mod3.Rmd` in Rstudio and knit it.
+When all the calculations are finished (which make take several days on a cluster) you can "knit" the r-markdown document `doc/mod3.Rmd`. First, you need to modify the `projectDir` in `R/setup.R`, to point to where your results are. Once this is done open `doc/mod3.Rmd` in Rstudio and knit it.
