@@ -2,10 +2,15 @@
 
 This repository contains software used in Eykelenboom et al. (2018).
 
-To run the software and create the markdown document you need to do the following:
+To run the software and create the markdown document you need to do the following. First, create a conda environment with all required software.
 
 ```
 conda create --name chromcom --file conda-spec.txt
+```
+
+Then, edit the file `config.yaml` and update the location of `Rscript`, which will be in your local conda environment. Then, run:
+
+```
 snakemake -c "qsub -V -cwd -o snakelog -e snakelog -pe smp 8" --jobs=50
 ```
 
