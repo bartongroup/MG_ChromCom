@@ -1,4 +1,4 @@
-rscript: "/cluster/gjb_lab/mgierlinski/software/miniconda2/envs/work/bin/Rscript"
+rscript: "Rscript"
 
 ncells: 10000
 ntry: 30
@@ -16,6 +16,16 @@ samples:
   - MK1775_ICRF193
   - RAD21
   - TT103
+  - TT108
+
+boot_samples:
+  - untreated
+  - scramble
+  - NCAPD2
+  - NCAPD3
+  - SMC2
+  - WAPL48
+  - RAD21
   - TT108
 
 
