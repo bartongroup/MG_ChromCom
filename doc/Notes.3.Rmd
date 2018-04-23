@@ -497,3 +497,19 @@ Added interquartile range to the parameter table. Also, added a link to download
 # 13/04/2018
 
 Correction for John.
+
+# 18/04/2018
+
+Re-doing the document. Creating a snakemake pipeline for all cluster jobs. Testing.
+
+# 19/04/2018
+
+More snakemake work. Created a conda environment for reproducibility. The snakemake pipeline seems to be working (tested on short runs with 100 cells). Now running the full monty. It will take several days.
+
+# 20/04/2018
+
+OK, this is a bit pointless. Since I already have most of the bootstraps ready from previous runs (some of the SMC2 were missing, probably crashed), all I need to do is to run it on top of the existing `bootstrap` directory. It will only re-do the missing files and then create the necessary fit files (these are in the new format now). Should be all finished today, so, presumably, we can go public.
+
+# 23/04/2018
+
+Finishing fits and bootstraps and preparing the document for publication.

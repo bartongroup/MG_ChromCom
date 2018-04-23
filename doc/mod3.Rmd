@@ -13,56 +13,51 @@ Collaborators: Tomo Tanaka, John Eykelenboom.
 
 [shiny app](https://shiny.compbio.dundee.ac.uk/marek_chromcom/param_tuner/)
 
-```{r setup, include=FALSE}
-library(knitr)
-library(mylib)
-library(ggplot2)
-library(gridExtra)
-library(latex2exp)
-library(kableExtra)
-library(parallel)
-
+```{r setup, echo=FALSE}
+source("../R/setup.R")
 source("../R/lib.R")
-binDir <- "../RData"
-fitDir <- "/home/mgierlinski/projects/chromcomR/RData/"
-figDir <- "/home/mgierlinski/projects/chromcomR/figures/"
 
-opts_chunk$set(fig.path='../figure/mod3-', 
-               cache.path='../cache/mod3-', 
-               fig.align='center',
-               external=TRUE,
-               echo=FALSE,
-               warning=FALSE,
-               message=FALSE,
-               cache=TRUE,
-               #fig.pos='H',
-               fig.width=4,
-               fig.height=3
-              )
+dataDir <- paste0(projectDir, "data/")
+fitDir <- paste0(projectDir, "fits/")
+figDir <- paste0(projectDir, "figures/")
+bootDir <- paste0(projectDir, "bootstrap/")
+tabDir <- paste0(projectDir, "tables/")
+pdfDir <- paste0(projectDir, "pdf/")
+
+for(dir in c(fitDir, figDir, bootDir, tabDir, pdfDir)) {
+  if(!dir.exists(dir)) dir.create(dir)
+}
+```
+
+```{r options, echo=FALSE}
+opts_chunk$set(
+  external = TRUE,
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  cache = TRUE
+)
 options(width = 1000)
 options(knitr.table.format = "html") 
-
-public_html <- "http://www.compbio.dundee.ac.uk/user/mgierlinski/aphids/"
-
-smth <- 5
 ```
 
 # Data
 
 ```{r read_experimental_data}
-echr <- lapply(dataFile, experimentalData)
+echr <- lapply(paste0(dataDir, dataSet, ".csv"), experimentalData)
+names(echr) <- dataSet
 ```
 
-In our data we distinguish four states, marked by colour: blue, brown, pink, red. For the purpose of the model we merge blue and brown together into one state. Here is the result of the experiment from `r nrow(echr$scramble$cells)` cells.
+In our data we distinguish four states, marked by colour: blue, brown, pink, red. For the purpose of the model we merge blue and brown together into one state. Here is an example from an experiment with `r nrow(echr$scramble$cells)` cells.
 
-```{r fig_cells, fig.width=5}
+```{r fig_cells, fig.width=5, fig.height=4}
 plotCells(echr$scramble) 
 ```
 
-The next figure shows the proportions of each colour as a function of time. The curves are smoothed with a running mean over the window of `r smth` time points.
+The next figure shows the proportions of each colour as a function of time. The curves are smoothed with a running mean over the window of 5 time points.
 
-```{r fig_timeline, fig.width=5}
-plotTimelines(echr$scramble, smooth=TRUE, k=smth) 
+```{r fig_timeline, fig.width=5, fig.height=4}
+plotTimelines(echr$scramble, smooth=TRUE, k=5) 
 ```
 
 
@@ -90,9 +85,11 @@ The model consists of three states and a set of rules.
 
 \* A switch, $t_{2, ref}$ was introduced to the model, selecting the reference for time $t_2$. In the default position ($t_{2, ref} = 1$) the B$\rightarrow$P activation time is $t_0-t_1 + \Delta t_2$. When the switch is set to $t_{2, ref} = 0$, the activation time is $t_0 + \Delta t_2$, that is, it can only occur after the nuclear envelope breakdown. The idea of the switch was to separate pink and red curves, as observed in some data sets.
 
-I use a Markov chain approach. The next state is generated from the current state based on rules outlined above. The rates, $k$, are converted into probabilities over a given time step $\Delta t$ as $Pr = 1 - e^{1 - k\Delta t}$. The transition time, $t_1$, is generated before the simulation starts for a given cell.
+I use a Markov chain approach. The next state is generated from the current state based on rules outlined above. The rates, $k$, are converted into probabilities over a given time step $\Delta t$ as $Pr = 1 - e^{1 - k\Delta t}$. The transition times, $t_1$, $t_2 = \Delta t_2$ and $t_3 = \Delta t_3$, are generated before the simulation starts for a given cell.
 
 The cell timeline is repeated for $n_{\rm cell}$ times and then the colour proportions are found at each time point.
+
+Note: though we experimented with varying $t_0$ and a possibility of a "reversed" P$\rightarrow$B transition, they are not discussed in the paper. Also, we don't discuss $t_{2, ref}$ switch.
 
 ## Example
 
@@ -121,7 +118,7 @@ pars <- c3pars(
   tau2 = 10,
   k1 = 0.06,
   k2 = 0.03,
-  t2re = 0
+  t2ref = 0
 )
 chr <- ChromCom3(pars)
 chr <- generateCells(chr, ncells=3000)
@@ -145,82 +142,55 @@ that is, the square root of the sum of squared residuals over all time points an
 
 ## Default model
 
-First, we fit the model with $\tau_1$, $\tau_2$, $k_1$ and $k_2$ free. To improve the chances of finding the correct global minimum, I run the fit with 10,000 cells and 100 tries.
+First, we fit the model with $\tau_1$, $\tau_2$, $k_1$ and $k_2$ free. To improve the chances of finding the correct global minimum, I run the fit with 10,000 cells and 30 tries.
 
 ### Scramble
 
 We suspect that $t_0$ might not be exactly zero. Hence I fit the model with $t_0 = 0, -5, -10, -15$ minutes.
 
-```{r fit_scramble, eval=FALSE}
-script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
-logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
-switch <- 1
+Here (and henceforward) I quote the `snakemake` rule (in `Snakefile` file) to create these results:
 
-for(t0 in c(0, -5, -10, -15)) {
-  name <- paste0("fitt_scramble_t.", -t0, "_tau1_k1_k2_tau2")
-  cmd <- paste("Rscript", script, "scramble", name, switch, 10000, 30, t0, 4)
-  qsub(cmd, logDir, name=name, ncor = 8)
-}
+```
+rule fit_scramble_t0
 ```
 
+Let's read and plot the results.
 
-```{r scramble_t0}
-pars <- c3pars(
-  t0 = -10,
-  tau1 = 15.3,
-  tau2 = 9,
-  k1 = 0.047,
-  k2 = 0.064
-)
-free <- c("tau1", "k1", "k2", "tau2")
-
+```{r read_scramble_t0}
 neb <- c(0, -5, -10, -15)
 chr.scr <- lapply(neb, function(t0) {
   name <- paste0("fitt_scramble_t.", -t0, "_tau1_k1_k2_tau2")
-  cacheData(name, fitChr, binDir=fitDir, cacheonly=TRUE)
+  chr <- readRDS(paste0(fitDir, name, ".rds"))
 })
-names(chr.scr) <- as.character(-neb) 
 ```
 
-```{r fig_scramble_t0, fig.width=5}
-for(t0 in names(chr.scr)) {
-  print(plotTimelines(chr.scr[[t0]], expdata = echr$scramble, withpars=TRUE)) 
-}
+```{r fig_scramble_t0, fig.width=5, fig.height=14}
+P <- lapply(chr.scr, function(chr)  plotTimelines(chr, expdata = echr$scramble, withpars=TRUE))
+grid.arrange(grobs=P, ncol=1) 
 ```
 
-I think the issue here is not $t_0$ but the fact that the red curve growths is too fast and the model cannot do it.
+I think the issue here is not $t_0$ but the fact that the red curve growths is too fast for the model to fully account for it.
 
 ### All conditions
 
-```{r fit_all_conditions_4par, eval=FALSE}
-script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
-logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
-switch <- 1
- 
-sets <- names(dataFile)
-for(set in sets) {
-  name <- paste0("fits_", set, "_ref1_t0_n10000_tau1_k1_k2_tau2")
-  cmd <- paste("Rscript", script, set, name, switch, 10000, 30, 0, 4)
-  qsub(cmd, logDir, name=name, ncor = 8)
-}
 ```
-
+rule fit_all
+```
 
 ```{r plot_all_conditions_function}
 plotAllConditions <- function(suffix) {
-  nms <- names(dataFile)
-  chr <- lapply(nms, function(set) {
-    name <- paste0("fits_", set, "_", suffix)
-    fname <- paste0(fitDir, name, ".RData")
+  sets <- dataSet
+  chr <- lapply(sets, function(set) {
+    fname <- paste0(fitDir, "fits_", set, "_", suffix, ".rds")
     if(file.exists(fname)) {
-      cacheData(name, binDir=fitDir, cacheonly=TRUE)
+      readRDS(fname)
     }
   })
-  names(chr) <- nms
+  names(chr) <- sets
   P <- list()
-  for(name in nms) {
-    if(!is.null(chr[[name]])) {
-      P[[name]] <- plotTimelines(chr[[name]], expdata = echr[[name]], withpars=TRUE, title=name, title.size=9)
+  for(set in sets) {
+    if(!is.null(chr[[set]])) {
+      P[[set]] <- plotTimelines(chr[[set]], expdata = echr[[set]], withpars=TRUE, title=set, title.size=9)
     }
   }
   P
@@ -231,53 +201,41 @@ plotAllConditions <- function(suffix) {
 Here are fit results for all conditions with $t_0$ fixed at zero and four parameters free: $\tau_1$, $\tau_2$, $k_1$ and $k_2$. The RMS is computed over (-50, 30) min range (though the model is shown on the entire range).
 
 ```{r fig_all_conditions, fig.width=12, fig.height=20}
-P <- plotAllConditions("ref1_t0_n10000_tau1_k1_k2_tau2") 
+P <- plotAllConditions("ref1_t0_tau1_k1_k2_tau2") 
 grid.arrange(grobs=P, ncol=2) 
 ```
 
 ## Three parameters, $\tau_2$ fixed at 8 min
 
-```{r fit_all_conditions_3par, eval=FALSE}
-script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
-logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
-switch <- 1
+We notice (see later) that $\tau_2$ is poorly constrained and similar in all conditions. We fix it at 8 min and fit the model with three free parameters.
 
-sets <- names(dataFile)
-for(set in sets) {
-  name <- paste0("fits_", set, "_ref1_t0_n10000_tau1_k1_k2")
-  cmd <- paste("Rscript", script, set, name, switch, 10000, 30, 0, 3)
-  qsub(cmd, logDir, name=name, ncor = 8)
-}
+```
+rule fit_all_3par
 ```
 
 
 ```{r fig_all_conditions_3par, fig.width=12, fig.height=20}
-P <- plotAllConditions("ref1_t0_n10000_tau1_k1_k2")
+P <- plotAllConditions("ref1_t0_tau1_k1_k2")
 grid.arrange(grobs=P, ncol=2)
 ```
 
 
 ## RAD21
 
-We want to see RAD21 with higher $\tau_2$. Below, there is a comparison between the default 3-parameter fit ($\tau_2$ fixed at 8 min) and a fit where $\tau_2$ was fixed at 15 min.
+RAD21 looks problematic. We want to see if it works with higher $\tau_2$. Below, there is a comparison between the default 3-parameter fit ($\tau_2$ fixed at 8 min) and a fit where $\tau_2$ was fixed at 15 min.
 
-```{r fit_RAD21, eval=FALSE}
-script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/fitting.R"
-logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
-switch <- 1
-
-name <- paste0("fits_RAD21_tau2_15_ref1_t0_n10000_tau1_k1_k2")
-cmd <- paste("Rscript", script, "RAD21", name, switch, 10000, 30, 0, 3, 15)
-qsub(cmd, logDir, name=name, ncor = 8)
+```
+rule fit_RAD21_t15
 ```
 
 ```{r RAD21_tau8_tau15, fig.width=6, fig.height=4}
-rad21.tau8 <- cacheData("fits_RAD21_ref1_t0_n10000_tau1_k1_k2", binDir=fitDir, cacheonly=TRUE)
-rad21.tau15 <- cacheData("fits_RAD21_tau2_15_ref1_t0_n10000_tau1_k1_k2", binDir=fitDir, cacheonly=TRUE)
+rad21.tau8 <- readRDS(paste0(fitDir, "fits_RAD21_ref1_t0_tau1_k1_k2.rds"))
+rad21.tau15 <- readRDS(paste0(fitDir, "fits_RAD21_tau2_15_ref1_t0_tau1_k1_k2.rds"))
 plotTimelines(rad21.tau8, expdata = echr$RAD21, withpars=TRUE, title="RAD21 tau2=8", title.size=9)
 plotTimelines(rad21.tau15, expdata = echr$RAD21, withpars=TRUE, title="RAD21 tau2=15", title.size=9)
 ```
 
+As we can see the model cannot reproduce RAD21 data because of the excess of pink state at early times. This is consistent with cohesin not been properly established due to RAD21 removal. This data set is beyond the scope of our model.
 
 ## Switch: P$\rightarrow$R only after $t_0$
 
@@ -285,32 +243,27 @@ Here are results from a modified model, where P$\rightarrow$R transition can hap
 
 We can also see that the pink curve is more peaked, as opposed to the smooth rise and decay in the default model.
 
+```
+rule fit_all_ref0
+rule fit_all_ref0_t10
+```
 
-NOT READY.
 ```{r fig_all_conditions_switch, fig.width=12, fig.height=28}
-#P1 <- plotAllConditions("ref0_t0_n10000_tau1_k1_k2_tau2")
-#P2 <- plotAllConditions("ref0_t10_n10000_tau1_k1_k2_tau2")
-#P <- c(rbind(P1, P2))  # interleave lists (beautiful trick!)
-#grid.arrange(grobs=P, ncol=2)
+P1 <- plotAllConditions("ref0_t0_tau1_k1_k2_tau2")
+P2 <- plotAllConditions("ref0_t10_tau1_k1_k2_tau2")
+P <- c(rbind(P1, P2))  # interleave lists (beautiful trick!)
+grid.arrange(grobs=P, ncol=2)
 ```
 
 ## Confidence intervals on fit parameters
 
-It is not easy to find confidence intervals in fit parameters when not only the model is non-analytic, but also stochastic. The only feasible approach it bootstrap, which is computationally expensive. Here I give it a try. 
+It is not easy to find confidence intervals in fit parameters when not only the model is non-analytic, but also stochastic. The only feasible approach it bootstrap, which is computationally expensive. Here I give it a try.
+
+The bootstrap is performed by sampling with replacement from the data and fitting each sample. Then, we look at the distribution of bootstrapped fit parameters.
 
 ```{r bootstrap_functions}
-script <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/R/bootstrap.R"
-logDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/log/"
-remoteBootDir <- "/home/mgierlinski/projects/chromcomR/bootstrap/"
-
-runBootstrap <- function(set, nbatch, root="boot", ncells=10000, ntry=30, switch=1, t0=0, npars=4) {
-  for(batch in 1:nbatch) {
-    args <- paste(set, root, batch, switch, ncells, ntry, t0, npars)
-    cmd <- paste("Rscript", script, args)
-    qsub(cmd, logDir, name=paste0(root, "_", set, "_", batch), ncor=8, host="login-gjb-1.compbio.dundee.ac.uk", queue="c6100.q,64bit-pri.q")
-  }
-}
-
+# convert original tau in bootstrap results into half-lifes
+# replaces tau_1, tau_2, ... with HL_1, HL_2
 convertHalfLife <- function(df) {
   cols <- grep("tau", names(df))
   df[, cols] <- log(2) * df[, cols]
@@ -318,11 +271,13 @@ convertHalfLife <- function(df) {
   df
 }
 
-
+# read bootstrap data created by rule boot_all in the snakefile
+# you need to specify the total number of batches, nbatch
+# halflife is a logical to indicate conversion of taus into HLs
 readBootstrap <- function(set, nbatch, root, halflife) {
   dat <- NULL
   for(batch in 1:nbatch) {
-    file <- paste0(remoteBootDir, root, "_", set, "_", batch, ".pars")
+    file <- paste0(bootDir, root, "_", set, "_", batch, ".pars")
     if(file.exists(file)) {
       info <- file.info(file)
       if(info$size > 0) {
@@ -341,20 +296,34 @@ readBootstrap <- function(set, nbatch, root, halflife) {
   dat
 }
 
+
+# read boootstraps for all sets, return a list of data frames
+# this is a simple wrapper around 'readBootstrap'
+readBootstraps <- function(sets, nboot=300, root="boot", halflife=TRUE) {
+  boot <- lapply(sets, function(set) {
+    readBootstrap(set, nboot, root, halflife)
+  })
+  names(boot) <- sets
+  boot
+}
+
+
+# find median, 95% CI and 25-27% quantiles
+# dat is a data frame with bootstrap results for one set
 bootParamStats <- function(dat, pars=c("HL1", "HL2", "k1", "k2")) {
   df <- NULL
   for(par in pars) {
     q <- quantile(dat[[par]], probs=c(0.025, 0.25, 0.5, 0.75, 0.975))
-    #q <- signif(q, 3)
-    #q <- sprintf("%.2g", q)
     row <- data.frame(par=par, median=q[3], lo95=q[1], up95=q[5], p25=q[2], p75=q[4])
     df <- rbind(df, row)
   }
   df
 }
 
+
+# plot histograms of bootstrap data
+# dat is a data frame with bootstrap results for one set
 bootParamPlot <- function(dat, title="", pars=c("HL1", "HL2", "k1", "k2")) {
-  
   # dummy data for x-limits
   vars <- c("HL1", "HL2", "k1", "k2")
   dummy <- data.frame(
@@ -371,14 +340,11 @@ bootParamPlot <- function(dat, title="", pars=c("HL1", "HL2", "k1", "k2")) {
     labs(title=title)
 }
 
-readBootstraps <- function(sets, nboot=300, root="boot", halflife=TRUE) {
-  boot <- lapply(sets, function(set) {
-    readBootstrap(set, nboot, root, halflife)
-  })
-  names(boot) <- sets
-  boot
-}
 
+# create a data frame with bootstrap best-fitting parameters (medians)
+# boots - a list of data frames with bootstrap results for all sets
+# sets - a list of sets to use
+# pars - a vector of parameter names to use
 bootstrapParamsTab <- function(boot, sets=NULL, pars=c("HL1", "HL2", "k1", "k2"), format="%.3g") {
   if(is.null(sets)) sets <- names(boot)
   P <- lapply(sets, function(set) {
@@ -391,6 +357,11 @@ bootstrapParamsTab <- function(boot, sets=NULL, pars=c("HL1", "HL2", "k1", "k2")
   df
 }
 
+
+# create a data frame with bootstrap best-fitting parameters, 95% CIs and quartiles
+# boots - a list of data frames with bootstrap results for all sets
+# sets - a list of sets to use
+# pars - a vector of parameter names to use
 bootstrapParamsTabCI <- function(boot, sets=NULL, pars=c("HL1", "HL2", "k1", "k2"), format="%.3g") {
   if(is.null(sets)) sets <- names(boot)
   P <- lapply(sets, function(set) {
@@ -410,6 +381,10 @@ bootstrapParamsTabCI <- function(boot, sets=NULL, pars=c("HL1", "HL2", "k1", "k2
 }
 
 
+# plot bootstrap distributions for all sets
+# boots - a list of data frames with bootstrap results for all sets
+# sets - a list of sets to use
+# pars - a vector of parameter names to use
 plotBootstrapDistributions <- function(boot, sets=NULL, pars=c("HL1", "HL2", "k1", "k2")) {
   if(is.null(sets)) sets <- names(boot)
   P <- lapply(sets, function(set) {
@@ -418,6 +393,11 @@ plotBootstrapDistributions <- function(boot, sets=NULL, pars=c("HL1", "HL2", "k1
   grid.arrange(grobs=P, ncol=1) 
 }
 
+
+# plot correlation of selected bootstrap parameters
+# boots - a list of data frames with bootstrap results for all sets
+# sets - a list of sets to use
+# pars - a vector of two parameter names to use
 plotBootstrapParamCor <- function(boot, sets=NULL, pars=c("HL2", "k2")) {
   if(is.null(sets)) sets <- names(boot)
   md <- plyr::ldply(boot, .id="set")
@@ -429,6 +409,11 @@ plotBootstrapParamCor <- function(boot, sets=NULL, pars=c("HL2", "k2")) {
     facet_wrap(~set)
 }
 
+
+# plot boostrap best-fitting values with 95% CIs
+# boots - a list of data frames with bootstrap results for all sets
+# sets - a list of sets to use
+# pars - a vector of parameter names to use
 plotBootstrapCI <- function(boot, sets=NULL, pars=c("HL1", "HL2", "k1", "k2")) {
   if(is.null(sets)) sets <- names(boot)
   P <- lapply(sets, function(set) {
@@ -439,13 +424,18 @@ plotBootstrapCI <- function(boot, sets=NULL, pars=c("HL1", "HL2", "k1", "k2")) {
   df$set <- as.factor(df$set)
 
   ggplot(df, aes(set, median)) +
-    geom_errorbar(aes(x=set, ymin=lo, ymax=up), width=0.4) +
+    geom_errorbar(aes(x=set, ymin=lo95, ymax=up95), width=0.4) +
     geom_point() +
     facet_wrap(~par, scales="free_y", nrow=1) +
     theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=1)) +
     labs(x="Set", y="Fit parameter value") 
 }
 
+
+# plot bootstrap box plots for all data
+# boots - a list of data frames with bootstrap results for all sets
+# sets - a list of sets to use
+# pars - a vector of parameter names to use
 plotBootstrapBox <- function(boot, pars=c("HL1", "HL2", "k1", "k2")) {
   md <- plyr::ldply(boot, .id="set")
   md <- md[,c("set", pars)]
@@ -462,26 +452,16 @@ plotBootstrapBox <- function(boot, pars=c("HL1", "HL2", "k1", "k2")) {
 
 ### Bootstraps (4 parameters)
 
-Running bootstraps on the cluster. This is quite slow, so I do it bit by bit.
+Running bootstraps on the cluster. This is quite slow!
+
+```
+rule boot_all
+```
+
+Once all is done, we read the results for selected sets.
 
 ```{r bootstrap_setup}
 nboot <- 300
-```
-
-```{r bootstrap_run, eval=FALSE}
-runBootstrap("untreated", nboot)
-
-runBootstrap("scramble", nboot)
-runBootstrap("NCAPD2", nboot)
-runBootstrap("NCAPD3", nboot)
-runBootstrap("SMC2", nboot)
-
-runBootstrap("RAD21", nboot)
-runBootstrap("WAPL48", nboot)
-runBootstrap("TT108", nboot)
-
-runBootstrap("MK1775", nboot)
-runBootstrap("MK1775_ICRF193", nboot)
 ```
 
 ```{r read_bootstraps}
@@ -501,7 +481,7 @@ And here are fit parameters and their 95% confidence intervals:
 plotBootstrapCI(boot)
 ```
 
-These are default box plots with whiskers encompassing 90% of data:
+These are box plots with whiskers encompassing 90% of data:
 
 ```{r bootstrap_fit_params_box, fig.width=6, fig.height=3}
 plotBootstrapBox(boot)
@@ -516,10 +496,8 @@ kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_wi
 
 ```{r bootstrap_pars_link}
 file <- "bootstrap_fit_parameters.txt"
-remoteDir <- "/home/mgierlinski/projects/chromcom/tables/"
-public_html <- "http://www.compbio.dundee.ac.uk/user/mgierlinski/chromcom/tables/"
-write.table(df, file=paste0(remoteDir, file), sep="\t", quote=FALSE, row.names=FALSE, col.names=TRUE)
-link <- paste0(public_html, file) 
+write.table(df, file=paste0(tabDir, file), sep="\t", quote=FALSE, row.names=FALSE, col.names=TRUE)
+link <- paste0(public_html, "tables", file) 
 ```
 
 Here is [link](`r link`) to the above table if you need to download it.
@@ -527,55 +505,46 @@ Here is [link](`r link`) to the above table if you need to download it.
 The next plot shows the correlation between $\tau_2$ and $k_2$ across bootstraps. The red line is a local regression line (LOESS).
 
 ```{r bootstrap_tau2_k2, fig.width=8, fig.height=7}
-plotBootstrapParamCor(boot) 
+plotBootstrapParamCor(boot)
 ```
 
 ### Bootstraps (3 parameters)
 
 Here I perform bootstrap analysis with fixed $\tau_2=8$ min.
 
-```{r bootstrap_run_3par, eval=FALSE}
-runBootstrap("untreated", nboot, root="boot_par3", npars=3)
-
-runBootstrap("scramble", nboot, root="boot_par3", npars=3)
-runBootstrap("NCAPD2", nboot, root="boot_par3", npars=3)
-runBootstrap("NCAPD3", nboot, root="boot_par3", npars=3)
-runBootstrap("SMC2", nboot, root="boot_par3", npars=3)
-
-runBootstrap("RAD21", nboot, root="boot_par3", npars=3)
-runBootstrap("WAPL48", nboot, root="boot_par3", npars=3)
-runBootstrap("TT108", nboot, root="boot_par3", npars=3)
+```
+rule boot_all_3par
 ```
 
 
 ```{r read_bootstraps_3par}
 sets <- c("untreated", "scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48", "TT108")
-boot.3 <- readBootstraps(sets, nboot=nboot, root="boot_par3")  
+boot.3 <- readBootstraps(sets, nboot=nboot, root="boot_3par")
 ```
 
-Here is the distribution of bootstrap result. Each bootstrap gives a set of fit parameters. Figures below show the distribution of fit parameters across all bootstraps.
+Here is the distribution of bootstrap result.
 
 ```{r bootstrap_fit_params_3par, fig.width=6, fig.height=14}
-plotBootstrapDistributions(boot.3, pars=c("HL1", "k1", "k2"))
+plotBootstrapDistributions(boot.3, pars=c("HL1", "k1", "k2")) 
 ```
 
 And here are fit parameters and their 95% confidence intervals:
 
 ```{r bootstrap_fit_params_CI_3par, fig.width=5, fig.height=3}
-plotBootstrapCI(boot.3, pars=c("HL1", "k1", "k2")) 
+plotBootstrapCI(boot.3, pars=c("HL1", "k1", "k2"))
 ```
 
 These are default box plots with whiskers encompassing 90% of data:
 
 ```{r bootstrap_fit_params_box_3par, fig.width=5, fig.height=3}
-plotBootstrapBox(boot.3, pars=c("HL1", "k1", "k2"))
+plotBootstrapBox(boot.3, pars=c("HL1", "k1", "k2")) 
 ```
 
 In this table we show the median value of each parameter:
 
 ```{r bootstrap_fit_params_median_3par}
 df <- bootstrapParamsTab(boot.3, pars=c("HL1", "k1", "k2"))
-kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12)
+kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) 
 ```
 
 # Four-colour plots
@@ -584,39 +553,41 @@ Here I create cell-line plots for all data sets using four colours.
 
 
 ```{r four_colour}
-echr4 <- lapply(dataFile, function(file) experimentalData(file, map=model.colours.extended))
-P <- lapply(names(echr4), function(nm) plotCells(echr4[[nm]], palette=c("blue", "chocolate4", "pink", "red")) + labs(title=nm))
-names(P) <- names(echr4) 
+echr4 <- lapply(dataSet, function(set) experimentalData(paste0(dataDir, set, ".csv"), map=model.colours.extended))
+names(echr4) <- dataSet
+P <- lapply(dataSet, function(set) plotCells(echr4[[set]], palette=c("blue", "chocolate4", "pink", "red")) + labs(title=set))
+names(P) <- dataSet
 ```
 
-```{r fig_four_colours, fig.width=12, fig.height=28}
+```{r fig_four_colours, fig.width=10, fig.height=20}
 grid.arrange(grobs=P, ncol=2)
 ```
 
 PDF files:
 
 ```{r four_colours_pdf}
-public_html <- "http://www.compbio.dundee.ac.uk/user/mgierlinski/chromcom/"
 df <- NULL
-for(nm in names(P)) {
-  file <- paste0(nm, "_4colour.pdf")
-  remote.file <- paste0("/home/mgierlinski/projects/chromcom/pdf/", file)
+for(set in dataSet) {
+  file <- paste0(set, "_4colour.pdf")
+  path.file <- paste0(pdfDir, file)
   url <- paste0(public_html, "pdf/", file)
-  link <- paste0("[", nm, "](", url, ")")
+  link <- paste0("[", set, "](", url, ")")
   df <- rbind(df, data.frame(link=link))
-  ggsave(remote.file, P[[nm]], device="pdf")
+  ggsave(path.file, P[[set]], device="pdf")
 }
 kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) 
 ```
 
 # Brown density
 
+This work is not included in the paper.
+
 ```{r colour_density_functions}
 
 # build a colour map
 # a list of logical vectors, different lenght each - trims NAs on both ends
-colourMap <- function(echr, condition, window=c(-300,-20)) {
-  ch <- echr[[condition]]
+colourMap <- function(echr, set, window=c(-300,-20)) {
+  ch <- echr[[set]]
   cells <- ch$cells
   sel.win <- ch$time >= window[1] & ch$time <= window[2]
   cells <- cells[, sel.win]
@@ -817,8 +788,8 @@ chi2.data <- function(dist1, dist2, max.count=30, bins=1) {
 
 
 ```{r plot_interval_distribution_function}
-plotIntervalDistribution <- function(echr, condition, window, with.theoretical=FALSE, what="interarrival", bins=1) {
-  cmap <- colourMap(echr, condition, window=window)
+plotIntervalDistribution <- function(echr, set, window, with.theoretical=FALSE, what="interarrival", bins=1) {
+  cmap <- colourMap(echr, set, window=window)
   if(what == "interarrival") {
     dist <- interarrivalDistribution(cmap)
     xlab <- "Point-to-point interval (min)"
@@ -855,7 +826,7 @@ plotIntervalDistribution <- function(echr, condition, window, with.theoretical=F
   xx <- 1:60
   yy <- lambda * exp(-lambda * xx)
 
-  timestep <- echr[[condition]]$timepars$step
+  timestep <- echr[[set]]$timepars$step
   
   df <- data.frame(dist=dist)
   rf <- data.frame(dist=rdist)
@@ -864,7 +835,7 @@ plotIntervalDistribution <- function(echr, condition, window, with.theoretical=F
     geom_histogram(aes(y=..density..), breaks=breaks) +
     geom_histogram(data=rf, aes(x=dist, y=..density..), breaks=breaks, colour=cbPalette[2], fill=NA) +
     xlim(0, 40) +
-    labs(x=xlab, y="Density", title=paste(condition, sprintf("d=%5.3f p=%.2g", lambda, p.value)))
+    labs(x=xlab, y="Density", title=paste(set, sprintf("d=%5.3f p=%.2g", lambda, p.value)))
   if(with.theoretical) g <- g + geom_point(data=data.frame(x=xx, y=yy), aes(x, y), colour=cbPalette[1])
   g
 }
@@ -1003,16 +974,14 @@ These tables show that there is very little discernible difference between condi
 ## S and late G2 data
 
 ```{r read_G2_S}
-patDataFile <- list(
-  S_phase = "../data/TT104_patterning_S_noncoloured.csv",
-  G2_phase = "../data/TT104_patterning_late_G2_noncoloured.csv"
-)
-pchr <- lapply(patDataFile, function(file) experimentalData(file, map=model.colours.extended))
+patdataSet <- c("S", "G2")
+pchr <- lapply(patdataSet, function(set) experimentalData(paste0(dataDir, set, ".csv"), map=model.colours.extended))
+names(pchr) <- patdataSet
 ```
 
 ```{r plot_S_G2, fig.width=6, fig.height=4}
-plotCells(pchr$S_phase, palette=c("blue", "chocolate4", "pink", "red"))
-plotCells(pchr$G2_phase, palette=c("blue", "chocolate4", "pink", "red"))
+plotCells(pchr$S, palette=c("blue", "chocolate4", "pink", "red"))
+plotCells(pchr$G2, palette=c("blue", "chocolate4", "pink", "red"))
 ```
 
 
@@ -1020,7 +989,7 @@ plotCells(pchr$G2_phase, palette=c("blue", "chocolate4", "pink", "red"))
 P <- list()
 k <- 1
 for(nm in names(pchr)) {
-  if(nm == "S_phase") {
+  if(nm == "S") {
     window <- c(-300,300)
   } else {
     window <- c(-300, -20)
@@ -1036,7 +1005,7 @@ grid.arrange(grobs=P, ncol=3)
 
 ```{r brown_distribution_chisq_SG2_function}
 getDistWin <- function(chr, condition, what) {
-  if(condition == "S_phase") {
+  if(condition == "S") {
     window <- c(-300, 300)
   } else {
     window <- c(-300, -20)
@@ -1103,7 +1072,11 @@ psgMap("gaps")
 
 # Figures
 
-All figures are in the [this folder](http://www.compbio.dundee.ac.uk/user/mgierlinski/chromcom/figures).
+```{r figures_link}
+link.fig <- paste0(public_html, "figures")
+```
+
+All figures are in the [this folder](`r link.fig`).
 
 
 ```{r fig_read_bootstraps}
@@ -1157,7 +1130,8 @@ dev.off()
 
 
 ```{r fig_four_colour}
-echr4 <- lapply(dataFile, function(file) experimentalData(file, map=model.colours.extended))
+echr4 <- lapply(dataSet, function(set) experimentalData(paste0(dataDir, set, ".csv"), map=model.colours.extended))
+names(echr4) <- dataSet
 P <- lapply(sets, function(nm) plotCells(echr4[[nm]], palette=c("blue", "chocolate4", "pink", "red")) + labs(title=nm))
 pdf(paste0(figDir, "cell_tracks.pdf"), width=4, height=14)
 grid.arrange(grobs=P, ncol=1)
