@@ -1,11 +1,12 @@
-# Fit one bootstrap
-# Rscript bootstrap.R infile outfile switch ncells ntry t0 npars
+# Stand-alone script to fit one bootstrap
+# Usage:
+#   Rscript bootstrap.R infile outfile switch ncells ntry t0 npars
 
-topDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/"
-source(paste0(topDir, "/R/setup.R"))
-source(paste0(topDir, "/R/lib.R"))
+source("R/setup.R")
+source("R/lib.R")
 
 args <- commandArgs(TRUE)
+
 infile <- args[1]
 outfile <- args[2]
 t2ref <- as.integer(args[3])
@@ -39,8 +40,6 @@ if(npars == 4) {
 } else {
   stop("Wrong number of parameters")
 }
-
-
 
 fit <- fitChr(echr, pars, free, ncells=ncells, ntry=ntry, ncores=8, bootstrap=TRUE)
 

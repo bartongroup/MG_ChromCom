@@ -1,11 +1,12 @@
-# Rscript fitting.Rs infile outfile switch ncells ntry t0 npars [tau2]
+# Stand-alone script to fit one data set
+# Usage:
+#   Rscript fitting.Rs infile outfile switch ncells ntry t0 npars tau2
 
-topDir <- "/cluster/gjb_lab/mgierlinski/projects/chromcomR/"
-source(paste0(topDir, "/R/setup.R"))
-source(paste0(topDir, "/R/lib.R"))
+source("R/setup.R")
+source("R/lib.R")
 
 args <- commandArgs(TRUE)
-#stopifnot(length(args) %in% c(7, 8))
+
 infile <- args[1]
 outfile <- args[2]
 t2ref <- as.integer(args[3])
