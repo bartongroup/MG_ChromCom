@@ -137,6 +137,7 @@ https://repo.continuum.io/pkgs/r/linux-64/r-rcolorbrewer-1.1_2-r342h0dda8fb_0.ta
 https://repo.continuum.io/pkgs/r/linux-64/r-rcpp-0.12.13-r342h9f83869_0.tar.bz2
 https://repo.continuum.io/pkgs/r/linux-64/r-rlang-0.1.2-r342hc878738_0.tar.bz2
 https://conda.anaconda.org/r/linux-64/r-rpart-4.1_11-r342hd35cc14_0.tar.bz2
+https://repo.continuum.io/pkgs/r/linux-64/r-rstudioapi-0.7-r342hedff9e9_0.tar.bz2
 https://conda.anaconda.org/r/linux-64/r-spatial-7.3_11-r342hff2a1d0_4.tar.bz2
 https://repo.continuum.io/pkgs/r/linux-64/r-stringi-1.1.6-r342hf484d3e_0.tar.bz2
 https://repo.continuum.io/pkgs/r/linux-64/r-viridislite-0.2.0-r342h3706391_0.tar.bz2
@@ -173,7 +174,7 @@ https://conda.anaconda.org/r/linux-64/r-recommended-3.4.2-h1751db4_0.tar.bz2
 https://repo.continuum.io/pkgs/r/linux-64/r-rvest-0.3.2-r342h8e81af5_0.tar.bz2
 https://conda.anaconda.org/r/linux-64/r-3.4.2-h65d9972_0.tar.bz2
 https://repo.continuum.io/pkgs/r/linux-64/r-rmarkdown-1.6-r342hacd9e3e_2.tar.bz2
-https://conda.anaconda.org/mgierlinski/noarch/r-kableextra-0.7.0-r342_0.tar.bz2
+https://conda.anaconda.org/mgierlinski/linux-64/r-kableextra-0.8.0-r342_0.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/mkl_fft-1.0.1-py35_1.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/mkl_random-1.0.1-py35_0.tar.bz2
 https://repo.anaconda.com/pkgs/main/linux-64/numpy-1.14.2-py35hdbf6ddf_1.tar.bz2
