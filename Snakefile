@@ -1,7 +1,3 @@
-import os
-import glob
-import sys
-
 configfile: "config.yaml"
 
 rscript = config['rscript']
