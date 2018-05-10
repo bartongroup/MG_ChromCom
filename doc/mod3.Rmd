@@ -1130,10 +1130,13 @@ dev.off()
 
 
 ```{r fig_four_colour}
-echr4 <- lapply(dataSet, function(set) experimentalData(paste0(dataDir, set, ".csv"), map=model.colours.extended))
-names(echr4) <- dataSet
-P <- lapply(sets, function(nm) plotCells(echr4[[nm]], palette=c("blue", "chocolate4", "pink", "red")) + labs(title=nm))
-pdf(paste0(figDir, "cell_tracks.pdf"), width=4, height=14)
-grid.arrange(grobs=P, ncol=1)
-dev.off()  
+trackDir <- paste0(figDir, "cell_tracks/")
+if(!dir.exists(trackDir)) dir.create(trackDir)
+for(set in dataSet) {
+  dat <- experimentalData(paste0(dataDir, set, ".csv"), map=model.colours.extended)
+  pdf(paste0(trackDir, set, ".pdf"), width=4, height=4)
+  g <- plotCells(dat, palette=c("blue", "chocolate4", "pink", "red")) + labs(title=set)
+  grid.arrange(g)
+  dev.off()  
+}
 ```
