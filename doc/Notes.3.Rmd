@@ -48,7 +48,7 @@ plotTimelines(chr)
 
 ## Scramble
 
-I did try to fit with five parameters (including $t_0$), but `optim` crashed sooner or later with uncomprehensible error messages. We need to fix $t_0$.
+I did try to fit with five parameters (including $t_0$), but `optim` crashed sooner or later with incomprehensible error messages. We need to fix $t_0$.
 
 # 04/09/2017
 
@@ -182,7 +182,7 @@ for(set in names(dataFile)) {
 
 # 18/09/2017
 
-There were some problems with fit limtis. I think I should fit it again.
+There were some problems with fit limits. I think I should fit it again.
 
 Struggling with TeX expression and multi-line title. Reverting to simple text.
 
@@ -224,7 +224,7 @@ It seems text-numeric type conflicts. I explicitly convert parameters into numer
 
 # 25/09/2017
 
-After a few days off work due to illnes, I'm putting all of this together in the mod3 document. The original model (ref1) needs to be re-fitted on the smae time interval as the new one. Running fits again.
+After a few days off work due to illness, I'm putting all of this together in the mod3 document. The original model (ref1) needs to be re-fitted on the same time interval as the new one. Running fits again.
 
 # 9/10/2017
 
@@ -282,9 +282,9 @@ New data set: early G2. Late G2 is our data up to -20 min.
 
 Look at density distribution of brown.
 
-Distribution of brown  - are they Poisson, ranodm, or is there a pattern, like clumping. Do cumulative dist. on intervals and see if it is exponential.
+Distribution of brown  - are they Poisson, random, or is there a pattern, like clumping. Do cumulative dist. on intervals and see if it is exponential.
 
-How to correct for the lenght of cell available (that is brow-to-brown distance will be biased for short cells, longer intervals missing)?
+How to correct for the length of cell available (that is brow-to-brown distance will be biased for short cells, longer intervals missing)?
 
 # 9/01/2018
 
@@ -370,7 +370,7 @@ Meeting with Tomo and John: do point-to-point diagrams for all conditions (also 
 
 # 19/01/2018
 
-Added SMC2. Added point-to-point distributions everwhere.
+Added SMC2. Added point-to-point distributions everywhere.
 
 # 23/01/2018
 
@@ -380,7 +380,7 @@ Meeting with Tomo and John.
 
 Why do model lines in fits always start at -50? That is blue = 1, pink = red = 0, but the model should start earlier.
 
-Brown distribution: if brown points are randomly scattered, what is the prob. of seeing 2, 3, 4... events next to each other. Compare with duration distirbution.
+Brown distribution: if brown points are randomly scattered, what is the prob. of seeing 2, 3, 4... events next to each other. Compare with duration distribution.
 
 # 24/01/2018
 
@@ -441,7 +441,7 @@ Now running three-parameter bootstraps.
 
 # 5/02/2018
 
-There was an almighty cluster crash on Friday and all the jobs were stopped. Recovered in the afternoon and jobs continuued, but lots of TT108  results missing. Produced a document with limited TT108, but need to run it again.
+There was an almighty cluster crash on Friday and all the jobs were stopped. Recovered in the afternoon and jobs continued, but lots of TT108  results missing. Produced a document with limited TT108, but need to run it again.
 
 # 7/02/2018
 
@@ -475,7 +475,7 @@ Fitting scramble for four values of t0. Fitting untreated. And scramble and untr
 
 Meeting with John.
 
-Scramble had sligthly different definitions of pink and red. There will be new scramble to re-do fits.
+Scramble had slightly different definitions of pink and red. There will be new scramble to re-do fits.
 
 Need to update Shiny.
 
@@ -513,3 +513,7 @@ OK, this is a bit pointless. Since I already have most of the bootstraps ready f
 # 23/04/2018
 
 Finishing fits and bootstraps and preparing the document for publication.
+
+# 10/05/2018
+
+John discovered that the data file for MK1775+ICRF193 was incomplete. He sent me a new file. I recreated the cell-track figure (goes to the paper, Fig. S4B).
