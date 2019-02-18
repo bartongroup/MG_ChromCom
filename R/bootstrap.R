@@ -1,6 +1,6 @@
 # Stand-alone script to fit one bootstrap
 # Usage:
-#   Rscript bootstrap.R infile outfile switch ncells ntry t0 npars
+#   Rscript bootstrap.R infile outfile switch ncells ntry t0 npars tau2
 
 source("R/setup.R")
 source("R/lib.R")
@@ -17,6 +17,7 @@ ncells <- args[4]
 ntry <- args[5]
 t0 <- as.numeric(args[6])
 npars <- as.integer(args[7])
+tau2 <- as.numeric(args[8])
 
 print(paste("Fitting", infile))
 
@@ -26,7 +27,7 @@ str(echr)
 pars <- c3pars(
   t0 = t0,
   tau1 = 15,
-  tau2 = 8,
+  tau2 = tau2,
   k1 = 0.05,
   k2 = 0.06,
   t2ref = t2ref
