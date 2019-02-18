@@ -547,6 +547,48 @@ df <- bootstrapParamsTab(boot.3, pars=c("HL1", "k1", "k2"))
 kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) 
 ```
 
+
+
+### Bootstraps (3 parameters, tau2=0)
+
+Here I perform bootstrap analysis with fixed $\tau_2=0$ min.
+
+```
+rule boot_all_3par0
+```
+
+
+```{r read_bootstraps_3par0}
+sets <- c("untreated", "scramble", "NCAPD2", "NCAPD3", "SMC2", "RAD21", "WAPL48", "TT108")
+boot.30 <- readBootstraps(sets, nboot=nboot, root="boot_3par0")
+```
+
+Here is the distribution of bootstrap result.
+
+```{r bootstrap_fit_params_3par0, fig.width=6, fig.height=14}
+plotBootstrapDistributions(boot.30, pars=c("HL1", "k1", "k2")) 
+```
+
+And here are fit parameters and their 95% confidence intervals:
+
+```{r bootstrap_fit_params_CI_3par0, fig.width=5, fig.height=3}
+plotBootstrapCI(boot.30, pars=c("HL1", "k1", "k2"))
+```
+
+These are default box plots with whiskers encompassing 90% of data:
+
+```{r bootstrap_fit_params_box_3par0, fig.width=5, fig.height=3}
+plotBootstrapBox(boot.30, pars=c("HL1", "k1", "k2")) 
+```
+
+In this table we show the median value of each parameter:
+
+```{r bootstrap_fit_params_median_3par0}
+df <- bootstrapParamsTab(boot.30, pars=c("HL1", "k1", "k2"))
+kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) 
+```
+
+
 # Four-colour plots
 
 Here I create cell-line plots for all data sets using four colours.

@@ -530,6 +530,12 @@ We want to make a good justification for the particular setup of our model (as s
 
 Another possibility is to set TD = 0, that is to remove the delay at all and rely only on r1 and r2. We have already tried fixing at its "best" value $\tau_2 = 8$ min. But not at zero. This is a simple test to perform. Warning, there is a lower limit of 3 min for $\tau_2$ set in the code (OK, this doesn't matter, as limits are ignored for fixed parameters).
 
+# 18/02/2019
+
+Back from holidays. The bootstraps were running on the cluster for quite a while. Surprisingly, they didn't crash. I updated the main document with a section on $\tau_2 = 0$ min. Doesn't differ very much from the $\tau_2 = 8$ min version, just $k_2$ is a bit smaller. But the pattern of values and variability between conditions looks the same. Perhaps we don't need a delay?
+
+
+
 
 
 
