@@ -21,7 +21,8 @@ rule all:
       expand("fits/fits_{sample}_ref0_t10_tau1_k1_k2_tau2.rds", sample=SAMPLES),
       ["fits/fits_RAD21_tau2_15_ref1_t0_tau1_k1_k2.rds"],
       expand("bootstrap/boot_{bsample}_{batch}.pars", bsample=BSAMPLES, batch=BATCHES),
-      expand("bootstrap/boot_3par_{bsample}_{batch}.pars", bsample=BSAMPLES, batch=BATCHES)
+      expand("bootstrap/boot_3par_{bsample}_{batch}.pars", bsample=BSAMPLES, batch=BATCHES),
+      expand("bootstrap/boot_3par0_{bsample}_{batch}.pars", bsample=BSAMPLES, batch=BATCHES)
 
 
 ####################################################################
@@ -101,7 +102,7 @@ rule boot_all:
     threads: 8
     log: "logs/boot_{bsample}_{batch}.log"
     shell:
-        "{rscript} R/bootstrap.R {input} {output} 1 {ncells} {ntry} 0 4 &> {log}"
+        "{rscript} R/bootstrap.R {input} {output} 1 {ncells} {ntry} 0 4 8 &> {log}"
 
 ####################################################################
 
@@ -111,6 +112,15 @@ rule boot_all_3par:
     threads: 8
     log: "logs/boot_3par_{bsample}_{batch}.log"
     shell:
-        "{rscript} R/bootstrap.R {input} {output} 1 {ncells} {ntry} 0 3 &> {log}"
+        "{rscript} R/bootstrap.R {input} {output} 1 {ncells} {ntry} 0 3 8 &> {log}"
 
+###################################################################
+
+rule boot_all_3par0:
+    input: "data/{bsample}.csv"
+    output: "bootstrap/boot_3par0_{bsample}_{batch}.pars"
+    threads: 8
+    log: "logs/boot_3par0_{bsample}_{batch}.log"
+    shell:
+        "{rscript} R/bootstrap.R {input} {output} 1 {ncells} {ntry} 0 3 0 &> {log}"
 
