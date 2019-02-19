@@ -508,7 +508,7 @@ The next plot shows the correlation between $\tau_2$ and $k_2$ across bootstraps
 plotBootstrapParamCor(boot)
 ```
 
-### Bootstraps (3 parameters)
+### Bootstraps (3 parameters, $\tau_2 = 8$ min)
 
 Here I perform bootstrap analysis with fixed $\tau_2=8$ min.
 
@@ -549,7 +549,7 @@ kable(df, format="html", row.names=FALSE) %>% kable_styling("condensed", full_wi
 
 
 
-### Bootstraps (3 parameters, tau2=0)
+### Bootstraps (3 parameters, $\tau_2 = 0$ min)
 
 Here I perform bootstrap analysis with fixed $\tau_2=0$ min.
 
